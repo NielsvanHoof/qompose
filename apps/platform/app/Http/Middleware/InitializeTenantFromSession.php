@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\TenantMembershipStatus;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
@@ -27,7 +28,9 @@ final class InitializeTenantFromSession
         $tenantId = $request->session()->get('active_tenant_id');
 
         if ($tenantId === null) {
-            $tenantIds = $user->tenantMemberships()
+            // Prefer the model query builder over the relation for strict PHPStan.
+            $tenantIds = TenantMembership::query()
+                ->where('user_id', $user->id)
                 ->where('status', TenantMembershipStatus::Active)
                 ->pluck('tenant_id');
 

@@ -36,7 +36,7 @@ final class ClientAccessGrantController extends Controller
         );
 
         // Flash plaintext once — the DB only stores the hash.
-        session()->flash('access_grant_token', $result['plain_text_token']);
+        $request->session()->flash('access_grant_token', $result['plain_text_token']);
 
         Inertia::flash('toast', [
             'type' => 'success',

@@ -16,6 +16,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 
 final class DashboardController extends Controller
 {
@@ -27,11 +28,13 @@ final class DashboardController extends Controller
             abort(403);
         }
 
-        $memberships = $user->tenantMemberships()
+        // Query the model builder directly so strict PHPStan accepts where()/with().
+        $memberships = TenantMembership::query()
             ->with('tenant:id,name,slug')
+            ->where('user_id', $user->id)
             ->where('status', TenantMembershipStatus::Active)
             ->get()
-            ->sortBy(fn (TenantMembership $membership): string => $membership->tenant->name)
+            ->sortBy(fn (TenantMembership $membership): string => $this->resolveMembershipTenant($membership)->name)
             ->values();
 
         if ($memberships->isEmpty()) {
@@ -45,10 +48,14 @@ final class DashboardController extends Controller
         }
 
         return Inertia::render('dashboard', [
-            'firms' => $memberships->map(fn (TenantMembership $membership): array => [
-                'name' => $membership->tenant->name,
-                'slug' => $membership->tenant->slug,
-            ]),
+            'firms' => $memberships->map(function (TenantMembership $membership): array {
+                $tenant = $this->resolveMembershipTenant($membership);
+
+                return [
+                    'name' => $tenant->name,
+                    'slug' => $tenant->slug,
+                ];
+            }),
         ]);
     }
 
@@ -56,39 +63,64 @@ final class DashboardController extends Controller
     {
         $this->authorize('viewAny', Dossier::class);
 
-        $recentDossiers = Dossier::query()
+        $recentDossiersQuery = Dossier::query()
             ->with('client:id,name')
-            ->latest()
-            ->limit(5)
+            ->latest();
+
+        // limit() lives on the base query builder; set it there for strict PHPStan.
+        $recentDossiersQuery->getQuery()->limit(5);
+
+        $recentDossiers = $recentDossiersQuery
             ->get(['id', 'client_id', 'title', 'reference', 'status', 'updated_at']);
 
         return Inertia::render('workspaces/dashboard', [
             'metrics' => [
-                'clients' => Client::query()->count(),
+                'clients' => Client::query()->toBase()->count(),
                 'open_dossiers' => Dossier::query()
                     ->whereNot('status', DossierStatus::Completed)
+                    ->toBase()
                     ->count(),
                 'awaiting_client' => Dossier::query()
                     ->where('status', DossierStatus::AwaitingClient)
+                    ->toBase()
                     ->count(),
                 'in_review' => Dossier::query()
                     ->where('status', DossierStatus::InReview)
+                    ->toBase()
                     ->count(),
                 'outstanding_document_requests' => DocumentRequest::query()
-                    ->whereIn('status', [
-                        DocumentRequestStatus::Pending,
-                        DocumentRequestStatus::Rejected,
-                    ])
+                    ->where('status', DocumentRequestStatus::Pending)
+                    ->orWhere('status', DocumentRequestStatus::Rejected)
+                    ->toBase()
                     ->count(),
             ],
-            'recent_dossiers' => $recentDossiers->map(fn (Dossier $dossier): array => [
-                'id' => $dossier->id,
-                'title' => $dossier->title,
-                'reference' => $dossier->reference,
-                'status' => $dossier->status->value,
-                'client_name' => $dossier->client->name,
-                'updated_at' => $dossier->updated_at->toDateTimeString(),
-            ]),
+            'recent_dossiers' => $recentDossiers->map(function (Dossier $dossier): array {
+                $client = $dossier->client;
+
+                if (! $client instanceof Client) {
+                    throw new RuntimeException('Dossier client is missing.');
+                }
+
+                return [
+                    'id' => $dossier->id,
+                    'title' => $dossier->title,
+                    'reference' => $dossier->reference,
+                    'status' => $dossier->status->value,
+                    'client_name' => $client->name,
+                    'updated_at' => $dossier->updated_at->toDateTimeString(),
+                ];
+            }),
         ]);
+    }
+
+    private function resolveMembershipTenant(TenantMembership $membership): Tenant
+    {
+        $tenant = $membership->tenant;
+
+        if (! $tenant instanceof Tenant) {
+            throw new RuntimeException('Tenant membership is missing its tenant.');
+        }
+
+        return $tenant;
     }
 }

@@ -44,7 +44,7 @@ final class ClientController extends Controller
     {
         Client::query()->create($request->validated());
 
-        if (Dossier::query()->doesntExist()) {
+        if (Dossier::query()->toBase()->doesntExist()) {
             return to_route('workspaces.dossiers.create');
         }
 

@@ -11,6 +11,7 @@ use App\Models\Client;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
@@ -65,7 +66,7 @@ final class DossierController extends Controller
         return to_route('workspaces.dossiers.show', $dossier);
     }
 
-    public function show(Dossier $dossier): Response
+    public function show(Request $request, Dossier $dossier): Response
     {
         $this->authorize('view', $dossier);
 
@@ -84,7 +85,7 @@ final class DossierController extends Controller
 
         return Inertia::render('workspaces/dossiers/show', [
             // One-time plain token after creating a grant (never stored in plaintext).
-            'access_grant_token' => $this->flashedAccessGrantToken(),
+            'access_grant_token' => $this->flashedAccessGrantToken($request),
             'dossier' => [
                 'id' => $dossier->id,
                 'title' => $dossier->title,
@@ -113,9 +114,9 @@ final class DossierController extends Controller
         ]);
     }
 
-    private function flashedAccessGrantToken(): ?string
+    private function flashedAccessGrantToken(Request $request): ?string
     {
-        $token = session()->pull('access_grant_token');
+        $token = $request->session()->pull('access_grant_token');
 
         return is_string($token) && $token !== '' ? $token : null;
     }
