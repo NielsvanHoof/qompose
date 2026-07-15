@@ -5,8 +5,6 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index as clientIndex } from '@/routes/workspaces/clients';
-import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import {
     Select,
     SelectContent,
@@ -14,6 +12,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { index as clientIndex } from '@/routes/workspaces/clients';
+import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 
 type Client = {
     id: number;

@@ -1,5 +1,5 @@
 import { Form, Head, Link, router, useForm } from '@inertiajs/react';
-import { useState, type FormEvent } from 'react';
+import { type FormEvent, useState } from 'react';
 import ClientAccessGrantController from '@/actions/App/Http/Controllers/Workspace/ClientAccessGrantController';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Workspace/DocumentRequestController';
 import UploadedDocumentController from '@/actions/App/Http/Controllers/Workspace/UploadedDocumentController';
