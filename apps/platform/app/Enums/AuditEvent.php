@@ -9,6 +9,7 @@ enum AuditEvent: string
     case DossierViewed = 'dossier.viewed';
     case DocumentRequestCreated = 'document_request.created';
     case DocumentUploaded = 'document.uploaded';
+    case QuestionnaireAnswerSubmitted = 'questionnaire.answer_submitted';
     case DocumentViewed = 'document.viewed';
     case DocumentDownloaded = 'document.downloaded';
     case AccessDenied = 'access.denied';
@@ -20,6 +21,7 @@ enum AuditEvent: string
             self::DossierViewed => 'Dossier viewed',
             self::DocumentRequestCreated => 'Document request created',
             self::DocumentUploaded => 'Document uploaded',
+            self::QuestionnaireAnswerSubmitted => 'Questionnaire answer submitted',
             self::DocumentViewed => 'Document viewed',
             self::DocumentDownloaded => 'Document downloaded',
             self::AccessDenied => 'Access denied',

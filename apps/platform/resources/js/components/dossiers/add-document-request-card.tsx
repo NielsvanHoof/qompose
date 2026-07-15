@@ -11,9 +11,16 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 /**
- * Sidebar form to add one document request to a dossier.
+ * Sidebar form to add one questionnaire item to a dossier.
  */
 export default function AddDocumentRequestCard({
     dossierId,
@@ -25,7 +32,7 @@ export default function AddDocumentRequestCard({
             <CardHeader>
                 <CardTitle>Add request</CardTitle>
                 <CardDescription>
-                    Ask the client for one document at a time.
+                    Ask for a file, a text answer, or a yes/no confirmation.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -37,7 +44,32 @@ export default function AddDocumentRequestCard({
                     {({ errors, processing }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="title">Document name</Label>
+                                <Label htmlFor="type">Type</Label>
+                                <Select
+                                    required
+                                    defaultValue="file"
+                                    name="type"
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-background">
+                                        <SelectItem value="file">
+                                            File upload
+                                        </SelectItem>
+                                        <SelectItem value="text">
+                                            Text answer
+                                        </SelectItem>
+                                        <SelectItem value="boolean">
+                                            Yes / no
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.type} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="title">Title</Label>
                                 <Input
                                     id="title"
                                     name="title"

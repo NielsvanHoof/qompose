@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Portal\ClientPortalAnswerController;
 use App\Http\Controllers\Portal\ClientPortalController;
 use App\Http\Controllers\Portal\ClientPortalUploadController;
 use App\Http\Middleware\ResolveClientPortalGrant;
@@ -26,4 +27,8 @@ Route::middleware([
         Route::post('{token}/document-requests/{documentRequest}/upload', [ClientPortalUploadController::class, 'store'])
             ->where(['token' => '[A-Za-z0-9]+', 'documentRequest' => '[0-9]+'])
             ->name('document-requests.upload');
+
+        Route::post('{token}/document-requests/{documentRequest}/answer', [ClientPortalAnswerController::class, 'store'])
+            ->where(['token' => '[A-Za-z0-9]+', 'documentRequest' => '[0-9]+'])
+            ->name('document-requests.answer');
     });

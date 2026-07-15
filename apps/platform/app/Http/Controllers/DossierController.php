@@ -10,11 +10,13 @@ use App\Http\Requests\Workspace\StoreDossierRequest;
 use App\Models\Client;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
+use App\Models\QuestionnaireTemplate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
+
 use function is_string;
 
 final class DossierController extends Controller
@@ -75,7 +77,7 @@ final class DossierController extends Controller
             'client:id,name,email',
             'documentRequests' => fn ($query) => $query
                 ->with('uploadedDocument')
-                ->orderBy('sort_order'),
+                ->oldest('sort_order'),
             'clientAccessGrants' => fn ($query) => $query->latest(),
         ]);
 
@@ -86,10 +88,23 @@ final class DossierController extends Controller
 
         $client = $this->resolveClient($dossier);
 
+        // oldest('name') instead of orderBy — Eloquent orderBy trips phpstan-strict-rules.
+        $templates = QuestionnaireTemplate::queryVisibleToCurrentTenant()
+            ->withCount('items')
+            ->oldest('name')
+            ->get(['id', 'name', 'category', 'tenant_id']);
+
         return Inertia::render('workspaces/dossiers/show', [
             // One-time plain token after creating a grant (never stored in plaintext).
             'access_grant_token' => $this->flashedAccessGrantToken($request),
             'access_grant_portal_url' => $this->flashedAccessGrantPortalUrl($request),
+            'templates' => $templates->map(fn (QuestionnaireTemplate $template): array => [
+                'id' => $template->id,
+                'name' => $template->name,
+                'category_label' => $template->category->label(),
+                'items_count' => $template->items_count,
+                'is_system' => $template->isSystem(),
+            ]),
             'dossier' => [
                 'id' => $dossier->id,
                 'title' => $dossier->title,
@@ -105,9 +120,14 @@ final class DossierController extends Controller
 
                         return [
                             'id' => $documentRequest->id,
+                            'type' => $documentRequest->type->value,
                             'title' => $documentRequest->title,
                             'instructions' => $documentRequest->instructions,
                             'status' => $documentRequest->status->value,
+                            'answer_text' => $documentRequest->answer_text,
+                            'answer_boolean' => $documentRequest->answer_boolean,
+                            'answered_at' => $documentRequest->answered_at?->toIso8601String(),
+                            'sort_order' => $documentRequest->sort_order,
                             'uploaded_document' => $uploaded === null ? null : [
                                 'id' => $uploaded->id,
                                 'original_filename' => $uploaded->original_filename,

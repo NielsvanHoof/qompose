@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Actions\Workspace;
 
 use App\Enums\DocumentRequestStatus;
+use App\Enums\QuestionnaireItemType;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use RuntimeException;
 
 use function is_int;
@@ -19,11 +21,15 @@ use function is_string;
 final class UploadDocumentForRequest
 {
     /**
-     * Store a file for a document request and mark the request as uploaded.
+     * Store a file for a document request and mark the request as submitted.
      * Replaces any previous upload for the same request.
      */
     public function __invoke(DocumentRequest $documentRequest, UploadedFile $file): UploadedDocument
     {
+        if ($documentRequest->type !== QuestionnaireItemType::File) {
+            throw new InvalidArgumentException('Only file items accept uploads.');
+        }
+
         $disk = (string) config('filesystems.default', 'local');
         $directory = sprintf(
             'tenants/%d/dossiers/%d',
@@ -59,7 +65,8 @@ final class UploadDocumentForRequest
             ]);
 
             $documentRequest->update([
-                'status' => DocumentRequestStatus::Uploaded,
+                'status' => DocumentRequestStatus::Submitted,
+                'answered_at' => now(),
             ]);
 
             return $uploadedDocument;

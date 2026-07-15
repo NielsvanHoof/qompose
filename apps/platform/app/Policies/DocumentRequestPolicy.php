@@ -44,4 +44,14 @@ final class DocumentRequestPolicy
             && $tenant instanceof Tenant
             && $user->belongsToTenant($tenant);
     }
+
+    public function update(User $user, DocumentRequest $documentRequest): bool
+    {
+        return $this->upload($user, $documentRequest);
+    }
+
+    public function delete(User $user, DocumentRequest $documentRequest): bool
+    {
+        return $this->upload($user, $documentRequest);
+    }
 }

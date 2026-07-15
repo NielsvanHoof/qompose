@@ -9,9 +9,14 @@ export type UploadedDocument = {
 /** Document request as shown on the staff dossier page. */
 export type DocumentRequest = {
     id: number;
+    type: string;
     title: string;
     instructions: string | null;
     status: string;
+    answer_text: string | null;
+    answer_boolean: boolean | null;
+    answered_at: string | null;
+    sort_order: number;
     uploaded_document: UploadedDocument | null;
 };
 
@@ -65,9 +70,12 @@ export type PortalUploadedDocument = {
 /** Document request as shown on the client portal. */
 export type PortalDocumentRequest = {
     id: number;
+    type: string;
     title: string;
     instructions: string | null;
     status: string;
+    answer_text: string | null;
+    answer_boolean: boolean | null;
     uploaded_document: PortalUploadedDocument | null;
 };
 

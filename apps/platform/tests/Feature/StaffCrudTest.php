@@ -57,6 +57,7 @@ test('staff can create a client, dossier, and document request', function () {
     $dossier = Dossier::query()->sole();
 
     $this->post(route('workspaces.dossiers.document-requests.store', $dossier), [
+        'type' => 'file',
         'title' => 'Payslip January 2025',
         'instructions' => 'Upload the original PDF.',
     ])->assertRedirect(route('workspaces.dossiers.show', $dossier));
@@ -219,7 +220,7 @@ test('staff can upload a document for a document request', function () {
 
     $uploaded = UploadedDocument::query()->sole();
 
-    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Uploaded)
+    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Submitted)
         ->and($uploaded->original_filename)->toBe('payslip.pdf')
         ->and($uploaded->document_request_id)->toBe($documentRequest->id);
 

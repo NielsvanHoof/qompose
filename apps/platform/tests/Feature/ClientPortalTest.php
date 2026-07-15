@@ -119,7 +119,7 @@ test('guest can upload a document through the portal', function () {
 
     $context['tenant']->makeCurrent();
 
-    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Uploaded)
+    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Submitted)
         ->and(UploadedDocument::query()->where('document_request_id', $documentRequest->id)->exists())->toBeTrue()
         ->and($context['dossier']->fresh()->status)->toBe(DossierStatus::InReview);
 });

@@ -1,11 +1,12 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import AddDocumentRequestCard from '@/components/dossiers/add-document-request-card';
+import ApplyTemplateCard from '@/components/dossiers/apply-template-card';
 import ClientAccessCard from '@/components/dossiers/client-access-card';
 import DocumentRequestsCard from '@/components/dossiers/document-requests-card';
 import PortalLinkBanner from '@/components/dossiers/portal-link-banner';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
-import type { Dossier } from '@/types';
+import type { ApplyTemplateOption, Dossier } from '@/types';
 import {
     index as dossierIndex,
     show as showDossier,
@@ -16,10 +17,12 @@ import {
  */
 export default function ShowDossier({
     dossier,
+    templates = [],
     access_grant_token: accessGrantToken = null,
     access_grant_portal_url: accessGrantPortalUrl = null,
 }: {
     dossier: Dossier;
+    templates?: ApplyTemplateOption[];
     access_grant_token?: string | null;
     access_grant_portal_url?: string | null;
 }) {
@@ -74,7 +77,13 @@ export default function ShowDossier({
                         />
                     </div>
 
-                    <AddDocumentRequestCard dossierId={dossier.id} />
+                    <div className="space-y-6">
+                        <ApplyTemplateCard
+                            dossierId={dossier.id}
+                            templates={templates}
+                        />
+                        <AddDocumentRequestCard dossierId={dossier.id} />
+                    </div>
                 </div>
             </div>
         </>

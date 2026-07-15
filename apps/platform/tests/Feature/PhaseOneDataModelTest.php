@@ -58,7 +58,7 @@ test('staff can create the phase one document collection graph', function () {
         'created_by' => $owner->id,
     ]);
 
-    $documentRequest->update(['status' => DocumentRequestStatus::Uploaded]);
+    $documentRequest->update(['status' => DocumentRequestStatus::Submitted]);
 
     expect($client->dossiers)->toHaveCount(1)
         ->and($dossier->client->is($client))->toBeTrue()

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Workspace;
 
 use App\Enums\Permission;
+use App\Enums\QuestionnaireItemType;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\DocumentRequest;
@@ -17,7 +18,7 @@ use RuntimeException;
 final class MediaLibraryController extends Controller
 {
     /**
-     * Cross-dossier list of every document request (pending and uploaded).
+     * Cross-dossier list of file document requests (pending and submitted).
      */
     public function index(Request $request): Response
     {
@@ -28,6 +29,7 @@ final class MediaLibraryController extends Controller
         $canDownload = $user !== null && $user->can(Permission::DownloadDocuments->value);
 
         $documentRequests = DocumentRequest::query()
+            ->where('type', QuestionnaireItemType::File)
             ->with([
                 'uploadedDocument',
                 'dossier:id,client_id,title,reference',

@@ -11,6 +11,7 @@ enum Permission: string
     case ReviewDocuments = 'documents.review';
     case DownloadDocuments = 'documents.download';
     case ManageClients = 'clients.manage';
+    case ManageTemplates = 'templates.manage';
     case ManageMembers = 'members.manage';
     case ManageTenantSettings = 'tenant.settings.manage';
 

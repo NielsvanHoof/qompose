@@ -1,3 +1,4 @@
+import PortalDocumentAnswer from '@/components/dossiers/portal-document-answer';
 import PortalDocumentUpload from '@/components/dossiers/portal-document-upload';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -11,7 +12,7 @@ import { formatBytes } from '@/lib/format-bytes';
 import type { PortalDocumentRequest } from '@/types';
 
 /**
- * Client-portal list of requested documents with upload controls.
+ * Client-portal questionnaire with uploads and typed answers.
  */
 export default function PortalDocumentRequestsCard({
     token,
@@ -22,20 +23,31 @@ export default function PortalDocumentRequestsCard({
     firmName: string;
     documentRequests: PortalDocumentRequest[];
 }) {
+    const submittedCount = documentRequests.filter(
+        (item) => item.status === 'submitted' || item.status === 'accepted',
+    ).length;
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Requested documents</CardTitle>
+                <CardTitle>Questionnaire</CardTitle>
                 <CardDescription>
-                    Upload each file below. You can replace a file until this
+                    Complete each item below. You can update answers until this
                     link expires.
+                    {documentRequests.length > 0 && (
+                        <>
+                            {' '}
+                            Progress: {submittedCount} /{' '}
+                            {documentRequests.length}
+                        </>
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {documentRequests.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                        No documents have been requested yet. Check back later
-                        or contact {firmName}.
+                        Nothing has been requested yet. Check back later or
+                        contact {firmName}.
                     </p>
                 ) : (
                     <div className="divide-y rounded-md border">
@@ -46,9 +58,14 @@ export default function PortalDocumentRequestsCard({
                             >
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div>
-                                        <p className="font-medium">
-                                            {documentRequest.title}
-                                        </p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <p className="font-medium">
+                                                {documentRequest.title}
+                                            </p>
+                                            <Badge variant="outline">
+                                                {documentRequest.type}
+                                            </Badge>
+                                        </div>
                                         {documentRequest.instructions && (
                                             <p className="mt-1 text-sm text-muted-foreground">
                                                 {documentRequest.instructions}
@@ -63,41 +80,50 @@ export default function PortalDocumentRequestsCard({
                                     </Badge>
                                 </div>
 
-                                {documentRequest.uploaded_document && (
-                                    <div className="rounded-md bg-muted/50 px-3 py-2 text-sm">
-                                        <p className="font-medium">
-                                            {
-                                                documentRequest
+                                {documentRequest.type === 'file' &&
+                                    documentRequest.uploaded_document && (
+                                        <div className="rounded-md bg-muted/50 px-3 py-2 text-sm">
+                                            <p className="font-medium">
+                                                {
+                                                    documentRequest
+                                                        .uploaded_document
+                                                        .original_filename
+                                                }
+                                            </p>
+                                            <p className="text-muted-foreground">
+                                                {formatBytes(
+                                                    documentRequest
+                                                        .uploaded_document
+                                                        .size_bytes,
+                                                )}
+                                                {documentRequest
                                                     .uploaded_document
-                                                    .original_filename
-                                            }
-                                        </p>
-                                        <p className="text-muted-foreground">
-                                            {formatBytes(
-                                                documentRequest
-                                                    .uploaded_document
-                                                    .size_bytes,
-                                            )}
-                                            {documentRequest.uploaded_document
-                                                .uploaded_at && (
-                                                <>
-                                                    {' '}
-                                                    ·{' '}
-                                                    {new Date(
-                                                        documentRequest
-                                                            .uploaded_document
-                                                            .uploaded_at,
-                                                    ).toLocaleString()}
-                                                </>
-                                            )}
-                                        </p>
-                                    </div>
-                                )}
+                                                    .uploaded_at && (
+                                                    <>
+                                                        {' '}
+                                                        ·{' '}
+                                                        {new Date(
+                                                            documentRequest
+                                                                .uploaded_document
+                                                                .uploaded_at,
+                                                        ).toLocaleString()}
+                                                    </>
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
 
-                                <PortalDocumentUpload
-                                    token={token}
-                                    documentRequest={documentRequest}
-                                />
+                                {documentRequest.type === 'file' ? (
+                                    <PortalDocumentUpload
+                                        token={token}
+                                        documentRequest={documentRequest}
+                                    />
+                                ) : (
+                                    <PortalDocumentAnswer
+                                        token={token}
+                                        documentRequest={documentRequest}
+                                    />
+                                )}
                             </div>
                         ))}
                     </div>

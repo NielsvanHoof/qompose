@@ -23,6 +23,7 @@ enum Role: string
                 Permission::ManageClients,
                 Permission::CreateDossiers,
                 Permission::ViewDossiers,
+                Permission::ManageTemplates,
                 Permission::ManageMembers,
                 Permission::ReviewDocuments,
                 Permission::DownloadDocuments,

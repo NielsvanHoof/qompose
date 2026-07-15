@@ -31,8 +31,8 @@ final class ClientPortalController extends Controller
                 'client:id,name,email',
                 'tenant:id,name',
                 'documentRequests' => fn ($query) => $query
-                    ->orderBy('sort_order')
-                    ->orderBy('id')
+                    ->oldest('sort_order')
+                    ->oldest('id')
                     ->with('uploadedDocument:id,document_request_id,original_filename,size_bytes,uploaded_at'),
             ])
             ->findOrFail($grant->dossier_id);
@@ -62,9 +62,12 @@ final class ClientPortalController extends Controller
                 'expires_at' => $grant->expires_at->toIso8601String(),
                 'document_requests' => $dossier->documentRequests->map(fn ($documentRequest): array => [
                     'id' => $documentRequest->id,
+                    'type' => $documentRequest->type->value,
                     'title' => $documentRequest->title,
                     'instructions' => $documentRequest->instructions,
                     'status' => $documentRequest->status->value,
+                    'answer_text' => $documentRequest->answer_text,
+                    'answer_boolean' => $documentRequest->answer_boolean,
                     'uploaded_document' => $documentRequest->uploadedDocument === null
                         ? null
                         : [

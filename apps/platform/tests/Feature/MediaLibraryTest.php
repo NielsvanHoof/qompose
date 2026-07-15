@@ -46,7 +46,7 @@ test('staff can view the media library with pending and uploaded documents', fun
         'tenant_id' => $tenant->id,
         'dossier_id' => $dossier->id,
         'title' => 'Uploaded ID',
-        'status' => DocumentRequestStatus::Uploaded,
+        'status' => DocumentRequestStatus::Submitted,
     ]);
 
     UploadedDocument::factory()->create([
@@ -76,7 +76,7 @@ test('staff can view the media library with pending and uploaded documents', fun
             ))
             ->where('documents', fn ($documents) => collect($documents)->contains(
                 fn (array $document): bool => $document['title'] === 'Uploaded ID'
-                    && $document['status'] === 'uploaded'
+                    && $document['status'] === 'submitted'
                     && $document['uploaded_document']['original_filename'] === 'passport.pdf',
             )));
 });
@@ -145,7 +145,7 @@ test('reviewer can browse the media library but cannot download', function () {
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $tenant->id,
         'dossier_id' => $dossier->id,
-        'status' => DocumentRequestStatus::Uploaded,
+        'status' => DocumentRequestStatus::Submitted,
     ]);
     $uploaded = UploadedDocument::factory()->create([
         'tenant_id' => $tenant->id,

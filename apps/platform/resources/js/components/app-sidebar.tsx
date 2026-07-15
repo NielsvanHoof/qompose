@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    ClipboardList,
     FolderGit2,
     Images,
     LayoutGrid,
@@ -22,6 +23,7 @@ import { dashboard } from '@/routes';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import { index as mediaIndex } from '@/routes/workspaces/media';
+import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -45,6 +47,11 @@ export function AppSidebar() {
                       title: 'Clients',
                       href: clientIndex(),
                       icon: Users,
+                  },
+                  {
+                      title: 'Templates',
+                      href: templateIndex(),
+                      icon: ClipboardList,
                   },
                   {
                       title: 'Media Library',

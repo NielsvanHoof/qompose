@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Enums\DocumentRequestStatus;
+use App\Enums\QuestionnaireItemType;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,6 +24,7 @@ final class DocumentRequestFactory extends Factory
     {
         return [
             'dossier_id' => Dossier::factory(),
+            'type' => QuestionnaireItemType::File,
             'title' => fake()->sentence(2),
             'instructions' => fake()->optional()->sentence(),
             'status' => DocumentRequestStatus::Pending,

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Workspace;
 
+use App\Enums\QuestionnaireItemType;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class StoreDocumentRequestRequest extends FormRequest
 {
@@ -29,10 +31,11 @@ final class StoreDocumentRequestRequest extends FormRequest
             && $user->can('create', DocumentRequest::class);
     }
 
-    /** @return array<string, list<ValidationRule|string>> */
+    /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
         return [
+            'type' => ['required', Rule::enum(QuestionnaireItemType::class)],
             'title' => ['required', 'string', 'max:255'],
             'instructions' => ['nullable', 'string', 'max:2000'],
         ];

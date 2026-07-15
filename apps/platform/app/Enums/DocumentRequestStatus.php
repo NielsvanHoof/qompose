@@ -7,7 +7,7 @@ namespace App\Enums;
 enum DocumentRequestStatus: string
 {
     case Pending = 'pending';
-    case Uploaded = 'uploaded';
+    case Submitted = 'submitted';
     case Accepted = 'accepted';
     case Rejected = 'rejected';
 }
