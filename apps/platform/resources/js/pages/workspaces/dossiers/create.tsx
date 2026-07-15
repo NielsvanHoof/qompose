@@ -1,11 +1,11 @@
 import { Head } from '@inertiajs/react';
 import CreateDossierForm from '@/components/dossiers/create-dossier-form';
 import Heading from '@/components/heading';
-import type { DossierClientOption } from '@/types';
 import {
     create as createDossier,
     index as dossierIndex,
 } from '@/routes/workspaces/dossiers';
+import type { DossierClientOption } from '@/types';
 
 /**
  * Create a new dossier for an existing client.

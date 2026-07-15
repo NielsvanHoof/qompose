@@ -8,11 +8,11 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import type { DossierSummary } from '@/types';
 import {
     index as dossierIndex,
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
+import type { DossierSummary } from '@/types';
 
 /**
  * Recently updated dossiers list for the workspace dashboard.

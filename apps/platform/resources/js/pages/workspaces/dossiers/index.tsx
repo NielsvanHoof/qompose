@@ -2,9 +2,9 @@ import { Head, Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import DossiersListCard from '@/components/dossiers/dossiers-list-card';
 import { Button } from '@/components/ui/button';
-import type { DossierSummary } from '@/types';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { create, index as dossierIndex } from '@/routes/workspaces/dossiers';
+import type { DossierSummary } from '@/types';
 
 /**
  * Dossiers index — list of all firm dossiers.

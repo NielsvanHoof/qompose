@@ -11,9 +11,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import type { DossierClientOption } from '@/types';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
+import type { DossierClientOption } from '@/types';
 
 /**
  * Create-dossier form, or an empty-state when no clients exist yet.

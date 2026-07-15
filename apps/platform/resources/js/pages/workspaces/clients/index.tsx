@@ -2,12 +2,12 @@ import { Head, Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import ClientsListCard from '@/components/clients/clients-list-card';
 import { Button } from '@/components/ui/button';
-import type { ClientSummary } from '@/types';
 import {
     index as clientIndex,
     create as createClient,
 } from '@/routes/workspaces/clients';
 import { create as createDossier } from '@/routes/workspaces/dossiers';
+import type { ClientSummary } from '@/types';
 
 /**
  * Clients index — people and organisations for document collection.

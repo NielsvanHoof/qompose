@@ -11,8 +11,8 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { formatBytes } from '@/lib/format-bytes';
-import type { MediaDocument } from '@/types';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
+import type { MediaDocument } from '@/types';
 
 /**
  * Media library list of document requests across all dossiers.

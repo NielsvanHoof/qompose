@@ -6,11 +6,11 @@ import DocumentRequestsCard from '@/components/dossiers/document-requests-card';
 import PortalLinkBanner from '@/components/dossiers/portal-link-banner';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
-import type { ApplyTemplateOption, Dossier } from '@/types';
 import {
     index as dossierIndex,
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
+import type { ApplyTemplateOption, Dossier } from '@/types';
 
 /**
  * Staff dossier detail page — composes domain section components.

@@ -7,8 +7,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import type { DossierSummary } from '@/types';
 import { show } from '@/routes/workspaces/dossiers';
+import type { DossierSummary } from '@/types';
 
 /**
  * Full dossier list for the dossiers index page.

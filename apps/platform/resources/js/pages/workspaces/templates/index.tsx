@@ -10,12 +10,12 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import type { TemplateSummary } from '@/types';
 import {
     create as createTemplate,
-    index as templateIndex,
     show as showTemplate,
+    index as templateIndex,
 } from '@/routes/workspaces/templates';
+import type { TemplateSummary } from '@/types';
 
 /**
  * Template library — system packs plus firm-owned copies.

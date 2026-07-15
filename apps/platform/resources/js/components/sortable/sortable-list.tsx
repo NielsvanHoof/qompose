@@ -1,9 +1,9 @@
 import {
+    closestCenter,
     DndContext,
     type DragEndEvent,
     KeyboardSensor,
     PointerSensor,
-    closestCenter,
     useSensor,
     useSensors,
 } from '@dnd-kit/core';
@@ -15,7 +15,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { applyIdOrder, reorderIds, sameIdOrder } from '@/lib/reorder';
 import { cn } from '@/lib/utils';

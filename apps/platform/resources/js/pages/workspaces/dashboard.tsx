@@ -3,10 +3,10 @@ import DashboardMetricsGrid from '@/components/dossiers/dashboard-metrics-grid';
 import RecentDossiersCard from '@/components/dossiers/recent-dossiers-card';
 import ReviewQueueCard from '@/components/dossiers/review-queue-card';
 import { Button } from '@/components/ui/button';
-import type { DossierSummary, WorkspaceDashboardMetrics } from '@/types';
 import { dashboard } from '@/routes';
 import { create as createClient } from '@/routes/workspaces/clients';
 import { create as createDossier } from '@/routes/workspaces/dossiers';
+import type { DossierSummary, WorkspaceDashboardMetrics } from '@/types';
 
 /**
  * Workspace dashboard — metrics, recent dossiers, and review queue.
