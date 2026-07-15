@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { Firm } from '@/types/workspace';
 
 declare module 'react' {
     interface InputHTMLAttributes<T> {
@@ -11,6 +12,8 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            workspaces: Firm[];
+            current_firm: Firm | null;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

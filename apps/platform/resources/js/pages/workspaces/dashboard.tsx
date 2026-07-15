@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ClipboardList, FileClock, FolderOpen, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,6 @@ import {
     index as dossierIndex,
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
-
-type Tenant = {
-    name: string;
-    slug: string;
-};
 
 type Metrics = {
     clients: number;
@@ -39,14 +34,14 @@ type RecentDossier = {
 };
 
 export default function WorkspaceDashboard({
-    tenant,
     metrics,
     recent_dossiers: recentDossiers,
 }: {
-    tenant: Tenant;
     metrics: Metrics;
     recent_dossiers: RecentDossier[];
 }) {
+    const { current_firm: currentFirm } = usePage().props;
+
     const metricCards = [
         {
             label: 'Clients',
@@ -81,9 +76,11 @@ export default function WorkspaceDashboard({
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                            {tenant.name}
-                        </p>
+                        {currentFirm && (
+                            <p className="text-sm font-medium text-muted-foreground">
+                                {currentFirm.name}
+                            </p>
+                        )}
                         <h1 className="text-2xl font-semibold tracking-tight">
                             Dossier overview
                         </h1>

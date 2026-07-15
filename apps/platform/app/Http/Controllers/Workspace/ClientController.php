@@ -16,11 +16,9 @@ final class ClientController extends Controller
 {
     public function index(): Response
     {
-        $tenant = $this->currentTenant();
         $this->authorize('viewAny', Client::class);
 
         return Inertia::render('workspaces/clients/index', [
-            'tenant' => ['slug' => $tenant->slug],
             'clients' => Client::query()
                 ->withCount('dossiers')
                 ->get(['id', 'name', 'email'])
@@ -37,12 +35,9 @@ final class ClientController extends Controller
 
     public function create(): Response
     {
-        $tenant = $this->currentTenant();
         $this->authorize('create', Client::class);
 
-        return Inertia::render('workspaces/clients/create', [
-            'tenant' => ['slug' => $tenant->slug],
-        ]);
+        return Inertia::render('workspaces/clients/create');
     }
 
     public function store(StoreClientRequest $request): RedirectResponse

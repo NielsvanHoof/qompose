@@ -8,23 +8,13 @@ import { Label } from '@/components/ui/label';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 
-type Tenant = {
-    slug: string;
-};
-
 type Client = {
     id: number;
     name: string;
     email: string;
 };
 
-export default function CreateDossier({
-    tenant,
-    clients,
-}: {
-    tenant: Tenant;
-    clients: Client[];
-}) {
+export default function CreateDossier({ clients }: { clients: Client[] }) {
     return (
         <>
             <Head title="New dossier" />
@@ -48,7 +38,7 @@ export default function CreateDossier({
                     </div>
                 ) : (
                     <Form
-                        {...DossierController.store.form(tenant)}
+                        {...DossierController.store.form()}
                         className="mt-6 space-y-6"
                     >
                         {({ errors, processing }) => (

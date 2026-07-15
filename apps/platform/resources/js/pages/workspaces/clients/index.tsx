@@ -11,10 +11,6 @@ import {
 import { create as createClient } from '@/routes/workspaces/clients';
 import { create as createDossier } from '@/routes/workspaces/dossiers';
 
-type Tenant = {
-    slug: string;
-};
-
 type Client = {
     id: number;
     name: string;
@@ -22,13 +18,7 @@ type Client = {
     dossiers_count: number;
 };
 
-export default function ClientIndex({
-    tenant,
-    clients,
-}: {
-    tenant: Tenant;
-    clients: Client[];
-}) {
+export default function ClientIndex({ clients }: { clients: Client[] }) {
     return (
         <>
             <Head title="Clients" />

@@ -23,14 +23,16 @@ import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { tenant } = usePage<{ tenant?: { slug: string } }>().props;
+    // Shared from HandleInertiaRequests — present when a firm is active.
+    const { current_firm: currentFirm } = usePage().props;
+
     const mainNavItems: NavItem[] = [
         {
             title: 'Dashboard',
             href: dashboard(),
             icon: LayoutGrid,
         },
-        ...(tenant
+        ...(currentFirm
             ? [
                   {
                       title: 'Dossiers',
@@ -45,6 +47,7 @@ export function AppSidebar() {
               ]
             : []),
     ];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

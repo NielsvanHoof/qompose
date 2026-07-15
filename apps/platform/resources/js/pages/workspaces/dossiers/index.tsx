@@ -15,10 +15,6 @@ import {
     show,
 } from '@/routes/workspaces/dossiers';
 
-type Tenant = {
-    slug: string;
-};
-
 type Dossier = {
     id: number;
     client_name: string;
@@ -27,13 +23,7 @@ type Dossier = {
     status: string;
 };
 
-export default function DossierIndex({
-    tenant,
-    dossiers,
-}: {
-    tenant: Tenant;
-    dossiers: Dossier[];
-}) {
+export default function DossierIndex({ dossiers }: { dossiers: Dossier[] }) {
     return (
         <>
             <Head title="Dossiers" />

@@ -7,11 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 
-type Tenant = {
-    slug: string;
-};
-
-export default function CreateClient({ tenant }: { tenant: Tenant }) {
+export default function CreateClient() {
     return (
         <>
             <Head title="New client" />
@@ -23,7 +19,7 @@ export default function CreateClient({ tenant }: { tenant: Tenant }) {
                 />
 
                 <Form
-                    {...ClientController.store.form(tenant)}
+                    {...ClientController.store.form()}
                     className="mt-6 space-y-6"
                 >
                     {({ errors, processing }) => (

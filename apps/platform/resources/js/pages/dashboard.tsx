@@ -10,11 +10,7 @@ import {
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { activate } from '@/routes/firms';
-
-type Firm = {
-    name: string;
-    slug: string;
-};
+import type { Firm } from '@/types';
 
 type PageProps = {
     firms: Firm[];

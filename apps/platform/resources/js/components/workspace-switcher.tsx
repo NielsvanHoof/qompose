@@ -15,16 +15,8 @@ import {
 } from '@/components/ui/sidebar';
 import { activate } from '@/routes/firms';
 
-type Firm = {
-    name: string;
-    slug: string;
-};
-
 export function WorkspaceSwitcher() {
-    const { current_firm: currentFirm, workspaces = [] } = usePage<{
-        current_firm?: Firm | null;
-        workspaces?: Firm[];
-    }>().props;
+    const { current_firm: currentFirm, workspaces = [] } = usePage().props;
 
     if (!currentFirm) {
         return null;

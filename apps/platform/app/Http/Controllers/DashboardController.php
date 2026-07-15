@@ -63,10 +63,6 @@ final class DashboardController extends Controller
             ->get(['id', 'client_id', 'title', 'reference', 'status', 'updated_at']);
 
         return Inertia::render('workspaces/dashboard', [
-            'tenant' => [
-                'name' => $tenant->name,
-                'slug' => $tenant->slug,
-            ],
             'metrics' => [
                 'clients' => Client::query()->count(),
                 'open_dossiers' => Dossier::query()

@@ -19,7 +19,6 @@ final class DossierController extends Controller
 {
     public function index(): Response
     {
-        $tenant = $this->currentTenant();
         $this->authorize('viewAny', Dossier::class);
 
         $dossiers = Dossier::query()
@@ -28,7 +27,6 @@ final class DossierController extends Controller
             ->get(['id', 'client_id', 'title', 'reference', 'status']);
 
         return Inertia::render('workspaces/dossiers/index', [
-            'tenant' => ['slug' => $tenant->slug],
             'dossiers' => $dossiers->map(function (Dossier $dossier): array {
                 $client = $this->resolveClient($dossier);
 
@@ -45,11 +43,9 @@ final class DossierController extends Controller
 
     public function create(): Response
     {
-        $tenant = $this->currentTenant();
         $this->authorize('create', Dossier::class);
 
         return Inertia::render('workspaces/dossiers/create', [
-            'tenant' => ['slug' => $tenant->slug],
             'clients' => Client::query()
                 ->get(['id', 'name', 'email'])
                 ->sortBy('name')
@@ -71,7 +67,6 @@ final class DossierController extends Controller
 
     public function show(Dossier $dossier): Response
     {
-        $tenant = $this->currentTenant();
         $this->authorize('view', $dossier);
 
         $dossier->load([
@@ -88,7 +83,6 @@ final class DossierController extends Controller
         $client = $this->resolveClient($dossier);
 
         return Inertia::render('workspaces/dossiers/show', [
-            'tenant' => ['slug' => $tenant->slug],
             // One-time plain token after creating a grant (never stored in plaintext).
             'access_grant_token' => $this->flashedAccessGrantToken(),
             'dossier' => [
