@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Workspace;
 
+use App\Enums\DossierStatus;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use App\Models\User;
@@ -25,6 +26,11 @@ final class CreateClientAccessGrant
             'expires_at' => now()->addDays($expiresInDays),
             'created_by' => $createdBy->id,
         ]);
+
+        // Issuing access means we are waiting on the client (unless already further along).
+        if ($dossier->status === DossierStatus::Draft) {
+            $dossier->update(['status' => DossierStatus::AwaitingClient]);
+        }
 
         return [
             'grant' => $grant,

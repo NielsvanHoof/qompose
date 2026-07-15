@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\InitializeTenantFromSession;
+use App\Http\Middleware\ResolveClientPortalGrant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function (): void {
             require __DIR__.'/../routes/tenant.php';
+            require __DIR__.'/../routes/portal.php';
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -28,6 +30,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(
             before: SubstituteBindings::class,
             prepend: InitializeTenantFromSession::class,
+        );
+
+        // Portal magic-link grants must resolve tenant before any tenant-scoped binding.
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: ResolveClientPortalGrant::class,
         );
 
         $middleware->web(append: [

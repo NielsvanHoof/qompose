@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Workspace;
 
 use App\Actions\Workspace\CreateClientAccessGrant;
+use App\Actions\Workspace\SendClientPortalInvite;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Workspace\StoreClientAccessGrantRequest;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -20,6 +22,7 @@ final class ClientAccessGrantController extends Controller
         StoreClientAccessGrantRequest $request,
         Dossier $dossier,
         CreateClientAccessGrant $createClientAccessGrant,
+        SendClientPortalInvite $sendClientPortalInvite,
     ): RedirectResponse {
         $this->authorize('view', $dossier);
 
@@ -35,13 +38,28 @@ final class ClientAccessGrantController extends Controller
             (int) ($request->validated('expires_in_days') ?? 7),
         );
 
-        // Flash plaintext once — the DB only stores the hash.
-        $request->session()->flash('access_grant_token', $result['plain_text_token']);
+        $plainTextToken = $result['plain_text_token'];
+        $portalUrl = URL::route('portal.show', ['token' => $plainTextToken]);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => 'Client access token created. Copy it now — it will not be shown again.',
-        ]);
+        // Flash plaintext once — the DB only stores the hash.
+        $request->session()->flash('access_grant_token', $plainTextToken);
+        $request->session()->flash('access_grant_portal_url', $portalUrl);
+
+        $sendInvite = (bool) ($request->validated('send_invite') ?? true);
+
+        if ($sendInvite) {
+            $sendClientPortalInvite($dossier, $result['grant'], $plainTextToken);
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => 'Client invite emailed. Copy the portal link now if you need it again.',
+            ]);
+        } else {
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => 'Client access link created. Copy it now — it will not be shown again.',
+            ]);
+        }
 
         return to_route('workspaces.dossiers.show', $dossier);
     }

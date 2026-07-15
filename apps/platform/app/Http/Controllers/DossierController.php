@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
+use function is_string;
 
 final class DossierController extends Controller
 {
@@ -88,6 +89,7 @@ final class DossierController extends Controller
         return Inertia::render('workspaces/dossiers/show', [
             // One-time plain token after creating a grant (never stored in plaintext).
             'access_grant_token' => $this->flashedAccessGrantToken($request),
+            'access_grant_portal_url' => $this->flashedAccessGrantPortalUrl($request),
             'dossier' => [
                 'id' => $dossier->id,
                 'title' => $dossier->title,
@@ -131,6 +133,13 @@ final class DossierController extends Controller
         $token = $request->session()->pull('access_grant_token');
 
         return is_string($token) && $token !== '' ? $token : null;
+    }
+
+    private function flashedAccessGrantPortalUrl(Request $request): ?string
+    {
+        $url = $request->session()->pull('access_grant_portal_url');
+
+        return is_string($url) && $url !== '' ? $url : null;
     }
 
     private function resolveClient(Dossier $dossier): Client

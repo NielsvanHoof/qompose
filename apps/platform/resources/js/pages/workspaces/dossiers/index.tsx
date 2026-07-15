@@ -1,30 +1,19 @@
 import { Head, Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import DossiersListCard from '@/components/dossiers/dossiers-list-card';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import type { DossierSummary } from '@/types';
 import { index as clientIndex } from '@/routes/workspaces/clients';
-import {
-    create,
-    index as dossierIndex,
-    show,
-} from '@/routes/workspaces/dossiers';
+import { create, index as dossierIndex } from '@/routes/workspaces/dossiers';
 
-type Dossier = {
-    id: number;
-    client_name: string;
-    title: string;
-    reference: string | null;
-    status: string;
-};
-
-export default function DossierIndex({ dossiers }: { dossiers: Dossier[] }) {
+/**
+ * Dossiers index — list of all firm dossiers.
+ */
+export default function DossierIndex({
+    dossiers,
+}: {
+    dossiers: DossierSummary[];
+}) {
     return (
         <>
             <Head title="Dossiers" />
@@ -53,47 +42,7 @@ export default function DossierIndex({ dossiers }: { dossiers: Dossier[] }) {
                     </div>
                 </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>All dossiers</CardTitle>
-                        <CardDescription>
-                            {dossiers.length === 1
-                                ? '1 dossier'
-                                : `${dossiers.length} dossiers`}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {dossiers.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                Create a dossier to start collecting documents.
-                            </p>
-                        ) : (
-                            <div className="divide-y rounded-md border">
-                                {dossiers.map((dossier) => (
-                                    <Link
-                                        key={dossier.id}
-                                        href={show(dossier.id)}
-                                        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
-                                    >
-                                        <div>
-                                            <p className="font-medium">
-                                                {dossier.title}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {dossier.client_name}
-                                                {dossier.reference &&
-                                                    ` · ${dossier.reference}`}
-                                            </p>
-                                        </div>
-                                        <Badge variant="secondary">
-                                            {dossier.status.replace('_', ' ')}
-                                        </Badge>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <DossiersListCard dossiers={dossiers} />
             </div>
         </>
     );

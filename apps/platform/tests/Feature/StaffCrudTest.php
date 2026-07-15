@@ -18,6 +18,7 @@ use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -124,6 +125,8 @@ test('read only staff cannot create clients or dossiers', function () {
 });
 
 test('staff can issue and revoke a client access grant', function () {
+    Notification::fake();
+
     $owner = User::factory()->create();
     $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
 
@@ -138,9 +141,11 @@ test('staff can issue and revoke a client access grant', function () {
         ->withSession(['active_tenant_id' => $tenant->id])
         ->post(route('workspaces.dossiers.access-grants.store', $dossier), [
             'expires_in_days' => 7,
+            'send_invite' => false,
         ])
         ->assertRedirect(route('workspaces.dossiers.show', $dossier))
-        ->assertSessionHas('access_grant_token');
+        ->assertSessionHas('access_grant_token')
+        ->assertSessionHas('access_grant_portal_url');
 
     $grant = ClientAccessGrant::query()->sole();
     expect($grant->isValid())->toBeTrue()

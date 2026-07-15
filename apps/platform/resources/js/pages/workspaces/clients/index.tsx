@@ -1,27 +1,18 @@
 import { Head, Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
+import ClientsListCard from '@/components/clients/clients-list-card';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import type { ClientSummary } from '@/types';
 import {
     index as clientIndex,
     create as createClient,
 } from '@/routes/workspaces/clients';
 import { create as createDossier } from '@/routes/workspaces/dossiers';
 
-type Client = {
-    id: number;
-    name: string;
-    email: string;
-    dossiers_count: number;
-};
-
-export default function ClientIndex({ clients }: { clients: Client[] }) {
+/**
+ * Clients index — people and organisations for document collection.
+ */
+export default function ClientIndex({ clients }: { clients: ClientSummary[] }) {
     return (
         <>
             <Head title="Clients" />
@@ -51,47 +42,7 @@ export default function ClientIndex({ clients }: { clients: Client[] }) {
                     </div>
                 </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>All clients</CardTitle>
-                        <CardDescription>
-                            {clients.length === 1
-                                ? '1 client'
-                                : `${clients.length} clients`}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {clients.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                Add your first client to create a dossier.
-                            </p>
-                        ) : (
-                            <div className="divide-y rounded-md border">
-                                {clients.map((client) => (
-                                    <div
-                                        key={client.id}
-                                        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                                    >
-                                        <div>
-                                            <p className="font-medium">
-                                                {client.name}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {client.email}
-                                            </p>
-                                        </div>
-                                        <p className="text-sm text-muted-foreground">
-                                            {client.dossiers_count}{' '}
-                                            {client.dossiers_count === 1
-                                                ? 'dossier'
-                                                : 'dossiers'}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <ClientsListCard clients={clients} />
             </div>
         </>
     );

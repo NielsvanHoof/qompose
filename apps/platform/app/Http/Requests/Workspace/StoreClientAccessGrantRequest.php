@@ -23,6 +23,20 @@ final class StoreClientAccessGrantRequest extends FormRequest
     {
         return [
             'expires_in_days' => ['nullable', 'integer', 'min:1', 'max:90'],
+            // Default true in the controller when omitted — checkbox posts "1" / absent.
+            'send_invite' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * Normalize checkbox / boolean input before validation runs.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('send_invite')) {
+            $this->merge([
+                'send_invite' => $this->boolean('send_invite'),
+            ]);
+        }
     }
 }
