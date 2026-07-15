@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Workspace\ClientAccessGrantController;
 use App\Http\Controllers\Workspace\ClientController;
 use App\Http\Controllers\Workspace\DocumentRequestController;
+use App\Http\Controllers\Workspace\MediaLibraryController;
 use App\Http\Controllers\Workspace\UploadedDocumentController;
 use App\Http\Middleware\EnsureValidTenantMembership;
 use App\Http\Middleware\InitializeTenantFromSession;
@@ -31,6 +32,8 @@ Route::middleware([
         Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
         Route::get('clients/create', [ClientController::class, 'create'])->name('clients.create');
         Route::post('clients', [ClientController::class, 'store'])->name('clients.store');
+
+        Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');
 
         Route::get('dossiers', [DossierController::class, 'index'])->name('dossiers.index');
         Route::get('dossiers/create', [DossierController::class, 'create'])->name('dossiers.create');

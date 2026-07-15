@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenants\ProvisionTenant;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -15,6 +18,22 @@ test('profile page is displayed', function () {
         ->get(route('profile.edit'));
 
     $response->assertOk();
+});
+
+test('profile page keeps the active firm in shared props for sidebar navigation', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $user = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)('Acme Accountants', $user);
+
+    $this->actingAs($user)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(route('profile.edit'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('settings/profile')
+            ->where('current_firm.slug', $tenant->slug)
+            ->where('current_firm.name', $tenant->name));
 });
 
 test('profile information can be updated', function () {

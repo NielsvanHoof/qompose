@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import type { InertiaLinkProps } from '@inertiajs/react';
 import { Fragment } from 'react';
 import {
     Breadcrumb,
@@ -10,6 +11,22 @@ import {
 } from '@/components/ui/breadcrumb';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 
+/**
+ * Wayfinder route helpers often return `{ url, method }` objects.
+ * React keys and string compares need the resolved URL string.
+ */
+function resolveHref(href: NonNullable<InertiaLinkProps['href']>): string {
+    if (typeof href === 'string') {
+        return href;
+    }
+
+    if (typeof href === 'object' && href !== null && 'url' in href) {
+        return String(href.url);
+    }
+
+    return String(href);
+}
+
 export function Breadcrumbs({
     breadcrumbs,
 }: {
@@ -20,12 +37,12 @@ export function Breadcrumbs({
             {breadcrumbs.length > 0 && (
                 <Breadcrumb>
                     <BreadcrumbList>
-                        {breadcrumbs.map((item) => {
-                            const isLast =
-                                item.href ===
-                                breadcrumbs[breadcrumbs.length - 1].href;
+                        {breadcrumbs.map((item, index) => {
+                            const href = resolveHref(item.href);
+                            const isLast = index === breadcrumbs.length - 1;
+
                             return (
-                                <Fragment key={item.href.toString()}>
+                                <Fragment key={`${item.title}-${href}`}>
                                     <BreadcrumbItem>
                                         {isLast ? (
                                             <BreadcrumbPage>

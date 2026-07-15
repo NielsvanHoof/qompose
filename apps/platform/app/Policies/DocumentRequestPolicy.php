@@ -11,6 +11,14 @@ use App\Models\User;
 
 final class DocumentRequestPolicy
 {
+    /**
+     * Media library and any future document-request index use the same gate as dossiers.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->can(Permission::ViewDossiers->value);
+    }
+
     public function create(User $user): bool
     {
         return $user->can(Permission::CreateDossiers->value);
