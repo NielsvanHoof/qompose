@@ -33,19 +33,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@7 # v7.0.0
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@2# v2
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
           tools: composer:v2
           coverage: xdebug
 
       - name: Setup Node
-        uses: actions/setup-node@6 # v6
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
 
