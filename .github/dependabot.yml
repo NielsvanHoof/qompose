@@ -11,15 +11,16 @@ updates:
         patterns:
           - "*"
 
+  # Composer and npm live in the platform app, not the repo root.
   - package-ecosystem: "composer"
-    directory: "/"
+    directory: "/apps/platform"
     schedule:
       interval: "weekly"
     cooldown:
       default-days: 5
 
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/apps/platform"
     schedule:
       interval: "weekly"
     cooldown:

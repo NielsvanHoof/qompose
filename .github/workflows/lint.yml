@@ -7,15 +7,26 @@ on:
       - main
       - master
       - workos
+    paths:
+      - 'apps/platform/**'
+      - '.github/workflows/lint.yml'
   pull_request:
     branches:
       - develop
       - main
       - master
       - workos
+    paths:
+      - 'apps/platform/**'
+      - '.github/workflows/lint.yml'
 
 permissions:
   contents: write
+
+defaults:
+  run:
+    # Platform app lives under apps/ in the monorepo.
+    working-directory: apps/platform
 
 jobs:
   quality:
