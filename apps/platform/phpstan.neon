@@ -1,0 +1,15 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/ekino/phpstan-banned-code/extension.neon
+
+parameters:
+    paths:
+        - app/
+        - bootstrap/app.php
+        - routes/
+
+    level: 8
+
+    reportUnmatchedIgnoredErrors: true

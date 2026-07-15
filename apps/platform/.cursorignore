@@ -1,0 +1,30 @@
+# Dependencies and generated frontend helpers
+/vendor/
+/node_modules/
+/resources/js/actions/
+/resources/js/routes/
+/resources/js/wayfinder/
+
+# Build output and runtime state
+/public/build/
+/public/hot
+/bootstrap/ssr/
+/storage/debugbar/
+/storage/framework/
+/storage/logs/
+/storage/pail/
+/storage/*.key
+/coverage/
+
+# Local configuration and editor-specific tooling
+/.env
+/.env.*
+!/.env.example
+/.agents/
+/.cursor/skills/
+/skills-lock.json
+
+# Local databases and test caches
+/database/*.sqlite*
+/.phpunit.cache/
+/.phpunit.result.cache

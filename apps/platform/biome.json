@@ -1,0 +1,50 @@
+{
+    "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": true
+    },
+    "files": {
+        "includes": [
+            "resources/js/**/*.ts",
+            "resources/js/**/*.tsx",
+            "!resources/js/actions",
+            "!resources/js/components/ui",
+            "!resources/js/routes",
+            "!resources/js/wayfinder"
+        ]
+    },
+    "formatter": {
+        "enabled": false
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "preset": "recommended",
+            "style": {
+                "useImportType": "error",
+                "useBlockStatements": "error"
+            },
+            "suspicious": {
+                "noExplicitAny": "error"
+            }
+        },
+        "domains": {
+            "react": "recommended",
+            "project": "recommended",
+            "types": "recommended"
+        }
+    },
+    "javascript": {
+        "jsxRuntime": "transparent"
+    },
+    "assist": {
+        "enabled": true,
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    }
+}
