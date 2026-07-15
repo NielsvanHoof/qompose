@@ -8,8 +8,8 @@ use App\Actions\Audit\LogAuditActivity;
 use App\Enums\AuditEvent;
 use App\Http\Requests\Workspace\StoreDossierRequest;
 use App\Models\Client;
+use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
-use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,8 +17,9 @@ use RuntimeException;
 
 final class DossierController extends Controller
 {
-    public function index(Tenant $tenant): Response
+    public function index(): Response
     {
+        $tenant = $this->currentTenant();
         $this->authorize('viewAny', Dossier::class);
 
         $dossiers = Dossier::query()
@@ -42,8 +43,9 @@ final class DossierController extends Controller
         ]);
     }
 
-    public function create(Tenant $tenant): Response
+    public function create(): Response
     {
+        $tenant = $this->currentTenant();
         $this->authorize('create', Dossier::class);
 
         return Inertia::render('workspaces/dossiers/create', [
@@ -60,52 +62,68 @@ final class DossierController extends Controller
         ]);
     }
 
-    public function store(StoreDossierRequest $request, Tenant $tenant): RedirectResponse
+    public function store(StoreDossierRequest $request): RedirectResponse
     {
         $dossier = Dossier::query()->create($request->validated());
 
-        return to_route('workspaces.dossiers.show', [$tenant, $dossier->id]);
+        return to_route('workspaces.dossiers.show', $dossier);
     }
 
-    public function show(Tenant $tenant, int $dossier): Response
+    public function show(Dossier $dossier): Response
     {
-        $record = Dossier::query()
-            ->with([
-                'client:id,name,email',
-                'documentRequests' => fn ($query) => $query->orderBy('sort_order'),
-            ])
-            ->whereKey($dossier)
-            ->firstOrFail();
+        $tenant = $this->currentTenant();
+        $this->authorize('view', $dossier);
 
-        $this->authorize('view', $record);
+        $dossier->load([
+            'client:id,name,email',
+            'documentRequests' => fn ($query) => $query->orderBy('sort_order'),
+            'clientAccessGrants' => fn ($query) => $query->latest(),
+        ]);
 
         app(LogAuditActivity::class)(
             AuditEvent::DossierViewed,
-            $record,
+            $dossier,
         );
 
-        $client = $this->resolveClient($record);
+        $client = $this->resolveClient($dossier);
 
         return Inertia::render('workspaces/dossiers/show', [
             'tenant' => ['slug' => $tenant->slug],
+            // One-time plain token after creating a grant (never stored in plaintext).
+            'access_grant_token' => $this->flashedAccessGrantToken(),
             'dossier' => [
-                'id' => $record->id,
-                'title' => $record->title,
-                'reference' => $record->reference,
-                'status' => $record->status->value,
+                'id' => $dossier->id,
+                'title' => $dossier->title,
+                'reference' => $dossier->reference,
+                'status' => $dossier->status->value,
                 'client' => [
                     'name' => $client->name,
                     'email' => $client->email,
                 ],
-                'document_requests' => $record->documentRequests
+                'document_requests' => $dossier->documentRequests
                     ->map(fn ($documentRequest): array => [
                         'id' => $documentRequest->id,
                         'title' => $documentRequest->title,
                         'instructions' => $documentRequest->instructions,
                         'status' => $documentRequest->status->value,
                     ]),
+                'access_grants' => $dossier->clientAccessGrants
+                    ->map(fn (ClientAccessGrant $grant): array => [
+                        'id' => $grant->id,
+                        'expires_at' => $grant->expires_at->toIso8601String(),
+                        'revoked_at' => $grant->revoked_at?->toIso8601String(),
+                        'last_used_at' => $grant->last_used_at?->toIso8601String(),
+                        'is_valid' => $grant->isValid(),
+                    ]),
             ],
         ]);
+    }
+
+    private function flashedAccessGrantToken(): ?string
+    {
+        $token = session()->pull('access_grant_token');
+
+        return is_string($token) && $token !== '' ? $token : null;
     }
 
     private function resolveClient(Dossier $dossier): Client

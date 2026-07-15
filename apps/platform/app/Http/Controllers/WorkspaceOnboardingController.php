@@ -10,9 +10,15 @@ use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Inertia\Response;
 
 final class WorkspaceOnboardingController extends Controller
 {
+    public function create(): Response
+    {
+        return Inertia::render('onboarding/firm');
+    }
+
     public function store(
         StoreWorkspaceRequest $request,
         ProvisionTenant $provisionTenant,
@@ -24,12 +30,15 @@ final class WorkspaceOnboardingController extends Controller
             $this->availableSlug($name),
         );
 
+        $request->session()->put('active_tenant_id', $tenant->id);
+        $request->session()->put('ensure_valid_tenant_session_tenant_id', $tenant->id);
+
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Workspace created.',
+            'message' => 'Firm created. Add your first client to get started.',
         ]);
 
-        return to_route('workspaces.dossiers.index', $tenant);
+        return to_route('workspaces.clients.create');
     }
 
     private function availableSlug(string $name): string

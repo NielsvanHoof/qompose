@@ -13,6 +13,14 @@ use RuntimeException;
 
 final class StoreClientRequest extends FormRequest
 {
+    /**
+     * Authorize create via ClientPolicy so store cannot bypass the create screen check.
+     */
+    public function authorize(): bool
+    {
+        return $this->user()?->can('create', Client::class) ?? false;
+    }
+
     /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {

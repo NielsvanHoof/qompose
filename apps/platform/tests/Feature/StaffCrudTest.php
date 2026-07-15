@@ -5,10 +5,13 @@ declare(strict_types=1);
 use App\Actions\Tenants\ProvisionTenant;
 use App\Enums\AuditEvent;
 use App\Enums\Role;
+use App\Enums\TenantMembershipStatus;
 use App\Models\Activity;
 use App\Models\Client;
+use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
+use App\Models\TenantMembership;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,21 +28,22 @@ test('staff can create a client, dossier, and document request', function () {
     $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
 
     $this->actingAs($owner)
-        ->get(route('workspaces.clients.index', $tenant))
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(route('workspaces.clients.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/clients/index')
             ->has('clients', 0));
 
-    $this->post(route('workspaces.clients.store', $tenant), [
+    $this->post(route('workspaces.clients.store'), [
         'name' => 'Jane Client',
         'email' => 'jane@example.com',
-    ])->assertRedirect(route('workspaces.clients.index', $tenant));
+    ])->assertRedirect(route('workspaces.dossiers.create'));
 
     $tenant->makeCurrent();
     $client = Client::query()->sole();
 
-    $this->post(route('workspaces.dossiers.store', $tenant), [
+    $this->post(route('workspaces.dossiers.store'), [
         'client_id' => $client->id,
         'title' => '2025 Payroll dossier',
         'reference' => 'PAY-2025-001',
@@ -47,12 +51,12 @@ test('staff can create a client, dossier, and document request', function () {
 
     $dossier = Dossier::query()->sole();
 
-    $this->post(route('workspaces.dossiers.document-requests.store', [$tenant, $dossier]), [
+    $this->post(route('workspaces.dossiers.document-requests.store', $dossier), [
         'title' => 'Payslip January 2025',
         'instructions' => 'Upload the original PDF.',
-    ])->assertRedirect(route('workspaces.dossiers.show', [$tenant, $dossier]));
+    ])->assertRedirect(route('workspaces.dossiers.show', $dossier));
 
-    $this->get(route('workspaces.dossiers.show', [$tenant, $dossier]))
+    $this->get(route('workspaces.dossiers.show', $dossier))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/dossiers/show')
@@ -75,7 +79,8 @@ test('staff cannot attach a dossier to a client in another tenant', function () 
     $foreignClient = Client::factory()->create(['tenant_id' => $tenantB->id]);
 
     $this->actingAs($ownerA)
-        ->post(route('workspaces.dossiers.store', $tenantA), [
+        ->withSession(['active_tenant_id' => $tenantA->id])
+        ->post(route('workspaces.dossiers.store'), [
             'client_id' => $foreignClient->id,
             'title' => 'Invalid dossier',
         ])
@@ -87,14 +92,88 @@ test('read only staff cannot create clients or dossiers', function () {
     $reader = User::factory()->create();
     $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
 
+    // Membership is required so the 403 comes from policy, not tenant middleware.
+    TenantMembership::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $reader->id,
+        'status' => TenantMembershipStatus::Active,
+        'joined_at' => now(),
+    ]);
+
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
+    $reader->unsetRelation('roles');
     $reader->assignRole(Role::ReadOnly->value);
 
     $this->actingAs($reader)
-        ->post(route('workspaces.clients.store', $tenant), [
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(route('workspaces.clients.store'), [
             'name' => 'Jane Client',
             'email' => 'jane@example.com',
         ])
+        ->assertForbidden();
+
+    $this->post(route('workspaces.dossiers.store'), [
+        'client_id' => 1,
+        'title' => 'Should not create',
+    ])->assertForbidden();
+});
+
+test('staff can issue and revoke a client access grant', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(route('workspaces.dossiers.access-grants.store', $dossier), [
+            'expires_in_days' => 7,
+        ])
+        ->assertRedirect(route('workspaces.dossiers.show', $dossier))
+        ->assertSessionHas('access_grant_token');
+
+    $grant = ClientAccessGrant::query()->sole();
+    expect($grant->isValid())->toBeTrue()
+        ->and($grant->created_by)->toBe($owner->id);
+
+    $this->delete(route('workspaces.access-grants.destroy', $grant))
+        ->assertRedirect(route('workspaces.dossiers.show', $dossier));
+
+    expect($grant->fresh()->isValid())->toBeFalse()
+        ->and($grant->fresh()->revoked_at)->not->toBeNull();
+});
+
+test('read only staff cannot issue client access grants', function () {
+    $owner = User::factory()->create();
+    $reader = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+
+    TenantMembership::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $reader->id,
+        'status' => TenantMembershipStatus::Active,
+        'joined_at' => now(),
+    ]);
+
+    $tenant->makeCurrent();
+    setPermissionsTeamId($tenant->id);
+    $reader->unsetRelation('roles');
+    $reader->assignRole(Role::ReadOnly->value);
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    $this->actingAs($reader)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(route('workspaces.dossiers.access-grants.store', $dossier))
         ->assertForbidden();
 });

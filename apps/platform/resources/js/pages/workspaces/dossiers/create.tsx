@@ -41,7 +41,7 @@ export default function CreateDossier({
                             Create a client before creating a dossier.
                         </p>
                         <Button className="mt-4" asChild>
-                            <Link href={clientIndex(tenant)}>
+                            <Link href={clientIndex()}>
                                 Go to clients
                             </Link>
                         </Button>
@@ -105,7 +105,7 @@ export default function CreateDossier({
                                         Create dossier
                                     </Button>
                                     <Button variant="ghost" asChild>
-                                        <Link href={dossierIndex(tenant)}>
+                                        <Link href={dossierIndex()}>
                                             Cancel
                                         </Link>
                                     </Button>

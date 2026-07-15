@@ -7,15 +7,16 @@ namespace App\Http\Controllers\Workspace;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Workspace\StoreClientRequest;
 use App\Models\Client;
-use App\Models\Tenant;
+use App\Models\Dossier;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final class ClientController extends Controller
 {
-    public function index(Tenant $tenant): Response
+    public function index(): Response
     {
+        $tenant = $this->currentTenant();
         $this->authorize('viewAny', Client::class);
 
         return Inertia::render('workspaces/clients/index', [
@@ -34,8 +35,9 @@ final class ClientController extends Controller
         ]);
     }
 
-    public function create(Tenant $tenant): Response
+    public function create(): Response
     {
+        $tenant = $this->currentTenant();
         $this->authorize('create', Client::class);
 
         return Inertia::render('workspaces/clients/create', [
@@ -43,10 +45,14 @@ final class ClientController extends Controller
         ]);
     }
 
-    public function store(StoreClientRequest $request, Tenant $tenant): RedirectResponse
+    public function store(StoreClientRequest $request): RedirectResponse
     {
         Client::query()->create($request->validated());
 
-        return to_route('workspaces.clients.index', $tenant);
+        if (Dossier::query()->doesntExist()) {
+            return to_route('workspaces.dossiers.create');
+        }
+
+        return to_route('workspaces.clients.index');
     }
 }

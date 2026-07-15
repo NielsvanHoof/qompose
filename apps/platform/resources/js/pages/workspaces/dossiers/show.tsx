@@ -1,4 +1,6 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import ClientAccessGrantController from '@/actions/App/Http/Controllers/Workspace/ClientAccessGrantController';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Workspace/DocumentRequestController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -15,15 +17,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 
-type Tenant = {
-    slug: string;
-};
-
 type DocumentRequest = {
     id: number;
     title: string;
     instructions: string | null;
     status: string;
+};
+
+type AccessGrant = {
+    id: number;
+    expires_at: string;
+    revoked_at: string | null;
+    last_used_at: string | null;
+    is_valid: boolean;
 };
 
 type Dossier = {
@@ -36,15 +42,27 @@ type Dossier = {
         email: string;
     };
     document_requests: DocumentRequest[];
+    access_grants: AccessGrant[];
 };
 
 export default function ShowDossier({
-    tenant,
     dossier,
+    access_grant_token: accessGrantToken = null,
 }: {
-    tenant: Tenant;
     dossier: Dossier;
+    access_grant_token?: string | null;
 }) {
+    const [copied, setCopied] = useState(false);
+
+    const copyToken = async () => {
+        if (!accessGrantToken) {
+            return;
+        }
+
+        await navigator.clipboard.writeText(accessGrantToken);
+        setCopied(true);
+    };
+
     return (
         <>
             <Head title={dossier.title} />
@@ -53,7 +71,7 @@ export default function ShowDossier({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <Link
-                            href={dossierIndex(tenant)}
+                            href={dossierIndex()}
                             className="text-sm text-muted-foreground hover:text-foreground"
                         >
                             Dossiers
@@ -64,53 +82,165 @@ export default function ShowDossier({
                         />
                     </div>
                     <Badge variant="secondary">
-                        {dossier.status.replace('_', ' ')}
+                        {dossier.status.replaceAll('_', ' ')}
                     </Badge>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
-                    <Card>
+                {accessGrantToken && (
+                    <Card className="border-primary/40">
                         <CardHeader>
-                            <CardTitle>Document requests</CardTitle>
+                            <CardTitle>New client access token</CardTitle>
                             <CardDescription>
-                                The client will see these in their secure portal.
+                                Copy this token now. It is shown once and cannot
+                                be retrieved again.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            {dossier.document_requests.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    No documents requested yet.
-                                </p>
-                            ) : (
-                                <div className="divide-y rounded-md border">
-                                    {dossier.document_requests.map(
-                                        (documentRequest) => (
-                                            <div
-                                                key={documentRequest.id}
-                                                className="flex flex-wrap items-start justify-between gap-3 px-4 py-3"
-                                            >
-                                                <div>
-                                                    <p className="font-medium">
-                                                        {documentRequest.title}
-                                                    </p>
-                                                    {documentRequest.instructions && (
-                                                        <p className="mt-1 text-sm text-muted-foreground">
-                                                            {
-                                                                documentRequest.instructions
-                                                            }
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <Badge variant="outline">
-                                                    {documentRequest.status}
-                                                </Badge>
-                                            </div>
-                                        ),
-                                    )}
-                                </div>
-                            )}
+                        <CardContent className="flex flex-wrap items-center gap-3">
+                            <code className="bg-muted max-w-full overflow-x-auto rounded-md px-3 py-2 text-sm">
+                                {accessGrantToken}
+                            </code>
+                            <Button type="button" variant="outline" onClick={copyToken}>
+                                {copied ? 'Copied' : 'Copy token'}
+                            </Button>
                         </CardContent>
                     </Card>
+                )}
+
+                <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Document requests</CardTitle>
+                                <CardDescription>
+                                    The client will see these in their secure
+                                    portal.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {dossier.document_requests.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        No documents requested yet.
+                                    </p>
+                                ) : (
+                                    <div className="divide-y rounded-md border">
+                                        {dossier.document_requests.map(
+                                            (documentRequest) => (
+                                                <div
+                                                    key={documentRequest.id}
+                                                    className="flex flex-wrap items-start justify-between gap-3 px-4 py-3"
+                                                >
+                                                    <div>
+                                                        <p className="font-medium">
+                                                            {
+                                                                documentRequest.title
+                                                            }
+                                                        </p>
+                                                        {documentRequest.instructions && (
+                                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                                {
+                                                                    documentRequest.instructions
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <Badge variant="outline">
+                                                        {documentRequest.status.replaceAll(
+                                                            '_',
+                                                            ' ',
+                                                        )}
+                                                    </Badge>
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Client access grants</CardTitle>
+                                <CardDescription>
+                                    Issue a temporary token so the client can
+                                    open this dossier in the portal.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {dossier.access_grants.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        No access grants yet.
+                                    </p>
+                                ) : (
+                                    <div className="divide-y rounded-md border">
+                                        {dossier.access_grants.map((grant) => (
+                                            <div
+                                                key={grant.id}
+                                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                                            >
+                                                <div className="text-sm">
+                                                    <p>
+                                                        Expires{' '}
+                                                        {new Date(
+                                                            grant.expires_at,
+                                                        ).toLocaleString()}
+                                                    </p>
+                                                    <p className="text-muted-foreground">
+                                                        {grant.is_valid
+                                                            ? 'Active'
+                                                            : grant.revoked_at
+                                                              ? 'Revoked'
+                                                              : 'Expired'}
+                                                    </p>
+                                                </div>
+                                                {grant.is_valid && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            router.delete(
+                                                                ClientAccessGrantController.destroy.url(
+                                                                    grant.id,
+                                                                ),
+                                                                {
+                                                                    preserveScroll: true,
+                                                                },
+                                                            )
+                                                        }
+                                                    >
+                                                        Revoke
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <Form
+                                    {...ClientAccessGrantController.store.form(
+                                        dossier.id,
+                                    )}
+                                    className="space-y-3"
+                                >
+                                    {({ processing }) => (
+                                        <>
+                                            <input
+                                                type="hidden"
+                                                name="expires_in_days"
+                                                value="7"
+                                            />
+                                            <Button
+                                                disabled={processing}
+                                                variant="secondary"
+                                            >
+                                                Create 7-day access token
+                                            </Button>
+                                        </>
+                                    )}
+                                </Form>
+                            </CardContent>
+                        </Card>
+                    </div>
 
                     <Card>
                         <CardHeader>
@@ -121,10 +251,9 @@ export default function ShowDossier({
                         </CardHeader>
                         <CardContent>
                             <Form
-                                {...DocumentRequestController.store.form({
-                                    tenant,
-                                    dossier: dossier.id,
-                                })}
+                                {...DocumentRequestController.store.form(
+                                    dossier.id,
+                                )}
                                 resetOnSuccess
                                 className="space-y-4"
                             >

@@ -58,7 +58,7 @@ export default function CreateClient({ tenant }: { tenant: Tenant }) {
                                     Create client
                                 </Button>
                                 <Button variant="ghost" asChild>
-                                    <Link href={clientIndex(tenant)}>Cancel</Link>
+                                    <Link href={clientIndex()}>Cancel</Link>
                                 </Button>
                             </div>
                         </>

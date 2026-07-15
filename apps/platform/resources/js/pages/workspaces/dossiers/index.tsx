@@ -51,10 +51,10 @@ export default function DossierIndex({
 
                     <div className="flex gap-2">
                         <Button variant="outline" asChild>
-                            <Link href={clientIndex(tenant)}>Clients</Link>
+                            <Link href={clientIndex()}>Clients</Link>
                         </Button>
                         <Button asChild>
-                            <Link href={create(tenant)}>
+                            <Link href={create()}>
                                 <Plus />
                                 New dossier
                             </Link>
@@ -81,10 +81,7 @@ export default function DossierIndex({
                                 {dossiers.map((dossier) => (
                                     <Link
                                         key={dossier.id}
-                                        href={show({
-                                            tenant,
-                                            dossier: dossier.id,
-                                        })}
+                                        href={show(dossier.id)}
                                         className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
                                     >
                                         <div>

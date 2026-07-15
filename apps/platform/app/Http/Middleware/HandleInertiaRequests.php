@@ -75,6 +75,18 @@ final class HandleInertiaRequests extends Middleware
                     ->values()
                     ->all();
             },
+            'current_firm' => function (): ?array {
+                $tenant = Tenant::current();
+
+                if (! $tenant instanceof Tenant) {
+                    return null;
+                }
+
+                return [
+                    'name' => $tenant->name,
+                    'slug' => $tenant->slug,
+                ];
+            },
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

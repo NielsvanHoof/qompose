@@ -47,10 +47,10 @@ export default function ClientIndex({
 
                     <div className="flex gap-2">
                         <Button variant="outline" asChild>
-                            <Link href={createDossier(tenant)}>New dossier</Link>
+                            <Link href={createDossier()}>New dossier</Link>
                         </Button>
                         <Button asChild>
-                            <Link href={createClient(tenant)}>
+                            <Link href={createClient()}>
                                 <Plus />
                                 New client
                             </Link>

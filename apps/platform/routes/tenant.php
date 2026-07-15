@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\DossierController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Workspace\ClientAccessGrantController;
 use App\Http\Controllers\Workspace\ClientController;
 use App\Http\Controllers\Workspace\DocumentRequestController;
 use App\Http\Middleware\EnsureValidTenantMembership;
-use App\Http\Middleware\InitializeTenantFromRoute;
+use App\Http\Middleware\InitializeTenantFromSession;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
 use Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession;
@@ -16,13 +18,13 @@ Route::middleware([
     'web',
     'auth',
     'verified',
-    InitializeTenantFromRoute::class,
+    InitializeTenantFromSession::class,
     EnsureValidTenantMembership::class,
     SetPermissionTeamContext::class,
     NeedsTenant::class,
     EnsureValidTenantSession::class,
 ])
-    ->prefix('workspaces/{tenant}')
+    ->prefix('')
     ->name('workspaces.')
     ->group(function () {
         Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
@@ -35,4 +37,8 @@ Route::middleware([
         Route::get('dossiers/{dossier}', [DossierController::class, 'show'])->name('dossiers.show');
         Route::post('dossiers/{dossier}/document-requests', [DocumentRequestController::class, 'store'])
             ->name('dossiers.document-requests.store');
+        Route::post('dossiers/{dossier}/access-grants', [ClientAccessGrantController::class, 'store'])
+            ->name('dossiers.access-grants.store');
+        Route::delete('access-grants/{grant}', [ClientAccessGrantController::class, 'destroy'])
+            ->name('access-grants.destroy');
     });

@@ -1,13 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     FolderGit2,
-    FolderOpen,
     LayoutGrid,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import { WorkspaceSwitcher } from '@/components/workspace-switcher';
 import {
     Sidebar,
     SidebarContent,
@@ -23,10 +23,7 @@ import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { tenant, workspaces = [] } = usePage<{
-        tenant?: { slug: string };
-        workspaces?: { name: string; slug: string }[];
-    }>().props;
+    const { tenant } = usePage<{ tenant?: { slug: string } }>().props;
     const mainNavItems: NavItem[] = [
         {
             title: 'Dashboard',
@@ -37,23 +34,17 @@ export function AppSidebar() {
             ? [
                   {
                       title: 'Dossiers',
-                      href: dossierIndex(tenant),
+                      href: dossierIndex(),
                       icon: FolderGit2,
                   },
                   {
                       title: 'Clients',
-                      href: clientIndex(tenant),
+                      href: clientIndex(),
                       icon: Users,
                   },
               ]
             : []),
     ];
-    const workspaceNavItems: NavItem[] = workspaces.map((workspace) => ({
-        title: workspace.name,
-        href: dossierIndex(workspace),
-        icon: FolderOpen,
-    }));
-
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -70,12 +61,10 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
-                {workspaceNavItems.length > 0 && (
-                    <NavMain label="Workspaces" items={workspaceNavItems} />
-                )}
             </SidebarContent>
 
             <SidebarFooter>
+                <WorkspaceSwitcher />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

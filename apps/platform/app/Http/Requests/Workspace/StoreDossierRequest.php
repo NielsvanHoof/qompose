@@ -13,6 +13,14 @@ use RuntimeException;
 
 final class StoreDossierRequest extends FormRequest
 {
+    /**
+     * Authorize create via DossierPolicy so POST /dossiers cannot skip the create gate.
+     */
+    public function authorize(): bool
+    {
+        return $this->user()?->can('create', Dossier::class) ?? false;
+    }
+
     /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {

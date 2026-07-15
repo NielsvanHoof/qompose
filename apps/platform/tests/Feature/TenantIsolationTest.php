@@ -37,7 +37,8 @@ test('tenant member can view dossiers in their workspace', function () {
     ]);
 
     $this->actingAs($owner)
-        ->get(route('workspaces.dossiers.show', [$tenant, $dossier->id]))
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(route('workspaces.dossiers.show', $dossier->id))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/dossiers/show')
@@ -59,7 +60,8 @@ test('users cannot access workspaces they do not belong to', function () {
     ]);
 
     $this->actingAs($outsider)
-        ->get(route('workspaces.dossiers.show', [$tenant, $dossier->id]))
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(route('workspaces.dossiers.show', $dossier->id))
         ->assertForbidden();
 });
 
@@ -80,11 +82,12 @@ test('users cannot read dossiers from another tenant via id guessing', function 
     ]);
 
     $this->actingAs($ownerA)
-        ->get(route('workspaces.dossiers.show', [$tenantA, $foreignDossier->id]))
+        ->withSession(['active_tenant_id' => $tenantA->id])
+        ->get(route('workspaces.dossiers.show', $foreignDossier->id))
         ->assertNotFound();
 });
 
-test('tenant session cannot be reused across different workspaces', function () {
+test('members can switch their active firm', function () {
     $user = User::factory()->create();
 
     $tenantA = app(ProvisionTenant::class)('Tenant A', $user, ownerRole: Role::Owner);
@@ -102,12 +105,29 @@ test('tenant session cannot be reused across different workspaces', function () 
     $user->assignRole(Role::ReadOnly->value);
 
     $this->actingAs($user)
-        ->get(route('workspaces.dossiers.index', $tenantA))
+        ->withSession(['active_tenant_id' => $tenantA->id])
+        ->get(route('workspaces.dossiers.index'))
         ->assertOk();
 
     $this->actingAs($user)
-        ->get(route('workspaces.dossiers.index', $tenantB))
-        ->assertUnauthorized();
+        ->post(route('firms.activate', $tenantB))
+        ->assertRedirect(route('dashboard'));
+
+    $this->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('workspaces/dashboard'));
+});
+
+test('users cannot activate a firm they do not belong to', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)('Tenant A', $owner);
+    $foreignTenant = app(ProvisionTenant::class)('Tenant B', User::factory()->create());
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(route('firms.activate', $foreignTenant))
+        ->assertForbidden();
 });
 
 test('read only members cannot create dossiers', function () {
@@ -134,7 +154,7 @@ test('tenant routes are registered with the expected middleware', function () {
 
     expect($route)->not->toBeNull();
     expect($route->middleware())->toContain('auth');
-    expect($route->middleware())->toContain(App\Http\Middleware\InitializeTenantFromRoute::class);
+    expect($route->middleware())->toContain(App\Http\Middleware\InitializeTenantFromSession::class);
     expect($route->middleware())->toContain(App\Http\Middleware\EnsureValidTenantMembership::class);
     expect($route->middleware())->toContain(App\Http\Middleware\SetPermissionTeamContext::class);
 });

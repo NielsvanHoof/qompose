@@ -22,7 +22,7 @@ final class SetPermissionTeamContext
         $tenant = Tenant::current();
 
         if (! $tenant instanceof Tenant) {
-            abort(Response::HTTP_FORBIDDEN);
+            return $next($request);
         }
 
         setPermissionsTeamId($tenant->getKey());
