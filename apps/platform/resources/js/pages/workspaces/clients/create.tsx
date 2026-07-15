@@ -5,7 +5,10 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index as clientIndex } from '@/routes/workspaces/clients';
+import {
+    index as clientIndex,
+    create as createClient,
+} from '@/routes/workspaces/clients';
 
 export default function CreateClient() {
     return (
@@ -64,3 +67,16 @@ export default function CreateClient() {
         </>
     );
 }
+
+CreateClient.layout = {
+    breadcrumbs: [
+        {
+            title: 'Clients',
+            href: clientIndex(),
+        },
+        {
+            title: 'New client',
+            href: createClient(),
+        },
+    ],
+};

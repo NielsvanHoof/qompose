@@ -13,7 +13,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { index as clientIndex } from '@/routes/workspaces/clients';
-import { index as dossierIndex } from '@/routes/workspaces/dossiers';
+import {
+    create as createDossier,
+    index as dossierIndex,
+} from '@/routes/workspaces/dossiers';
 
 type Client = {
     id: number;
@@ -119,3 +122,16 @@ export default function CreateDossier({ clients }: { clients: Client[] }) {
         </>
     );
 }
+
+CreateDossier.layout = {
+    breadcrumbs: [
+        {
+            title: 'Dossiers',
+            href: dossierIndex(),
+        },
+        {
+            title: 'New dossier',
+            href: createDossier(),
+        },
+    ],
+};

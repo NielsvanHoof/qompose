@@ -8,7 +8,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { create as createClient } from '@/routes/workspaces/clients';
+import {
+    index as clientIndex,
+    create as createClient,
+} from '@/routes/workspaces/clients';
 import { create as createDossier } from '@/routes/workspaces/dossiers';
 
 type Client = {
@@ -93,3 +96,12 @@ export default function ClientIndex({ clients }: { clients: Client[] }) {
         </>
     );
 }
+
+ClientIndex.layout = {
+    breadcrumbs: [
+        {
+            title: 'Clients',
+            href: clientIndex(),
+        },
+    ],
+};

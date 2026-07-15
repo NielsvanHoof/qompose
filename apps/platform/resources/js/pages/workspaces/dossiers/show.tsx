@@ -1,4 +1,10 @@
-import { Form, Head, Link, router, useForm } from '@inertiajs/react';
+import {
+    Form,
+    Head,
+    router,
+    setLayoutProps,
+    useForm,
+} from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
 import ClientAccessGrantController from '@/actions/App/Http/Controllers/Workspace/ClientAccessGrantController';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Workspace/DocumentRequestController';
@@ -16,7 +22,10 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index as dossierIndex } from '@/routes/workspaces/dossiers';
+import {
+    index as dossierIndex,
+    show as showDossier,
+} from '@/routes/workspaces/dossiers';
 
 type UploadedDocument = {
     id: number;
@@ -143,6 +152,20 @@ export default function ShowDossier({
 }) {
     const [copied, setCopied] = useState(false);
 
+    // Dynamic trail: dossier title comes from page props.
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Dossiers',
+                href: dossierIndex(),
+            },
+            {
+                title: dossier.title,
+                href: showDossier(dossier.id),
+            },
+        ],
+    });
+
     const copyToken = async () => {
         if (!accessGrantToken) {
             return;
@@ -158,18 +181,10 @@ export default function ShowDossier({
 
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <Link
-                            href={dossierIndex()}
-                            className="text-sm text-muted-foreground hover:text-foreground"
-                        >
-                            Dossiers
-                        </Link>
-                        <Heading
-                            title={dossier.title}
-                            description={`${dossier.client.name} · ${dossier.client.email}`}
-                        />
-                    </div>
+                    <Heading
+                        title={dossier.title}
+                        description={`${dossier.client.name} · ${dossier.client.email}`}
+                    />
                     <Badge variant="secondary">
                         {dossier.status.replaceAll('_', ' ')}
                     </Badge>

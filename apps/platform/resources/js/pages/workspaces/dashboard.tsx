@@ -9,6 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { dashboard } from '@/routes';
 import { create as createClient } from '@/routes/workspaces/clients';
 import {
     create as createDossier,
@@ -198,3 +199,12 @@ export default function WorkspaceDashboard({
         </>
     );
 }
+
+WorkspaceDashboard.layout = {
+    breadcrumbs: [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+        },
+    ],
+};

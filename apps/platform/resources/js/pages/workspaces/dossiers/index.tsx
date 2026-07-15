@@ -12,6 +12,7 @@ import {
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import {
     create,
+    index as dossierIndex,
     show,
 } from '@/routes/workspaces/dossiers';
 
@@ -97,3 +98,12 @@ export default function DossierIndex({ dossiers }: { dossiers: Dossier[] }) {
         </>
     );
 }
+
+DossierIndex.layout = {
+    breadcrumbs: [
+        {
+            title: 'Dossiers',
+            href: dossierIndex(),
+        },
+    ],
+};

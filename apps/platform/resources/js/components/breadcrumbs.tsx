@@ -20,11 +20,12 @@ export function Breadcrumbs({
             {breadcrumbs.length > 0 && (
                 <Breadcrumb>
                     <BreadcrumbList>
-                        {breadcrumbs.map((item, index) => {
-                            const isLast = index === breadcrumbs.length - 1;
-
+                        {breadcrumbs.map((item) => {
+                            const isLast =
+                                item.href ===
+                                breadcrumbs[breadcrumbs.length - 1].href;
                             return (
-                                <Fragment key={item.href}>
+                                <Fragment key={item.href.toString()}>
                                     <BreadcrumbItem>
                                         {isLast ? (
                                             <BreadcrumbPage>
