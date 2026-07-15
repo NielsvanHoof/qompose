@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Tenants\ProvisionTenant;
 use App\Enums\AuditEvent;
+use App\Enums\DocumentRequestStatus;
 use App\Enums\Role;
 use App\Enums\TenantMembershipStatus;
 use App\Models\Activity;
@@ -12,9 +13,12 @@ use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\TenantMembership;
+use App\Models\UploadedDocument;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -175,5 +179,91 @@ test('read only staff cannot issue client access grants', function () {
     $this->actingAs($reader)
         ->withSession(['active_tenant_id' => $tenant->id])
         ->post(route('workspaces.dossiers.access-grants.store', $dossier))
+        ->assertForbidden();
+});
+
+test('staff can upload a document for a document request', function () {
+    Storage::fake('local');
+
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'title' => 'Payslip January 2025',
+    ]);
+
+    $file = UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf');
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(route('workspaces.dossiers.document-requests.upload', [
+            'dossier' => $dossier,
+            'documentRequest' => $documentRequest,
+        ]), [
+            'document' => $file,
+        ])
+        ->assertRedirect(route('workspaces.dossiers.show', $dossier));
+
+    $uploaded = UploadedDocument::query()->sole();
+
+    expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Uploaded)
+        ->and($uploaded->original_filename)->toBe('payslip.pdf')
+        ->and($uploaded->document_request_id)->toBe($documentRequest->id);
+
+    Storage::disk($uploaded->disk)->assertExists($uploaded->path);
+
+    $this->get(route('workspaces.uploaded-documents.download', $uploaded))
+        ->assertOk();
+
+    expect(Activity::query()
+        ->where('event', AuditEvent::DocumentUploaded->value)
+        ->exists())->toBeTrue();
+});
+
+test('read only staff cannot upload documents', function () {
+    Storage::fake('local');
+
+    $owner = User::factory()->create();
+    $reader = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+
+    TenantMembership::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $reader->id,
+        'status' => TenantMembershipStatus::Active,
+        'joined_at' => now(),
+    ]);
+
+    $tenant->makeCurrent();
+    setPermissionsTeamId($tenant->id);
+    $reader->unsetRelation('roles');
+    $reader->assignRole(Role::ReadOnly->value);
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+
+    $this->actingAs($reader)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(route('workspaces.dossiers.document-requests.upload', [
+            'dossier' => $dossier,
+            'documentRequest' => $documentRequest,
+        ]), [
+            'document' => UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf'),
+        ])
         ->assertForbidden();
 });

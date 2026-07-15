@@ -12,6 +12,7 @@ use App\Models\TenantMembership;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -157,4 +158,24 @@ test('tenant routes are registered with the expected middleware', function () {
     expect($route->middleware())->toContain(App\Http\Middleware\InitializeTenantFromSession::class);
     expect($route->middleware())->toContain(App\Http\Middleware\EnsureValidTenantMembership::class);
     expect($route->middleware())->toContain(App\Http\Middleware\SetPermissionTeamContext::class);
+});
+
+test('workspace pages load tenant memberships only once', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(route('workspaces.dossiers.index'))
+        ->assertOk();
+
+    // Count only the relation eager-load, not InitializeTenantFromSession's whereHas exists subquery.
+    $membershipEagerLoads = collect(DB::getQueryLog())
+        ->filter(fn (array $query): bool => str_contains($query['query'], 'from "tenant_memberships"')
+            && str_contains($query['query'], '"user_id" in'));
+
+    expect($membershipEagerLoads)->toHaveCount(1);
 });

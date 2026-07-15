@@ -7,6 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Client = {
     id: number;
@@ -31,9 +38,7 @@ export default function CreateDossier({ clients }: { clients: Client[] }) {
                             Create a client before creating a dossier.
                         </p>
                         <Button className="mt-4" asChild>
-                            <Link href={clientIndex()}>
-                                Go to clients
-                            </Link>
+                            <Link href={clientIndex()}>Go to clients</Link>
                         </Button>
                     </div>
                 ) : (
@@ -45,25 +50,31 @@ export default function CreateDossier({ clients }: { clients: Client[] }) {
                             <>
                                 <div className="grid gap-2">
                                     <Label htmlFor="client_id">Client</Label>
-                                    <select
-                                        id="client_id"
-                                        name="client_id"
+                                    <Select
                                         required
                                         defaultValue=""
-                                        className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
+                                        name="client_id"
                                     >
-                                        <option value="" disabled>
-                                            Select a client
-                                        </option>
-                                        {clients.map((client) => (
-                                            <option
-                                                key={client.id}
-                                                value={client.id}
-                                            >
-                                                {client.name} ({client.email})
-                                            </option>
-                                        ))}
-                                    </select>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select a client" />
+                                        </SelectTrigger>
+                                        <SelectContent className="space-y-1 bg-background p-1">
+                                            {clients.map((client) => (
+                                                <SelectItem
+                                                    key={client.id}
+                                                    value={client.id.toString()}
+                                                    className="flex flex-col"
+                                                >
+                                                    <span className="font-medium">
+                                                        {client.name}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {client.email}
+                                                    </span>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                     <InputError message={errors.client_id} />
                                 </div>
 

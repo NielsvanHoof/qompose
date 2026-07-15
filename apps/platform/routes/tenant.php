@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Workspace\ClientAccessGrantController;
 use App\Http\Controllers\Workspace\ClientController;
 use App\Http\Controllers\Workspace\DocumentRequestController;
+use App\Http\Controllers\Workspace\UploadedDocumentController;
 use App\Http\Middleware\EnsureValidTenantMembership;
 use App\Http\Middleware\InitializeTenantFromSession;
 use App\Http\Middleware\SetPermissionTeamContext;
@@ -37,6 +38,12 @@ Route::middleware([
         Route::get('dossiers/{dossier}', [DossierController::class, 'show'])->name('dossiers.show');
         Route::post('dossiers/{dossier}/document-requests', [DocumentRequestController::class, 'store'])
             ->name('dossiers.document-requests.store');
+        Route::post(
+            'dossiers/{dossier}/document-requests/{documentRequest}/upload',
+            [UploadedDocumentController::class, 'store'],
+        )->name('dossiers.document-requests.upload');
+        Route::get('uploaded-documents/{uploadedDocument}/download', [UploadedDocumentController::class, 'download'])
+            ->name('uploaded-documents.download');
         Route::post('dossiers/{dossier}/access-grants', [ClientAccessGrantController::class, 'store'])
             ->name('dossiers.access-grants.store');
         Route::delete('access-grants/{grant}', [ClientAccessGrantController::class, 'destroy'])

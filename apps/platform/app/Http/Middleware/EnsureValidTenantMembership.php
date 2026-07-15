@@ -23,6 +23,8 @@ final class EnsureValidTenantMembership
             abort(Response::HTTP_FORBIDDEN);
         }
 
+        $user->loadMissing('tenantMemberships.tenant');
+
         if (! $user->belongsToTenant($tenant)) {
             abort(Response::HTTP_FORBIDDEN);
         }

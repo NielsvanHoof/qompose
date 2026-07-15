@@ -1,7 +1,8 @@
-import { Form, Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Form, Head, Link, router, useForm } from '@inertiajs/react';
+import { useState, type FormEvent } from 'react';
 import ClientAccessGrantController from '@/actions/App/Http/Controllers/Workspace/ClientAccessGrantController';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Workspace/DocumentRequestController';
+import UploadedDocumentController from '@/actions/App/Http/Controllers/Workspace/UploadedDocumentController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +18,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 
+type UploadedDocument = {
+    id: number;
+    original_filename: string;
+    size_bytes: number;
+    uploaded_at: string;
+};
+
 type DocumentRequest = {
     id: number;
     title: string;
     instructions: string | null;
     status: string;
+    uploaded_document: UploadedDocument | null;
 };
 
 type AccessGrant = {
@@ -44,6 +53,86 @@ type Dossier = {
     document_requests: DocumentRequest[];
     access_grants: AccessGrant[];
 };
+
+function formatBytes(bytes: number): string {
+    if (bytes < 1024) {
+        return `${bytes} B`;
+    }
+
+    if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function DocumentRequestUpload({
+    dossierId,
+    documentRequest,
+}: {
+    dossierId: number;
+    documentRequest: DocumentRequest;
+}) {
+    const form = useForm<{ document: File | null }>({
+        document: null,
+    });
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+
+        form.post(
+            UploadedDocumentController.store.url({
+                dossier: dossierId,
+                documentRequest: documentRequest.id,
+            }),
+            {
+                forceFormData: true,
+                preserveScroll: true,
+                onSuccess: () => form.reset('document'),
+            },
+        );
+    };
+
+    return (
+        <form onSubmit={submit} className="mt-3 space-y-2">
+            <div className="flex flex-wrap items-end gap-2">
+                <div className="grid min-w-48 flex-1 gap-1">
+                    <Label htmlFor={`document-${documentRequest.id}`}>
+                        {documentRequest.uploaded_document
+                            ? 'Replace file'
+                            : 'Upload file'}
+                    </Label>
+                    <Input
+                        id={`document-${documentRequest.id}`}
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
+                        onChange={(event) =>
+                            form.setData(
+                                'document',
+                                event.target.files?.[0] ?? null,
+                            )
+                        }
+                    />
+                </div>
+                <Button
+                    type="submit"
+                    size="sm"
+                    disabled={form.processing || !form.data.document}
+                >
+                    {form.processing ? 'Uploading…' : 'Upload'}
+                </Button>
+            </div>
+            {form.progress && (
+                <progress
+                    value={form.progress.percentage}
+                    max={100}
+                    className="h-1.5 w-full"
+                />
+            )}
+            <InputError message={form.errors.document} />
+        </form>
+    );
+}
 
 export default function ShowDossier({
     dossier,
@@ -99,7 +188,11 @@ export default function ShowDossier({
                             <code className="bg-muted max-w-full overflow-x-auto rounded-md px-3 py-2 text-sm">
                                 {accessGrantToken}
                             </code>
-                            <Button type="button" variant="outline" onClick={copyToken}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={copyToken}
+                            >
                                 {copied ? 'Copied' : 'Copy token'}
                             </Button>
                         </CardContent>
@@ -112,8 +205,8 @@ export default function ShowDossier({
                             <CardHeader>
                                 <CardTitle>Document requests</CardTitle>
                                 <CardDescription>
-                                    The client will see these in their secure
-                                    portal.
+                                    Upload files received from the client, or
+                                    wait for portal uploads.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -127,28 +220,77 @@ export default function ShowDossier({
                                             (documentRequest) => (
                                                 <div
                                                     key={documentRequest.id}
-                                                    className="flex flex-wrap items-start justify-between gap-3 px-4 py-3"
+                                                    className="space-y-2 px-4 py-3"
                                                 >
-                                                    <div>
-                                                        <p className="font-medium">
-                                                            {
-                                                                documentRequest.title
-                                                            }
-                                                        </p>
-                                                        {documentRequest.instructions && (
-                                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                                        <div>
+                                                            <p className="font-medium">
                                                                 {
-                                                                    documentRequest.instructions
+                                                                    documentRequest.title
                                                                 }
                                                             </p>
-                                                        )}
+                                                            {documentRequest.instructions && (
+                                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                                    {
+                                                                        documentRequest.instructions
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <Badge variant="outline">
+                                                            {documentRequest.status.replaceAll(
+                                                                '_',
+                                                                ' ',
+                                                            )}
+                                                        </Badge>
                                                     </div>
-                                                    <Badge variant="outline">
-                                                        {documentRequest.status.replaceAll(
-                                                            '_',
-                                                            ' ',
-                                                        )}
-                                                    </Badge>
+
+                                                    {documentRequest.uploaded_document && (
+                                                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-2 text-sm">
+                                                            <div>
+                                                                <p className="font-medium">
+                                                                    {
+                                                                        documentRequest
+                                                                            .uploaded_document
+                                                                            .original_filename
+                                                                    }
+                                                                </p>
+                                                                <p className="text-muted-foreground">
+                                                                    {formatBytes(
+                                                                        documentRequest
+                                                                            .uploaded_document
+                                                                            .size_bytes,
+                                                                    )}{' '}
+                                                                    ·{' '}
+                                                                    {new Date(
+                                                                        documentRequest.uploaded_document.uploaded_at,
+                                                                    ).toLocaleString()}
+                                                                </p>
+                                                            </div>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                asChild
+                                                            >
+                                                                <a
+                                                                    href={UploadedDocumentController.download.url(
+                                                                        documentRequest
+                                                                            .uploaded_document
+                                                                            .id,
+                                                                    )}
+                                                                >
+                                                                    Download
+                                                                </a>
+                                                            </Button>
+                                                        </div>
+                                                    )}
+
+                                                    <DocumentRequestUpload
+                                                        dossierId={dossier.id}
+                                                        documentRequest={
+                                                            documentRequest
+                                                        }
+                                                    />
                                                 </div>
                                             ),
                                         )}

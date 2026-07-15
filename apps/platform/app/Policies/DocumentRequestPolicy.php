@@ -24,4 +24,16 @@ final class DocumentRequestPolicy
             && $tenant instanceof Tenant
             && $user->belongsToTenant($tenant);
     }
+
+    /**
+     * Staff upload onto a request (e.g. files received by email).
+     */
+    public function upload(User $user, DocumentRequest $documentRequest): bool
+    {
+        $tenant = $documentRequest->tenant;
+
+        return $user->can(Permission::CreateDossiers->value)
+            && $tenant instanceof Tenant
+            && $user->belongsToTenant($tenant);
+    }
 }

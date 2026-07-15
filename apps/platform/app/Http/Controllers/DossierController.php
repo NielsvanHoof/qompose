@@ -72,7 +72,9 @@ final class DossierController extends Controller
 
         $dossier->load([
             'client:id,name,email',
-            'documentRequests' => fn ($query) => $query->orderBy('sort_order'),
+            'documentRequests' => fn ($query) => $query
+                ->with('uploadedDocument')
+                ->orderBy('sort_order'),
             'clientAccessGrants' => fn ($query) => $query->latest(),
         ]);
 
@@ -96,12 +98,22 @@ final class DossierController extends Controller
                     'email' => $client->email,
                 ],
                 'document_requests' => $dossier->documentRequests
-                    ->map(fn ($documentRequest): array => [
-                        'id' => $documentRequest->id,
-                        'title' => $documentRequest->title,
-                        'instructions' => $documentRequest->instructions,
-                        'status' => $documentRequest->status->value,
-                    ]),
+                    ->map(function ($documentRequest): array {
+                        $uploaded = $documentRequest->uploadedDocument;
+
+                        return [
+                            'id' => $documentRequest->id,
+                            'title' => $documentRequest->title,
+                            'instructions' => $documentRequest->instructions,
+                            'status' => $documentRequest->status->value,
+                            'uploaded_document' => $uploaded === null ? null : [
+                                'id' => $uploaded->id,
+                                'original_filename' => $uploaded->original_filename,
+                                'size_bytes' => $uploaded->size_bytes,
+                                'uploaded_at' => $uploaded->uploaded_at->toIso8601String(),
+                            ],
+                        ];
+                    }),
                 'access_grants' => $dossier->clientAccessGrants
                     ->map(fn (ClientAccessGrant $grant): array => [
                         'id' => $grant->id,

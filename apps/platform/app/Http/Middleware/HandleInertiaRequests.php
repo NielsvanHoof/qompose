@@ -55,7 +55,7 @@ final class HandleInertiaRequests extends Middleware
                     return [];
                 }
 
-                $user->load('tenantMemberships.tenant');
+                $user->loadMissing('tenantMemberships.tenant');
 
                 return $user->tenantMemberships
                     ->filter(fn ($membership): bool => $membership->status === TenantMembershipStatus::Active

@@ -8,6 +8,7 @@ enum AuditEvent: string
 {
     case DossierViewed = 'dossier.viewed';
     case DocumentRequestCreated = 'document_request.created';
+    case DocumentUploaded = 'document.uploaded';
     case DocumentViewed = 'document.viewed';
     case DocumentDownloaded = 'document.downloaded';
     case AccessDenied = 'access.denied';
@@ -18,6 +19,7 @@ enum AuditEvent: string
         return match ($this) {
             self::DossierViewed => 'Dossier viewed',
             self::DocumentRequestCreated => 'Document request created',
+            self::DocumentUploaded => 'Document uploaded',
             self::DocumentViewed => 'Document viewed',
             self::DocumentDownloaded => 'Document downloaded',
             self::AccessDenied => 'Access denied',
