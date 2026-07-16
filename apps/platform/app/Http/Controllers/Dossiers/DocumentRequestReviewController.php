@@ -47,7 +47,7 @@ final class DocumentRequestReviewController extends Controller
             'type' => 'success',
             'message' => $decision === DocumentRequestStatus::Accepted
                 ? 'Item approved.'
-                : 'Changes requested from the client.',
+                : 'Changes requested. The client notification has been queued.',
         ]);
 
         return to_route(

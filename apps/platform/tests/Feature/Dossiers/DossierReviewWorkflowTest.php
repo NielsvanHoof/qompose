@@ -10,6 +10,8 @@ use App\Enums\DossierStatus;
 use App\Enums\QuestionnaireItemType;
 use App\Enums\Role;
 use App\Enums\TenantMembershipStatus;
+use App\Listeners\LogClientChangesRequestedFailed;
+use App\Listeners\LogClientChangesRequestedSent;
 use App\Models\Activity;
 use App\Models\Client;
 use App\Models\DocumentRequest;
@@ -17,10 +19,17 @@ use App\Models\Dossier;
 use App\Models\TenantMembership;
 use App\Models\UploadedDocument;
 use App\Models\User;
+use App\Notifications\Portal\ClientChangesRequestedNotification;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Notifications\Events\NotificationFailed;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -65,6 +74,8 @@ function createReviewWorkflowContext(): array
 }
 
 test('a reviewer can approve submitted evidence without editing the questionnaire', function () {
+    Notification::fake();
+
     $context = createReviewWorkflowContext();
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $context['tenant']->id,
@@ -109,9 +120,13 @@ test('a reviewer can approve submitted evidence without editing the questionnair
         'type' => QuestionnaireItemType::File->value,
         'title' => 'Reviewer may not rewrite this',
     ])->assertForbidden();
+
+    Notification::assertNothingSent();
 });
 
 test('rejected items show feedback and a client correction returns them to review', function () {
+    Notification::fake();
+
     $context = createReviewWorkflowContext();
     $documentRequest = DocumentRequest::factory()->create([
         'tenant_id' => $context['tenant']->id,
@@ -155,6 +170,36 @@ test('rejected items show feedback and a client correction returns them to revie
         ->and($documentRequest->fresh()->rejection_reason)
         ->toBe('Please include the full registered address.');
 
+    Notification::assertSentOnDemand(
+        ClientChangesRequestedNotification::class,
+        function (
+            ClientChangesRequestedNotification $notification,
+            array $channels,
+            AnonymousNotifiable $notifiable,
+        ) use ($context, $documentRequest): bool {
+            $queuedJob = new SendQueuedNotifications($notifiable, $notification, $channels);
+            $mail = $notification->toMail($notifiable);
+
+            expect($notification)->toBeInstanceOf(ShouldBeEncrypted::class)
+                ->and($notification->afterCommit)->toBeTrue()
+                ->and($queuedJob->afterCommit)->toBeTrue()
+                ->and($queuedJob->shouldBeEncrypted)->toBeTrue()
+                ->and($notification->documentRequestId)->toBe($documentRequest->id)
+                ->and($notification->dossierId)->toBe($context['dossier']->id)
+                ->and($mail->subject)->toContain('changes requested')
+                ->and((string) json_encode($mail->introLines))
+                ->toContain('original invitation')
+                ->not->toContain('Please include the full registered address.');
+
+            return true;
+        },
+    );
+
+    expect(Activity::query()
+        ->where('event', AuditEvent::ClientChangesRequestedQueued->value)
+        ->where('subject_id', $documentRequest->id)
+        ->exists())->toBeTrue();
+
     $this->get(route('portal.show', $grantResult['plain_text_token']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
@@ -183,6 +228,49 @@ test('rejected items show feedback and a client correction returns them to revie
     $this->post($answerUrl, [
         'answer_text' => 'Changing an item already under review',
     ])->assertForbidden();
+});
+
+test('changes requested delivery outcomes are audited', function () {
+    $context = createReviewWorkflowContext();
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'dossier_id' => $context['dossier']->id,
+        'status' => DocumentRequestStatus::Rejected,
+        'rejection_reason' => 'Please correct this.',
+    ]);
+    $notification = new ClientChangesRequestedNotification(
+        documentRequestId: $documentRequest->id,
+        dossierId: $context['dossier']->id,
+        clientName: 'Jane Client',
+        dossierTitle: $context['dossier']->title,
+        documentRequestTitle: $documentRequest->title,
+        firmName: $context['tenant']->name,
+    );
+    $notifiable = (new AnonymousNotifiable)->route('mail', 'jane@example.com');
+
+    app(LogClientChangesRequestedSent::class)->handle(
+        new NotificationSent($notifiable, $notification, 'mail'),
+    );
+    app(LogClientChangesRequestedFailed::class)->handle(
+        new NotificationFailed($notifiable, $notification, 'mail', [
+            'exception' => new RuntimeException('Mail failed.'),
+        ]),
+    );
+
+    $activities = Activity::query()
+        ->whereIn('event', [
+            AuditEvent::ClientChangesRequestedSent->value,
+            AuditEvent::ClientChangesRequestedFailed->value,
+        ])
+        ->get();
+
+    expect($activities)->toHaveCount(2)
+        ->and($activities->pluck('event'))->toContain(
+            AuditEvent::ClientChangesRequestedSent->value,
+            AuditEvent::ClientChangesRequestedFailed->value,
+        )
+        ->and($activities->pluck('subject_id')->unique()->all())
+        ->toBe([$documentRequest->id]);
 });
 
 test('a dossier can only be completed after every item is approved', function () {

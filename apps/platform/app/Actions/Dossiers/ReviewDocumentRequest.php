@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Dossiers;
 
 use App\Actions\Audit\LogAuditActivity;
+use App\Actions\Portal\SendClientChangesRequestedNotification;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
 use App\Models\DocumentRequest;
@@ -19,6 +20,7 @@ final class ReviewDocumentRequest
 {
     public function __construct(
         private readonly LogAuditActivity $logAuditActivity,
+        private readonly SendClientChangesRequestedNotification $sendClientChangesRequestedNotification,
     ) {}
 
     public function __invoke(
@@ -90,6 +92,20 @@ final class ReviewDocumentRequest
                 ],
                 $reviewer,
             );
+
+            if ($decision === DocumentRequestStatus::Rejected) {
+                ($this->sendClientChangesRequestedNotification)($lockedDocumentRequest);
+
+                ($this->logAuditActivity)(
+                    AuditEvent::ClientChangesRequestedQueued,
+                    $lockedDocumentRequest,
+                    [
+                        'dossier_id' => $lockedDocumentRequest->dossier_id,
+                        'channel' => 'mail',
+                    ],
+                    $reviewer,
+                );
+            }
 
             return $lockedDocumentRequest->fresh() ?? $lockedDocumentRequest;
         });

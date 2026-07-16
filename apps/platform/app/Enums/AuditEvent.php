@@ -21,6 +21,9 @@ enum AuditEvent: string
     case ClientPortalInviteQueued = 'client_portal.invite_queued';
     case ClientPortalInviteSent = 'client_portal.invite_sent';
     case ClientPortalInviteFailed = 'client_portal.invite_failed';
+    case ClientChangesRequestedQueued = 'client_portal.changes_requested_queued';
+    case ClientChangesRequestedSent = 'client_portal.changes_requested_sent';
+    case ClientChangesRequestedFailed = 'client_portal.changes_requested_failed';
     case AccessDenied = 'access.denied';
     case MemberRoleChanged = 'member.role_changed';
 
@@ -42,6 +45,9 @@ enum AuditEvent: string
             self::ClientPortalInviteQueued => 'Client portal invitation queued',
             self::ClientPortalInviteSent => 'Client portal invitation sent',
             self::ClientPortalInviteFailed => 'Client portal invitation failed',
+            self::ClientChangesRequestedQueued => 'Client changes-requested notification queued',
+            self::ClientChangesRequestedSent => 'Client changes-requested notification sent',
+            self::ClientChangesRequestedFailed => 'Client changes-requested notification failed',
             self::AccessDenied => 'Access denied',
             self::MemberRoleChanged => 'Member role changed',
         };
