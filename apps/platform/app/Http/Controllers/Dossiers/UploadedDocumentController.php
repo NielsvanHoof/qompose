@@ -26,6 +26,7 @@ final class UploadedDocumentController extends Controller
         Dossier $dossier,
         DocumentRequest $documentRequest,
         UploadDocumentForRequest $uploadDocumentForRequest,
+        LogAuditActivity $logAuditActivity,
     ): RedirectResponse {
         // Ensure the request belongs to this dossier (tenant scope already applied).
         abort_unless($documentRequest->dossier_id === $dossier->id, 404);
@@ -38,12 +39,16 @@ final class UploadedDocumentController extends Controller
             return back()->withErrors(['document' => 'A document file is required.']);
         }
 
-        $uploadedDocument = $uploadDocumentForRequest($documentRequest, $file);
-
-        app(LogAuditActivity::class)(
-            AuditEvent::DocumentUploaded,
-            $uploadedDocument,
-            ['original_filename' => $uploadedDocument->original_filename],
+        $uploadedDocument = $uploadDocumentForRequest(
+            $documentRequest,
+            $file,
+            static function (UploadedDocument $uploadedDocument) use ($logAuditActivity): void {
+                $logAuditActivity(
+                    AuditEvent::DocumentUploaded,
+                    $uploadedDocument,
+                    ['original_filename' => $uploadedDocument->original_filename],
+                );
+            },
         );
 
         Inertia::flash('toast', [

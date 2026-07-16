@@ -15,7 +15,9 @@ use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use function array_key_exists;
 
 final class ClientPortalAnswerController extends Controller
 {
@@ -27,39 +29,48 @@ final class ClientPortalAnswerController extends Controller
         string $token,
         DocumentRequest $documentRequest,
         SubmitQuestionnaireAnswer $submitQuestionnaireAnswer,
+        LogAuditActivity $logAuditActivity,
     ): RedirectResponse {
         $grant = $this->grantFromRequest($request);
 
         abort_unless($documentRequest->dossier_id === $grant->dossier_id, 404);
 
-        $validated = $request->validated();
-
-        $submitQuestionnaireAnswer(
+        DB::transaction(function () use (
+            $request,
             $documentRequest,
-            $validated['answer_text'] ?? null,
-            array_key_exists('answer_boolean', $validated)
-                ? (bool) $validated['answer_boolean']
-                : null,
-        );
+            $grant,
+            $submitQuestionnaireAnswer,
+            $logAuditActivity,
+        ): void {
+            $validated = $request->validated();
 
-        $dossier = Dossier::query()->findOrFail($grant->dossier_id);
+            $submittedDocumentRequest = $submitQuestionnaireAnswer(
+                $documentRequest,
+                $validated['answer_text'] ?? null,
+                array_key_exists('answer_boolean', $validated)
+                    ? (bool) $validated['answer_boolean']
+                    : null,
+            );
 
-        // Mark dossier as awaiting review once the client starts answering.
-        if (in_array($dossier->status, [DossierStatus::Draft, DossierStatus::AwaitingClient], true)) {
-            $dossier->update(['status' => DossierStatus::InReview]);
-        }
+            $dossier = Dossier::query()->findOrFail($grant->dossier_id);
 
-        $grant->forceFill(['last_used_at' => now()])->save();
+            // Mark dossier as awaiting review once the client starts answering.
+            if (in_array($dossier->status, [DossierStatus::Draft, DossierStatus::AwaitingClient], true)) {
+                $dossier->update(['status' => DossierStatus::InReview]);
+            }
 
-        app(LogAuditActivity::class)(
-            AuditEvent::QuestionnaireAnswerSubmitted,
-            $documentRequest,
-            [
-                'source' => 'client_portal',
-                'answer_type' => $documentRequest->type->value,
-                'access_grant_id' => $grant->id,
-            ],
-        );
+            $grant->forceFill(['last_used_at' => now()])->save();
+
+            $logAuditActivity(
+                AuditEvent::QuestionnaireAnswerSubmitted,
+                $submittedDocumentRequest,
+                [
+                    'source' => 'client_portal',
+                    'answer_type' => $submittedDocumentRequest->type->value,
+                    'access_grant_id' => $grant->id,
+                ],
+            );
+        });
 
         Inertia::flash('toast', [
             'type' => 'success',

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\Tenant;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /*
@@ -104,7 +104,6 @@ function workspaceRoute(
     string $name,
     Tenant|string $tenant,
     array $parameters = [],
-): string
-{
+): string {
     return route($name, ['tenant' => $tenant, ...$parameters]);
 }

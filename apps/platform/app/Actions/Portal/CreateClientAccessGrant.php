@@ -8,6 +8,7 @@ use App\Enums\DossierStatus;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class CreateClientAccessGrant
@@ -19,22 +20,28 @@ final class CreateClientAccessGrant
      */
     public function __invoke(Dossier $dossier, User $createdBy, int $expiresInDays = 7): array
     {
-        $plainTextToken = Str::random(64);
+        return DB::transaction(function () use ($dossier, $createdBy, $expiresInDays): array {
+            $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
+            $dossierQuery->getQuery()->lockForUpdate();
+            $lockedDossier = $dossierQuery->firstOrFail();
 
-        $grant = $dossier->clientAccessGrants()->create([
-            'token' => ClientAccessGrant::hashToken($plainTextToken),
-            'expires_at' => now()->addDays($expiresInDays),
-            'created_by' => $createdBy->id,
-        ]);
+            $plainTextToken = Str::random(64);
 
-        // Issuing access means we are waiting on the client (unless already further along).
-        if ($dossier->status === DossierStatus::Draft) {
-            $dossier->update(['status' => DossierStatus::AwaitingClient]);
-        }
+            $grant = $lockedDossier->clientAccessGrants()->create([
+                'token' => ClientAccessGrant::hashToken($plainTextToken),
+                'expires_at' => now()->addDays($expiresInDays),
+                'created_by' => $createdBy->id,
+            ]);
 
-        return [
-            'grant' => $grant,
-            'plain_text_token' => $plainTextToken,
-        ];
+            // Issuing access means we are waiting on the client (unless already further along).
+            if ($lockedDossier->status === DossierStatus::Draft) {
+                $lockedDossier->update(['status' => DossierStatus::AwaitingClient]);
+            }
+
+            return [
+                'grant' => $grant,
+                'plain_text_token' => $plainTextToken,
+            ];
+        });
     }
 }

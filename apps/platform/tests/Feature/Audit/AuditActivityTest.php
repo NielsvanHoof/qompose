@@ -103,3 +103,39 @@ test('audit log records cannot be updated', function () {
     expect(fn () => $activity->update(['description' => 'tampered']))
         ->toThrow(RuntimeException::class, 'Audit log records are immutable.');
 });
+
+test('audit properties discard secrets and truncate untrusted request metadata', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    setPermissionsTeamId($tenant->id);
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    request()->headers->set('User-Agent', str_repeat('x', 700));
+
+    $activity = app(LogAuditActivity::class)(
+        AuditEvent::DossierViewed,
+        $dossier,
+        [
+            'safe' => 'kept',
+            'plain_text_token' => 'secret-token',
+            'nested' => [
+                'portal_url' => 'https://example.test/portal/secret-token',
+                'channel' => 'mail',
+            ],
+        ],
+        $owner,
+    );
+
+    expect($activity->getProperty('safe'))->toBe('kept')
+        ->and($activity->getProperty('plain_text_token'))->toBeNull()
+        ->and($activity->getProperty('nested'))->toBe(['channel' => 'mail'])
+        ->and(mb_strlen((string) $activity->getProperty('user_agent')))->toBe(512)
+        ->and((string) json_encode($activity->properties))->not->toContain('secret-token');
+});

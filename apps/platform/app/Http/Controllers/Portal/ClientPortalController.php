@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
+use App\Actions\Audit\LogAuditActivity;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Models\ClientAccessGrant;
 use App\Queries\Portal\GetClientPortalData;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,10 +24,22 @@ final class ClientPortalController extends Controller
         Request $request,
         string $token,
         GetClientPortalData $getClientPortalData,
+        LogAuditActivity $logAuditActivity,
     ): Response {
         $grant = $this->grantFromRequest($request);
 
-        $grant->forceFill(['last_used_at' => now()])->save();
+        DB::transaction(function () use ($grant, $logAuditActivity): void {
+            $grant->forceFill(['last_used_at' => now()])->save();
+
+            $logAuditActivity(
+                AuditEvent::ClientPortalAccessed,
+                $grant,
+                [
+                    'source' => 'client_portal',
+                    'dossier_id' => $grant->dossier_id,
+                ],
+            );
+        });
 
         return Inertia::render('portal/show', [
             'token' => $token,

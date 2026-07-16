@@ -8,8 +8,9 @@ use App\Enums\DocumentRequestStatus;
 use App\Enums\QuestionnaireItemType;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
-use Illuminate\Http\UploadedFile;
+use Closure;
 use Illuminate\Filesystem\FilesystemManager;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -29,9 +30,14 @@ final class UploadDocumentForRequest
     /**
      * Store a file for a document request and mark the request as submitted.
      * Replaces any previous upload for the same request.
+     *
+     * @param  (Closure(UploadedDocument, DocumentRequest): void)|null  $afterPersist
      */
-    public function __invoke(DocumentRequest $documentRequest, UploadedFile $file): UploadedDocument
-    {
+    public function __invoke(
+        DocumentRequest $documentRequest,
+        UploadedFile $file,
+        ?Closure $afterPersist = null,
+    ): UploadedDocument {
         if ($documentRequest->type !== QuestionnaireItemType::File) {
             throw new InvalidArgumentException('Only file items accept uploads.');
         }
@@ -65,6 +71,7 @@ final class UploadDocumentForRequest
                 $path,
                 $file,
                 $sizeBytes,
+                $afterPersist,
                 &$replacedFile,
             ): UploadedDocument {
                 $documentRequestQuery = DocumentRequest::query()
@@ -106,6 +113,10 @@ final class UploadDocumentForRequest
                     'status' => DocumentRequestStatus::Submitted,
                     'answered_at' => now(),
                 ]);
+
+                if ($afterPersist instanceof Closure) {
+                    $afterPersist($uploadedDocument, $lockedDocumentRequest);
+                }
 
                 return $uploadedDocument;
             });

@@ -14,6 +14,7 @@ use App\Http\Requests\Portal\StorePortalUploadedDocumentRequest;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
+use App\Models\UploadedDocument;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 
@@ -27,6 +28,7 @@ final class ClientPortalUploadController extends Controller
         string $token,
         int $documentRequest,
         UploadDocumentForRequest $uploadDocumentForRequest,
+        LogAuditActivity $logAuditActivity,
     ): RedirectResponse {
         $grant = $this->grantFromRequest($request);
 
@@ -41,29 +43,35 @@ final class ClientPortalUploadController extends Controller
             return back()->withErrors(['document' => 'A document file is required.']);
         }
 
-        $uploadedDocument = $uploadDocumentForRequest($documentRequestModel, $file);
+        $uploadDocumentForRequest(
+            $documentRequestModel,
+            $file,
+            static function (
+                UploadedDocument $uploadedDocument,
+                DocumentRequest $lockedDocumentRequest,
+            ) use ($grant, $logAuditActivity): void {
+                // Mark dossier as awaiting review once the client starts delivering files.
+                $dossier = $lockedDocumentRequest->dossier;
 
-        // Mark dossier as awaiting review once the client starts delivering files.
-        $dossier = $documentRequestModel->dossier;
+                if (! $dossier instanceof Dossier) {
+                    abort(404);
+                }
 
-        if (! $dossier instanceof Dossier) {
-            abort(404);
-        }
+                if ($dossier->status === DossierStatus::Draft || $dossier->status === DossierStatus::AwaitingClient) {
+                    $dossier->update(['status' => DossierStatus::InReview]);
+                }
 
-        if ($dossier->status === DossierStatus::Draft || $dossier->status === DossierStatus::AwaitingClient) {
-            $dossier->update(['status' => DossierStatus::InReview]);
-        }
+                $grant->forceFill(['last_used_at' => now()])->save();
 
-        $grant->forceFill(['last_used_at' => now()])->save();
-
-        app(LogAuditActivity::class)(
-            AuditEvent::DocumentUploaded,
-            $uploadedDocument,
-            [
-                'original_filename' => $uploadedDocument->original_filename,
-                'source' => 'client_portal',
-                'access_grant_id' => $grant->id,
-            ],
+                $logAuditActivity(
+                    AuditEvent::DocumentUploaded,
+                    $uploadedDocument,
+                    [
+                        'source' => 'client_portal',
+                        'access_grant_id' => $grant->id,
+                    ],
+                );
+            },
         );
 
         Inertia::flash('toast', [

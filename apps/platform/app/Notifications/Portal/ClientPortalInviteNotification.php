@@ -8,21 +8,25 @@ use App\Models\Client;
 use App\Models\Dossier;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use RuntimeException;
 
-final class ClientPortalInviteNotification extends Notification implements ShouldQueue
+final class ClientPortalInviteNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable;
 
     public function __construct(
+        public int $grantId,
         public Dossier $dossier,
         public string $portalUrl,
         public CarbonInterface $expiresAt,
         public string $firmName,
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     /**
      * @return list<string>

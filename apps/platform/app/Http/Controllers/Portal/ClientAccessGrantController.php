@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
-use App\Actions\Portal\CreateClientAccessGrant;
-use App\Actions\Portal\SendClientPortalInvite;
+use App\Actions\Portal\IssueClientPortalAccess;
+use App\Actions\Portal\RevokeClientPortalAccess;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\StoreClientAccessGrantRequest;
 use App\Models\ClientAccessGrant;
@@ -23,8 +23,7 @@ final class ClientAccessGrantController extends Controller
         Tenant $tenant,
         StoreClientAccessGrantRequest $request,
         Dossier $dossier,
-        CreateClientAccessGrant $createClientAccessGrant,
-        SendClientPortalInvite $sendClientPortalInvite,
+        IssueClientPortalAccess $issueClientPortalAccess,
     ): RedirectResponse {
         $this->authorize('view', $dossier);
 
@@ -34,10 +33,13 @@ final class ClientAccessGrantController extends Controller
             abort(Response::HTTP_FORBIDDEN);
         }
 
-        $result = $createClientAccessGrant(
+        $sendInvite = (bool) ($request->validated('send_invite') ?? true);
+
+        $result = $issueClientPortalAccess(
             $dossier,
             $user,
             (int) ($request->validated('expires_in_days') ?? 7),
+            $sendInvite,
         );
 
         $plainTextToken = $result['plain_text_token'];
@@ -47,14 +49,10 @@ final class ClientAccessGrantController extends Controller
         $request->session()->flash('access_grant_token', $plainTextToken);
         $request->session()->flash('access_grant_portal_url', $portalUrl);
 
-        $sendInvite = (bool) ($request->validated('send_invite') ?? true);
-
         if ($sendInvite) {
-            $sendClientPortalInvite($dossier, $result['grant'], $plainTextToken);
-
             Inertia::flash('toast', [
                 'type' => 'success',
-                'message' => 'Client invite emailed. Copy the portal link now if you need it again.',
+                'message' => 'Client invite queued. Copy the portal link now if you need it again.',
             ]);
         } else {
             Inertia::flash('toast', [
@@ -69,13 +67,20 @@ final class ClientAccessGrantController extends Controller
         );
     }
 
-    public function destroy(Tenant $tenant, ClientAccessGrant $grant): RedirectResponse
-    {
+    public function destroy(
+        Tenant $tenant,
+        ClientAccessGrant $grant,
+        RevokeClientPortalAccess $revokeClientPortalAccess,
+    ): RedirectResponse {
         $this->authorize('revoke', $grant);
 
-        if ($grant->revoked_at === null) {
-            $grant->update(['revoked_at' => now()]);
+        $user = request()->user();
+
+        if (! $user instanceof User) {
+            abort(Response::HTTP_FORBIDDEN);
         }
+
+        $revokeClientPortalAccess($grant, $user);
 
         Inertia::flash('toast', [
             'type' => 'success',

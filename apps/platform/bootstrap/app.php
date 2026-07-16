@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\HardenClientPortalResponse;
 use App\Http\Middleware\InitializeTenantFromRoute;
 use App\Http\Middleware\InitializeTenantFromSession;
 use App\Http\Middleware\ResolveClientPortalGrant;
@@ -53,5 +54,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+        );
+
+        $exceptions->respond(
+            fn (Symfony\Component\HttpFoundation\Response $response, Throwable $exception, Request $request) => $request->is('portal/*')
+                ? HardenClientPortalResponse::applyHeaders($response)
+                : $response,
         );
     })->create();

@@ -40,6 +40,7 @@ final class SendClientPortalInvite
 
         Notification::route('mail', $client->email)
             ->notify(new ClientPortalInviteNotification(
+                grantId: $grant->id,
                 dossier: $dossier,
                 portalUrl: $portalUrl,
                 expiresAt: $grant->expires_at,
