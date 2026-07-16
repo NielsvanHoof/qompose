@@ -1,7 +1,7 @@
 import { Form, router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
-import DocumentRequestController from '@/actions/App/Http/Controllers/Workspace/DocumentRequestController';
-import UploadedDocumentController from '@/actions/App/Http/Controllers/Workspace/UploadedDocumentController';
+import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
+import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
 import DocumentRequestUpload from '@/components/dossiers/document-request-upload';
 import InputError from '@/components/input-error';
 import SortableList from '@/components/sortable/sortable-list';

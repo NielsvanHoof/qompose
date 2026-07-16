@@ -1,6 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import UploadedDocumentController from '@/actions/App/Http/Controllers/Workspace/UploadedDocumentController';
+import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

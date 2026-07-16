@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenants\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenant;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

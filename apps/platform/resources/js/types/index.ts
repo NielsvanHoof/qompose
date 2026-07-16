@@ -1,9 +1,10 @@
 export type * from './auth';
-export type * from './client';
+export type * from './clients';
 export type * from './dashboard';
-export type * from './dossier';
+export type * from './dossiers';
 export type * from './media';
 export type * from './navigation';
-export type * from './template';
+export type * from './portal';
+export type * from './questionnaires';
 export type * from './ui';
 export type * from './workspace';

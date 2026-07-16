@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import DocumentRequestController from '@/actions/App/Http/Controllers/Workspace/DocumentRequestController';
+import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {

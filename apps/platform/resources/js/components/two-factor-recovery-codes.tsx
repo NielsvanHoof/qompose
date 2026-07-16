@@ -35,7 +35,7 @@ export default function TwoFactorRecoveryCodes({
     errors,
 }: Props) {
     const [codesAreVisible, setCodesAreVisible] = useState<boolean>(false);
-    const codesSectionRef = useRef<HTMLDivElement | null>(null);
+    const codesSectionRef = useRef<HTMLUListElement | null>(null);
     const canRegenerateCodes = recoveryCodesList.length > 0 && codesAreVisible;
 
     const toggleCodesVisibility = useCallback(async () => {
@@ -138,13 +138,15 @@ export default function TwoFactorRecoveryCodes({
                                             className="list-none space-y-2"
                                             aria-busy="true"
                                         >
-                                            {RECOVERY_CODE_SKELETONS.map((skeletonId) => (
-                                                <div
-                                                    key={skeletonId}
-                                                    className="h-4 animate-pulse rounded bg-muted-foreground/20"
-                                                    aria-hidden="true"
-                                                />
-                                            ))}
+                                            {RECOVERY_CODE_SKELETONS.map(
+                                                (skeletonId) => (
+                                                    <div
+                                                        key={skeletonId}
+                                                        className="h-4 animate-pulse rounded bg-muted-foreground/20"
+                                                        aria-hidden="true"
+                                                    />
+                                                ),
+                                            )}
                                         </li>
                                     )}
                                 </ul>

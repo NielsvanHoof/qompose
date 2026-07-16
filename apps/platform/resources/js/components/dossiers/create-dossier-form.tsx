@@ -1,5 +1,5 @@
 import { Form, Link } from '@inertiajs/react';
-import DossierController from '@/actions/App/Http/Controllers/DossierController';
+import DossierController from '@/actions/App/Http/Controllers/Dossiers/DossierController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

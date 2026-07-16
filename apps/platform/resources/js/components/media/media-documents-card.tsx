@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { FolderOpen } from 'lucide-react';
-import UploadedDocumentController from '@/actions/App/Http/Controllers/Workspace/UploadedDocumentController';
+import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Portal;
 
 use App\Actions\Audit\LogAuditActivity;
-use App\Actions\Workspace\SubmitQuestionnaireAnswer;
+use App\Actions\Dossiers\SubmitQuestionnaireAnswer;
 use App\Enums\AuditEvent;
 use App\Enums\DossierStatus;
 use App\Http\Controllers\Controller;

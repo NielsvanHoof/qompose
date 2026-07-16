@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\DossierController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\Workspace\ClientAccessGrantController;
-use App\Http\Controllers\Workspace\ClientController;
-use App\Http\Controllers\Workspace\DocumentRequestController;
-use App\Http\Controllers\Workspace\MediaLibraryController;
-use App\Http\Controllers\Workspace\QuestionnaireTemplateController;
-use App\Http\Controllers\Workspace\QuestionnaireTemplateItemController;
-use App\Http\Controllers\Workspace\UploadedDocumentController;
+use App\Http\Controllers\Dossiers\DossierController;
+use App\Http\Controllers\Reporting\DashboardController;
+use App\Http\Controllers\Portal\ClientAccessGrantController;
+use App\Http\Controllers\Clients\ClientController;
+use App\Http\Controllers\Dossiers\DocumentRequestController;
+use App\Http\Controllers\Reporting\MediaLibraryController;
+use App\Http\Controllers\Questionnaires\QuestionnaireTemplateController;
+use App\Http\Controllers\Questionnaires\QuestionnaireTemplateItemController;
+use App\Http\Controllers\Dossiers\UploadedDocumentController;
 use App\Http\Middleware\EnsureValidTenantMembership;
 use App\Http\Middleware\InitializeTenantFromSession;
 use App\Http\Middleware\SetPermissionTeamContext;

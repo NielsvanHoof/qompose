@@ -1,5 +1,5 @@
 import { Form, Link } from '@inertiajs/react';
-import ClientController from '@/actions/App/Http/Controllers/Workspace/ClientController';
+import ClientController from '@/actions/App/Http/Controllers/Clients/ClientController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\ActiveTenantController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\WorkspaceOnboardingController;
+use App\Http\Controllers\Tenancy\ActiveTenantController;
+use App\Http\Controllers\Reporting\DashboardController;
+use App\Http\Controllers\Tenancy\WorkspaceOnboardingController;
 use App\Http\Middleware\InitializeTenantFromSession;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
