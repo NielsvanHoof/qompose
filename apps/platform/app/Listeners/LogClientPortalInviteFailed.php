@@ -45,7 +45,7 @@ final class LogClientPortalInviteFailed
             }
 
             $tenant->execute(function () use ($grant, $event): void {
-                ($this->logAuditActivity)(
+                $this->logAuditActivity->handle(
                     AuditEvent::ClientPortalInviteFailed,
                     $grant,
                     [

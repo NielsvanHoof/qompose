@@ -28,7 +28,7 @@ final class GetMediaLibraryDocuments
      *     }|null
      * }>
      */
-    public function __invoke(): array
+    public function handle(): array
     {
         return DocumentRequest::query()
             ->where('type', QuestionnaireItemType::File)

@@ -14,7 +14,7 @@ use RuntimeException;
 
 final class SendClientChangesRequestedNotification
 {
-    public function __invoke(DocumentRequest $documentRequest): void
+    public function handle(DocumentRequest $documentRequest): void
     {
         $documentRequest->loadMissing([
             'dossier.client',

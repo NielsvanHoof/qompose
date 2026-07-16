@@ -16,7 +16,7 @@ final class GetClientIndexData
      *     dossiers_count: int
      * }>
      */
-    public function __invoke(): array
+    public function handle(): array
     {
         return Client::query()
             ->withCount('dossiers')

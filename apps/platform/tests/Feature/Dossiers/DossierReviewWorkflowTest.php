@@ -45,7 +45,7 @@ function createReviewWorkflowContext(): array
 {
     $owner = User::factory()->create();
     $reviewer = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -137,7 +137,7 @@ test('rejected items show feedback and a client correction returns them to revie
         'status' => DocumentRequestStatus::Submitted,
     ]);
 
-    $grantResult = app(CreateClientAccessGrant::class)(
+    $grantResult = app(CreateClientAccessGrant::class)->handle(
         $context['dossier'],
         $context['owner'],
         7,
@@ -300,7 +300,7 @@ test('a dossier can only be completed after every item is approved', function ()
         'reviewed_at' => now(),
     ]);
 
-    $grantResult = app(CreateClientAccessGrant::class)(
+    $grantResult = app(CreateClientAccessGrant::class)->handle(
         $context['dossier'],
         $context['owner'],
         7,

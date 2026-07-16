@@ -14,7 +14,7 @@ final class SubmitQuestionnaireAnswer
     /**
      * Store a text or boolean answer and mark the request as submitted.
      */
-    public function __invoke(
+    public function handle(
         DocumentRequest $documentRequest,
         ?string $answerText = null,
         ?bool $answerBoolean = null,

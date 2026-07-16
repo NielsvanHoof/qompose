@@ -22,7 +22,7 @@ beforeEach(function () {
 
 test('staff can create the phase one document collection graph', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -76,8 +76,8 @@ test('tenant owned records cannot be queried without an active tenant', function
 
 test('phase one models are isolated per tenant', function () {
     $owner = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)('Tenant A', $owner);
-    $tenantB = app(ProvisionTenant::class)('Tenant B', $owner);
+    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $owner);
+    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $owner);
 
     $tenantA->makeCurrent();
 
@@ -95,8 +95,8 @@ test('phase one models are isolated per tenant', function () {
 
 test('composite tenant foreign keys reject cross tenant dossier links', function () {
     $owner = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)('Tenant A', $owner);
-    $tenantB = app(ProvisionTenant::class)('Tenant B', $owner);
+    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $owner);
+    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $owner);
 
     $tenantA->makeCurrent();
     $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
@@ -121,7 +121,7 @@ test('composite tenant foreign keys reject cross tenant dossier links', function
 
 test('client access grant validity reflects expiry and revocation', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 

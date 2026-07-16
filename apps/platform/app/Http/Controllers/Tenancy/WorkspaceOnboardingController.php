@@ -23,12 +23,13 @@ final class WorkspaceOnboardingController extends Controller
         ProvisionTenant $provisionTenant,
     ): RedirectResponse {
         $name = $request->validated('name');
-        $tenant = $provisionTenant(
+        $tenant = $provisionTenant->handle(
             $name,
             $request->authenticatedUser(),
         );
 
         $request->session()->put('active_tenant_id', $tenant->id);
+        $request->session()->flash('inertia.refresh.workspaces', true);
 
         Inertia::flash('toast', [
             'type' => 'success',

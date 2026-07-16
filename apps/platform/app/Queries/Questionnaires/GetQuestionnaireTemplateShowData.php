@@ -26,7 +26,7 @@ final class GetQuestionnaireTemplateShowData
      *     }>
      * }
      */
-    public function __invoke(QuestionnaireTemplate $template): array
+    public function handle(QuestionnaireTemplate $template): array
     {
         $template->load([
             'items' => fn ($query) => $query

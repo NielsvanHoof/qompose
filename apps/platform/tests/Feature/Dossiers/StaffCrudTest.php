@@ -18,6 +18,7 @@ use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -30,7 +31,7 @@ beforeEach(function () {
 
 test('staff can create a client, dossier, and document request', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -77,11 +78,109 @@ test('staff can create a client, dossier, and document request', function () {
             ->exists())->toBeTrue();
 });
 
+test('document request creation rolls back when auditing fails', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    $event = 'eloquent.creating: '.Activity::class;
+    Event::listen($event, static function (Activity $activity): void {
+        if ($activity->event === AuditEvent::DocumentRequestCreated->value) {
+            throw new RuntimeException('Simulated audit failure.');
+        }
+    });
+
+    try {
+        $this->actingAs($owner)
+            ->withSession(['active_tenant_id' => $tenant->id])
+            ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
+                'dossier' => $dossier,
+            ]), [
+                'type' => 'file',
+                'title' => 'Payslip January 2025',
+                'instructions' => 'Upload the original PDF.',
+            ])
+            ->assertServerError();
+    } finally {
+        Event::forget($event);
+    }
+
+    $tenant->makeCurrent();
+
+    expect(DocumentRequest::query()->whereBelongsTo($dossier)->exists())->toBeFalse();
+});
+
+test('staff can reorder every document request in a dossier', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $otherDossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    $documentRequests = collect(range(0, 2))
+        ->map(fn (int $sortOrder): DocumentRequest => DocumentRequest::factory()->create([
+            'tenant_id' => $tenant->id,
+            'dossier_id' => $dossier->id,
+            'sort_order' => $sortOrder,
+        ]));
+    $foreignDocumentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $otherDossier->id,
+    ]);
+    $reorderedIds = $documentRequests->pluck('id')->reverse()->values()->all();
+    $showRoute = workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]);
+    $reorderRoute = workspaceRoute('workspaces.dossiers.document-requests.reorder', $tenant, [
+        'dossier' => $dossier,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post($reorderRoute, ['document_request_ids' => $reorderedIds])
+        ->assertRedirect($showRoute);
+
+    expect(DocumentRequest::query()
+        ->whereBelongsTo($dossier)
+        ->oldest('sort_order')
+        ->pluck('id')
+        ->all())->toBe($reorderedIds);
+
+    $this->from($showRoute)
+        ->post($reorderRoute, [
+            'document_request_ids' => [
+                $reorderedIds[0],
+                $reorderedIds[1],
+                $foreignDocumentRequest->id,
+            ],
+        ])
+        ->assertRedirect($showRoute)
+        ->assertSessionHasErrors('document_request_ids');
+
+    expect(DocumentRequest::query()
+        ->whereBelongsTo($dossier)
+        ->oldest('sort_order')
+        ->pluck('id')
+        ->all())->toBe($reorderedIds);
+});
+
 test('staff cannot attach a dossier to a client in another tenant', function () {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenant::class)('Tenant B', $ownerB);
+    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $ownerA);
+    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $ownerB);
 
     $tenantB->makeCurrent();
     $foreignClient = Client::factory()->create(['tenant_id' => $tenantB->id]);
@@ -98,7 +197,7 @@ test('staff cannot attach a dossier to a client in another tenant', function () 
 test('read only staff cannot create clients or dossiers', function () {
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     // Membership is required so the 403 comes from policy, not tenant middleware.
     TenantMembership::query()->create([
@@ -131,7 +230,7 @@ test('staff can issue and revoke a client access grant', function () {
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -166,7 +265,7 @@ test('staff can issue and revoke a client access grant', function () {
 test('read only staff cannot issue client access grants', function () {
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -198,7 +297,7 @@ test('staff can upload a document for a document request', function () {
     Storage::fake('local');
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -247,7 +346,7 @@ test('read only staff cannot upload documents', function () {
 
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,

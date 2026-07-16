@@ -18,7 +18,7 @@ final class SendClientPortalInvite
     /**
      * Email the dossier's client a magic link that opens the portal with this grant.
      */
-    public function __invoke(
+    public function handle(
         Dossier $dossier,
         ClientAccessGrant $grant,
         string $plainTextToken,

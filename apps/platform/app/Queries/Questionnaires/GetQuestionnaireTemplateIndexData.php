@@ -30,7 +30,7 @@ final class GetQuestionnaireTemplateIndexData
      *     }>
      * }
      */
-    public function __invoke(): array
+    public function handle(): array
     {
         $templates = QuestionnaireTemplate::queryVisibleToCurrentTenant()
             ->withCount('items')

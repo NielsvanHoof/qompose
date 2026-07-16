@@ -20,7 +20,7 @@ final class LogAuditActivity
     /**
      * @param  array<string, mixed>  $properties
      */
-    public function __invoke(
+    public function handle(
         AuditEvent $event,
         ?Model $subject = null,
         array $properties = [],

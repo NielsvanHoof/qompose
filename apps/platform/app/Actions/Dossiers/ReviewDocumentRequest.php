@@ -23,7 +23,7 @@ final class ReviewDocumentRequest
         private readonly SendClientChangesRequestedNotification $sendClientChangesRequestedNotification,
     ) {}
 
-    public function __invoke(
+    public function handle(
         DocumentRequest $documentRequest,
         User $reviewer,
         DocumentRequestStatus $decision,
@@ -81,7 +81,7 @@ final class ReviewDocumentRequest
                 ]);
             }
 
-            ($this->logAuditActivity)(
+            $this->logAuditActivity->handle(
                 $decision === DocumentRequestStatus::Accepted
                     ? AuditEvent::DocumentRequestAccepted
                     : AuditEvent::DocumentRequestRejected,
@@ -94,9 +94,9 @@ final class ReviewDocumentRequest
             );
 
             if ($decision === DocumentRequestStatus::Rejected) {
-                ($this->sendClientChangesRequestedNotification)($lockedDocumentRequest);
+                $this->sendClientChangesRequestedNotification->handle($lockedDocumentRequest);
 
-                ($this->logAuditActivity)(
+                $this->logAuditActivity->handle(
                     AuditEvent::ClientChangesRequestedQueued,
                     $lockedDocumentRequest,
                     [

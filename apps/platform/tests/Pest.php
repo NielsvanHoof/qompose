@@ -28,8 +28,19 @@ pest()->presets()->custom('qompose', function () {
 
         expect('App\Actions')
             ->classes()
-            ->toBeFinal()
-            ->toBeInvokable()
+            ->toBeFinal(),
+
+        expect('App\Actions')
+            ->classes()
+            ->toHaveMethod('handle')
+            ->ignoring([
+                'App\Actions\Accounts',
+                'App\Actions\Audit\LogTenantActivityAction',
+            ]),
+
+        expect('App\Actions')
+            ->classes()
+            ->not->toHaveMethod('__invoke')
             ->ignoring([
                 'App\Actions\Accounts',
                 'App\Actions\Audit\LogTenantActivityAction',
@@ -37,8 +48,15 @@ pest()->presets()->custom('qompose', function () {
 
         expect('App\Queries')
             ->classes()
-            ->toBeFinal()
-            ->toBeInvokable(),
+            ->toBeFinal(),
+
+        expect('App\Queries')
+            ->classes()
+            ->toHaveMethod('handle'),
+
+        expect('App\Queries')
+            ->classes()
+            ->not->toHaveMethod('__invoke'),
 
         expect('App\Http\Controllers\Controller')
             ->toBeAbstract(),

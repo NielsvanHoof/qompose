@@ -28,7 +28,7 @@ final class DossierController extends Controller
         $this->authorize('viewAny', Dossier::class);
 
         return Inertia::render('dossiers/index', [
-            'dossiers' => $getDossierIndexData(),
+            'dossiers' => $getDossierIndexData->handle(),
         ]);
     }
 
@@ -37,7 +37,7 @@ final class DossierController extends Controller
         $this->authorize('create', Dossier::class);
 
         return Inertia::render('dossiers/create', [
-            'clients' => $getDossierCreateData(),
+            'clients' => $getDossierCreateData->handle(),
         ]);
     }
 
@@ -56,12 +56,13 @@ final class DossierController extends Controller
         Request $request,
         Dossier $dossier,
         GetDossierShowData $getDossierShowData,
+        LogAuditActivity $logAuditActivity,
     ): Response {
         $this->authorize('view', $dossier);
 
-        $data = $getDossierShowData($dossier);
+        $data = $getDossierShowData->handle($dossier);
 
-        app(LogAuditActivity::class)(
+        $logAuditActivity->handle(
             AuditEvent::DossierViewed,
             $dossier,
         );

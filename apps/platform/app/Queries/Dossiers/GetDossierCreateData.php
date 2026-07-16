@@ -11,7 +11,7 @@ final class GetDossierCreateData
     /**
      * @return array<int, array{id: int, name: string, email: string}>
      */
-    public function __invoke(): array
+    public function handle(): array
     {
         return Client::query()
             ->get(['id', 'name', 'email'])

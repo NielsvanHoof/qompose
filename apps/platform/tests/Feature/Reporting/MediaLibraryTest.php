@@ -24,7 +24,7 @@ beforeEach(function () {
 
 test('staff can view the media library with pending and uploaded documents', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -84,8 +84,8 @@ test('staff can view the media library with pending and uploaded documents', fun
 test('media library does not include document requests from another tenant', function () {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenant::class)('Tenant B', $ownerB);
+    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $ownerA);
+    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $ownerB);
 
     $tenantB->makeCurrent();
     $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
@@ -124,7 +124,7 @@ test('media library does not include document requests from another tenant', fun
 test('reviewer can browse the media library but cannot download', function () {
     $owner = User::factory()->create();
     $reviewer = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,

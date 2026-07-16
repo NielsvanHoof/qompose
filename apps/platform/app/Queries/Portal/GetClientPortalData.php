@@ -40,7 +40,7 @@ final class GetClientPortalData
      *     }
      * }
      */
-    public function __invoke(ClientAccessGrant $grant): array
+    public function handle(ClientAccessGrant $grant): array
     {
         $dossier = Dossier::query()
             ->with([

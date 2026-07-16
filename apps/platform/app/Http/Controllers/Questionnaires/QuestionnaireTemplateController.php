@@ -26,7 +26,7 @@ final class QuestionnaireTemplateController extends Controller
         $this->authorize('viewAny', QuestionnaireTemplate::class);
 
         return Inertia::render('questionnaires/index', [
-            ...$getQuestionnaireTemplateIndexData(),
+            ...$getQuestionnaireTemplateIndexData->handle(),
             'categories' => collect(QuestionnaireTemplateCategory::cases())
                 ->map(fn (QuestionnaireTemplateCategory $category): array => [
                     'value' => $category->value,
@@ -70,7 +70,7 @@ final class QuestionnaireTemplateController extends Controller
         $this->authorize('view', $template);
 
         return Inertia::render('questionnaires/show', [
-            'template' => $getQuestionnaireTemplateShowData($template),
+            'template' => $getQuestionnaireTemplateShowData->handle($template),
             'categories' => collect(QuestionnaireTemplateCategory::cases())
                 ->map(fn (QuestionnaireTemplateCategory $category): array => [
                     'value' => $category->value,
@@ -113,7 +113,7 @@ final class QuestionnaireTemplateController extends Controller
     ): RedirectResponse {
         $this->authorize('copy', $template);
 
-        $copy = $copyQuestionnaireTemplate($template);
+        $copy = $copyQuestionnaireTemplate->handle($template);
 
         return to_route(
             'workspaces.templates.show',

@@ -17,7 +17,7 @@ final class DeleteDocumentRequest
         private readonly FilesystemManager $filesystems,
     ) {}
 
-    public function __invoke(DocumentRequest $documentRequest): void
+    public function handle(DocumentRequest $documentRequest): void
     {
         /** @var array{disk: string, path: string}|null $storedFile */
         $storedFile = DB::transaction(function () use ($documentRequest): ?array {

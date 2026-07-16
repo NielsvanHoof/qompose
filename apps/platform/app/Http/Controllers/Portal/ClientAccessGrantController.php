@@ -35,7 +35,7 @@ final class ClientAccessGrantController extends Controller
 
         $sendInvite = (bool) ($request->validated('send_invite') ?? true);
 
-        $result = $issueClientPortalAccess(
+        $result = $issueClientPortalAccess->handle(
             $dossier,
             $user,
             (int) ($request->validated('expires_in_days') ?? 7),
@@ -80,7 +80,7 @@ final class ClientAccessGrantController extends Controller
             abort(Response::HTTP_FORBIDDEN);
         }
 
-        $revokeClientPortalAccess($grant, $user);
+        $revokeClientPortalAccess->handle($grant, $user);
 
         Inertia::flash('toast', [
             'type' => 'success',

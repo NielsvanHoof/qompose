@@ -27,7 +27,7 @@ final class DashboardController extends Controller
             abort(403);
         }
 
-        $memberships = $getActiveTenantMembershipsForUser($user);
+        $memberships = $getActiveTenantMembershipsForUser->handle($user);
 
         if ($memberships->isEmpty()) {
             return to_route('onboarding.firm.create');
@@ -59,7 +59,7 @@ final class DashboardController extends Controller
 
         return Inertia::render(
             'workspaces/dashboard',
-            $getWorkspaceDashboardData($tenant),
+            $getWorkspaceDashboardData->handle($tenant),
         );
     }
 

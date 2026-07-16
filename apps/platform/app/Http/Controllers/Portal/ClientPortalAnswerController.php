@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
-use App\Actions\Audit\LogAuditActivity;
-use App\Actions\Dossiers\SubmitQuestionnaireAnswer;
-use App\Enums\AuditEvent;
-use App\Enums\DossierStatus;
+use App\Actions\Portal\SubmitPortalAnswer;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Http\Requests\Portal\StorePortalQuestionnaireAnswerRequest;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
-use App\Models\Dossier;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 use function array_key_exists;
@@ -29,49 +24,22 @@ final class ClientPortalAnswerController extends Controller
         StorePortalQuestionnaireAnswerRequest $request,
         string $token,
         DocumentRequest $documentRequest,
-        SubmitQuestionnaireAnswer $submitQuestionnaireAnswer,
-        LogAuditActivity $logAuditActivity,
+        SubmitPortalAnswer $submitPortalAnswer,
     ): RedirectResponse {
         $grant = $this->grantFromRequest($request);
 
         abort_unless($documentRequest->dossier_id === $grant->dossier_id, 404);
 
-        DB::transaction(function () use (
-            $request,
+        $validated = $request->validated();
+
+        $submitPortalAnswer->handle(
             $documentRequest,
             $grant,
-            $submitQuestionnaireAnswer,
-            $logAuditActivity,
-        ): void {
-            $validated = $request->validated();
-
-            $submittedDocumentRequest = $submitQuestionnaireAnswer(
-                $documentRequest,
-                $validated['answer_text'] ?? null,
-                array_key_exists('answer_boolean', $validated)
-                    ? (bool) $validated['answer_boolean']
-                    : null,
-            );
-
-            $dossier = Dossier::query()->findOrFail($grant->dossier_id);
-
-            // Mark dossier as awaiting review once the client starts answering.
-            if (in_array($dossier->status, [DossierStatus::Draft, DossierStatus::AwaitingClient], true)) {
-                $dossier->update(['status' => DossierStatus::InReview]);
-            }
-
-            $grant->forceFill(['last_used_at' => now()])->save();
-
-            $logAuditActivity(
-                AuditEvent::QuestionnaireAnswerSubmitted,
-                $submittedDocumentRequest,
-                [
-                    'source' => 'client_portal',
-                    'answer_type' => $submittedDocumentRequest->type->value,
-                    'access_grant_id' => $grant->id,
-                ],
-            );
-        });
+            $validated['answer_text'] ?? null,
+            array_key_exists('answer_boolean', $validated)
+                ? (bool) $validated['answer_boolean']
+                : null,
+        );
 
         Inertia::flash('toast', [
             'type' => 'success',

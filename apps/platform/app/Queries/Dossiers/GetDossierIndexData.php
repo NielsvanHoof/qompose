@@ -19,7 +19,7 @@ final class GetDossierIndexData
      *     status: string
      * }>
      */
-    public function __invoke(): array
+    public function handle(): array
     {
         return Dossier::query()
             ->with('client:id,name')

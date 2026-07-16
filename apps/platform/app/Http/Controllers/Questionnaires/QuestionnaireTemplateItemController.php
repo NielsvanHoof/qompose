@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Questionnaires;
 
+use App\Actions\Questionnaires\CreateQuestionnaireTemplateItem;
+use App\Actions\Questionnaires\ReorderQuestionnaireTemplateItems;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Questionnaires\ReorderQuestionnaireTemplateItemsRequest;
 use App\Http\Requests\Questionnaires\StoreQuestionnaireTemplateItemRequest;
@@ -12,9 +14,6 @@ use App\Models\QuestionnaireTemplate;
 use App\Models\QuestionnaireTemplateItem;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
-
-use function count;
 
 final class QuestionnaireTemplateItemController extends Controller
 {
@@ -22,14 +21,9 @@ final class QuestionnaireTemplateItemController extends Controller
         Tenant $tenant,
         StoreQuestionnaireTemplateItemRequest $request,
         QuestionnaireTemplate $template,
+        CreateQuestionnaireTemplateItem $createQuestionnaireTemplateItem,
     ): RedirectResponse {
-        // Aggregates live on the base query builder for strict PHPStan.
-        $nextSortOrder = (int) $template->items()->toBase()->max('sort_order') + 1;
-
-        $template->items()->create([
-            ...$request->validated(),
-            'sort_order' => $nextSortOrder,
-        ]);
+        $createQuestionnaireTemplateItem->handle($template, $request->validated());
 
         return to_route(
             'workspaces.templates.show',
@@ -73,27 +67,12 @@ final class QuestionnaireTemplateItemController extends Controller
         Tenant $tenant,
         ReorderQuestionnaireTemplateItemsRequest $request,
         QuestionnaireTemplate $template,
+        ReorderQuestionnaireTemplateItems $reorderQuestionnaireTemplateItems,
     ): RedirectResponse {
-        $itemIds = array_map('intval', $request->validated('item_ids'));
-        $ownedIds = $template->items()
-            ->toBase()
-            ->pluck('id')
-            ->map(fn ($id): int => (int) $id)
-            ->all();
-
-        abort_unless(
-            count($itemIds) === count($ownedIds)
-            && array_diff($itemIds, $ownedIds) === [],
-            422,
+        $reorderQuestionnaireTemplateItems->handle(
+            $template,
+            $request->array('item_ids'),
         );
-
-        DB::transaction(function () use ($itemIds): void {
-            foreach ($itemIds as $index => $itemId) {
-                QuestionnaireTemplateItem::query()
-                    ->whereKey($itemId)
-                    ->update(['sort_order' => $index]);
-            }
-        });
 
         return to_route(
             'workspaces.templates.show',

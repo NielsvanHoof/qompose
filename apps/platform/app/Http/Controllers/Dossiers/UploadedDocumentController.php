@@ -39,11 +39,11 @@ final class UploadedDocumentController extends Controller
             return back()->withErrors(['document' => 'A document file is required.']);
         }
 
-        $uploadedDocument = $uploadDocumentForRequest(
+        $uploadedDocument = $uploadDocumentForRequest->handle(
             $documentRequest,
             $file,
             static function (UploadedDocument $uploadedDocument) use ($logAuditActivity): void {
-                $logAuditActivity(
+                $logAuditActivity->handle(
                     AuditEvent::DocumentUploaded,
                     $uploadedDocument,
                     ['original_filename' => $uploadedDocument->original_filename],
@@ -62,11 +62,14 @@ final class UploadedDocumentController extends Controller
         );
     }
 
-    public function download(Tenant $tenant, UploadedDocument $uploadedDocument): StreamedResponse
-    {
+    public function download(
+        Tenant $tenant,
+        UploadedDocument $uploadedDocument,
+        LogAuditActivity $logAuditActivity,
+    ): StreamedResponse {
         $this->authorize('download', $uploadedDocument);
 
-        app(LogAuditActivity::class)(
+        $logAuditActivity->handle(
             AuditEvent::DocumentDownloaded,
             $uploadedDocument,
             ['original_filename' => $uploadedDocument->original_filename],

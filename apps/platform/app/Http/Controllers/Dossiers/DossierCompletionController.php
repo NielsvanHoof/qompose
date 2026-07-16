@@ -28,7 +28,7 @@ final class DossierCompletionController extends Controller
             abort(Response::HTTP_FORBIDDEN);
         }
 
-        $completeDossier($dossier, $user);
+        $completeDossier->handle($dossier, $user);
 
         Inertia::flash('toast', [
             'type' => 'success',

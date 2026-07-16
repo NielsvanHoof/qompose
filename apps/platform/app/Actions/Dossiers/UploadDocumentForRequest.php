@@ -33,7 +33,7 @@ final class UploadDocumentForRequest
      *
      * @param  (Closure(UploadedDocument, DocumentRequest): void)|null  $afterPersist
      */
-    public function __invoke(
+    public function handle(
         DocumentRequest $documentRequest,
         UploadedFile $file,
         ?Closure $afterPersist = null,

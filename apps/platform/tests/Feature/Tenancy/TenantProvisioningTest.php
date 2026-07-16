@@ -22,7 +22,7 @@ beforeEach(function () {
 test('tenant provisioning creates the complete tenant graph atomically', function () {
     $owner = User::factory()->create();
 
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     expect($tenant->slug)->toBe('acme-accountants')
         ->and(TenantMembership::query()
@@ -40,7 +40,7 @@ test('tenant provisioning rolls back the complete tenant graph when a later step
     $owner = User::factory()->create();
     $owner->delete();
 
-    expect(fn () => app(ProvisionTenant::class)('Acme Accountants', $owner))
+    expect(fn () => app(ProvisionTenant::class)->handle('Acme Accountants', $owner))
         ->toThrow(QueryException::class);
 
     expect(Tenant::query()->count())->toBe(0)
@@ -57,8 +57,8 @@ test('tenant provisioning increments a slug that is already reserved', function 
 
     $owner = User::factory()->create();
 
-    $secondTenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
-    $thirdTenant = app(ProvisionTenant::class)('Acme Accountants', User::factory()->create());
+    $secondTenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $thirdTenant = app(ProvisionTenant::class)->handle('Acme Accountants', User::factory()->create());
 
     expect($secondTenant->slug)->toBe('acme-accountants-2')
         ->and($thirdTenant->slug)->toBe('acme-accountants-3');
@@ -76,7 +76,7 @@ test('tenant provisioning retries when a slug is claimed during insertion', func
         SQL);
 
     try {
-        $tenant = app(ProvisionTenant::class)(
+        $tenant = app(ProvisionTenant::class)->handle(
             'Acme Accountants',
             User::factory()->create(),
         );

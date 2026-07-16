@@ -22,7 +22,7 @@ final class IssueClientPortalAccess
     /**
      * @return array{grant: ClientAccessGrant, plain_text_token: string}
      */
-    public function __invoke(
+    public function handle(
         Dossier $dossier,
         User $createdBy,
         int $expiresInDays,
@@ -34,13 +34,13 @@ final class IssueClientPortalAccess
             $expiresInDays,
             $sendInvite,
         ): array {
-            $result = ($this->createClientAccessGrant)(
+            $result = $this->createClientAccessGrant->handle(
                 $dossier,
                 $createdBy,
                 $expiresInDays,
             );
 
-            ($this->logAuditActivity)(
+            $this->logAuditActivity->handle(
                 AuditEvent::ClientPortalAccessGrantCreated,
                 $result['grant'],
                 [
@@ -52,13 +52,13 @@ final class IssueClientPortalAccess
             );
 
             if ($sendInvite) {
-                ($this->sendClientPortalInvite)(
+                $this->sendClientPortalInvite->handle(
                     $dossier,
                     $result['grant'],
                     $result['plain_text_token'],
                 );
 
-                ($this->logAuditActivity)(
+                $this->logAuditActivity->handle(
                     AuditEvent::ClientPortalInviteQueued,
                     $result['grant'],
                     [

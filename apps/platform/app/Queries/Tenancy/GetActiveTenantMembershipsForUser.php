@@ -16,7 +16,7 @@ final class GetActiveTenantMembershipsForUser
     /**
      * @return Collection<int, TenantMembership>
      */
-    public function __invoke(User $user): Collection
+    public function handle(User $user): Collection
     {
         return TenantMembership::query()
             ->with('tenant:id,name,slug')

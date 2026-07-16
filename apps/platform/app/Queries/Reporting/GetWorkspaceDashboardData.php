@@ -34,7 +34,7 @@ final class GetWorkspaceDashboardData
      *     }>
      * }
      */
-    public function __invoke(Tenant $tenant): array
+    public function handle(Tenant $tenant): array
     {
         $recentDossiersQuery = Dossier::query()
             ->whereBelongsTo($tenant)

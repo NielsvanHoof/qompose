@@ -12,7 +12,7 @@ final class ResolveClientAccessGrantFromToken
      * Look up a valid grant by the plain token from the magic link.
      * Bypasses the tenant global scope because no tenant is current yet.
      */
-    public function __invoke(string $plainTextToken): ?ClientAccessGrant
+    public function handle(string $plainTextToken): ?ClientAccessGrant
     {
         if ($plainTextToken === '') {
             return null;

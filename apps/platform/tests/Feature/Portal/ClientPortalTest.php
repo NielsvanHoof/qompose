@@ -44,7 +44,7 @@ beforeEach(function () {
 function createPortalDossierWithGrant(): array
 {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -59,7 +59,7 @@ function createPortalDossierWithGrant(): array
         'status' => DossierStatus::Draft,
     ]);
 
-    $result = app(CreateClientAccessGrant::class)($dossier, $owner, 7);
+    $result = app(CreateClientAccessGrant::class)->handle($dossier, $owner, 7);
 
     return [
         'owner' => $owner,
@@ -266,7 +266,7 @@ test('staff can email a portal invite when creating an access grant', function (
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create([
@@ -343,7 +343,7 @@ test('staff can create a portal link without emailing', function () {
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -470,7 +470,7 @@ test('grant issuance rolls back when its audit transaction fails', function () {
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create([

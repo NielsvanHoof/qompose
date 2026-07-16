@@ -46,7 +46,7 @@ test('users with one firm see its dashboard', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $user);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $user);
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -62,7 +62,7 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);

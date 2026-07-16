@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Enums\TenantMembershipStatus;
 use App\Models\Tenant;
-use App\Models\TenantMembership;
 use App\Models\User;
+use App\Queries\Tenancy\GetWorkspaceNavigationForUser;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
-use RuntimeException;
 
 final class HandleInertiaRequests extends Middleware
 {
+    public function __construct(
+        private readonly GetWorkspaceNavigationForUser $getWorkspaceNavigationForUser,
+    ) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -42,39 +45,25 @@ final class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user instanceof User
+                    ? [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                    ]
+                    : null,
             ],
-            'workspaces' => function () use ($request): array {
-                $user = $request->user();
-
-                if (! $user instanceof User) {
-                    return [];
-                }
-
-                $user->loadMissing('tenantMemberships.tenant');
-
-                return $user->tenantMemberships
-                    ->filter(fn ($membership): bool => $membership->status === TenantMembershipStatus::Active
-                        && $membership->tenant instanceof Tenant)
-                    ->map(function (TenantMembership $membership): array {
-                        $tenant = $membership->tenant;
-
-                        if (! $tenant instanceof Tenant) {
-                            throw new RuntimeException('Active workspace membership is missing its tenant.');
-                        }
-
-                        return [
-                            'name' => $tenant->name,
-                            'slug' => $tenant->slug,
-                        ];
-                    })
-                    ->values()
-                    ->all();
-            },
+            'workspaces' => $user instanceof User
+                ? Inertia::once(
+                    fn (): array => $this->getWorkspaceNavigationForUser->handle($user),
+                )->fresh($request->session()->pull('inertia.refresh.workspaces', false))
+                : [],
             'current_firm' => function (): ?array {
                 $tenant = Tenant::current();
 

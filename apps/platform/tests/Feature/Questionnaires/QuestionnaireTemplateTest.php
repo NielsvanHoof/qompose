@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Portal\CreateClientAccessGrant;
 use App\Actions\Tenancy\ProvisionTenant;
+use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
 use App\Enums\QuestionnaireItemType;
@@ -11,6 +12,7 @@ use App\Enums\QuestionnaireTemplateCategory;
 use App\Enums\Role;
 use App\Enums\TenantMembershipStatus;
 use App\Models\Client;
+use App\Models\Activity;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
@@ -30,7 +32,7 @@ beforeEach(function () {
 
 test('staff can view system and firm templates', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -54,7 +56,7 @@ test('staff can view system and firm templates', function () {
 
 test('system templates cannot be updated or deleted', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -77,7 +79,7 @@ test('system templates cannot be updated or deleted', function () {
 
 test('owner can copy a system template into the firm', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -116,7 +118,7 @@ test('owner can copy a system template into the firm', function () {
 test('read only staff cannot copy templates', function () {
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -140,7 +142,7 @@ test('read only staff cannot copy templates', function () {
 test('adviser can apply a template and edit dossier items', function () {
     $owner = User::factory()->create();
     $adviser = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -190,7 +192,10 @@ test('adviser can apply a template and edit dossier items', function () {
 
     expect($requests)->toHaveCount(1 + $system->items()->count())
         ->and($requests->first()->title)->toBe('Existing ad-hoc request')
-        ->and($requests->pluck('type')->contains(QuestionnaireItemType::Boolean))->toBeTrue();
+        ->and($requests->pluck('type')->contains(QuestionnaireItemType::Boolean))->toBeTrue()
+        ->and(Activity::query()
+            ->where('event', AuditEvent::DocumentRequestCreated->value)
+            ->count())->toBe($system->items()->count());
 
     $firstTemplateItem = $requests->skip(1)->first();
 
@@ -216,8 +221,8 @@ test('adviser can apply a template and edit dossier items', function () {
 test('firm templates are isolated between tenants', function () {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenant::class)('Tenant B', $ownerB);
+    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $ownerA);
+    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $ownerB);
 
     $tenantA->makeCurrent();
     $templateA = QuestionnaireTemplate::factory()->create([
@@ -233,7 +238,7 @@ test('firm templates are isolated between tenants', function () {
 
 test('owner can manage firm template items', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
@@ -256,9 +261,63 @@ test('owner can manage firm template items', function () {
         ->and($item->title)->toBe('Confirm completeness');
 });
 
+test('owner can reorder every firm template item', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $template = QuestionnaireTemplate::factory()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Custom pack',
+    ]);
+    $otherTemplate = QuestionnaireTemplate::factory()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Other pack',
+    ]);
+    $items = collect(range(0, 2))
+        ->map(fn (int $sortOrder): QuestionnaireTemplateItem => QuestionnaireTemplateItem::factory()->create([
+            'questionnaire_template_id' => $template->id,
+            'sort_order' => $sortOrder,
+        ]));
+    $foreignItem = QuestionnaireTemplateItem::factory()->create([
+        'questionnaire_template_id' => $otherTemplate->id,
+    ]);
+    $reorderedIds = $items->pluck('id')->reverse()->values()->all();
+    $showRoute = workspaceRoute('workspaces.templates.show', $tenant, ['template' => $template]);
+    $reorderRoute = workspaceRoute('workspaces.templates.items.reorder', $tenant, ['template' => $template]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post($reorderRoute, ['item_ids' => $reorderedIds])
+        ->assertRedirect($showRoute);
+
+    expect(QuestionnaireTemplateItem::query()
+        ->whereBelongsTo($template, 'template')
+        ->oldest('sort_order')
+        ->pluck('id')
+        ->all())->toBe($reorderedIds);
+
+    $this->from($showRoute)
+        ->post($reorderRoute, [
+            'item_ids' => [
+                $reorderedIds[0],
+                $reorderedIds[1],
+                $foreignItem->id,
+            ],
+        ])
+        ->assertRedirect($showRoute)
+        ->assertSessionHasErrors('item_ids');
+
+    expect(QuestionnaireTemplateItem::query()
+        ->whereBelongsTo($template, 'template')
+        ->oldest('sort_order')
+        ->pluck('id')
+        ->all())->toBe($reorderedIds);
+});
+
 test('guest can submit text and boolean answers through the portal', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -283,7 +342,7 @@ test('guest can submit text and boolean answers through the portal', function ()
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $result = app(CreateClientAccessGrant::class)($dossier, $owner, 7);
+    $result = app(CreateClientAccessGrant::class)->handle($dossier, $owner, 7);
     $plainTextToken = $result['plain_text_token'];
     $grant = $result['grant'];
 

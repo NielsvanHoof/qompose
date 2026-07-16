@@ -16,7 +16,7 @@ final class RevokeClientPortalAccess
         private readonly LogAuditActivity $logAuditActivity,
     ) {}
 
-    public function __invoke(ClientAccessGrant $grant, User $revokedBy): ClientAccessGrant
+    public function handle(ClientAccessGrant $grant, User $revokedBy): ClientAccessGrant
     {
         return DB::transaction(function () use ($grant, $revokedBy): ClientAccessGrant {
             $grantQuery = ClientAccessGrant::query()->whereKey($grant->getKey());
@@ -29,7 +29,7 @@ final class RevokeClientPortalAccess
 
             $lockedGrant->update(['revoked_at' => now()]);
 
-            ($this->logAuditActivity)(
+            $this->logAuditActivity->handle(
                 AuditEvent::ClientPortalAccessGrantRevoked,
                 $lockedGrant,
                 ['dossier_id' => $lockedGrant->dossier_id],

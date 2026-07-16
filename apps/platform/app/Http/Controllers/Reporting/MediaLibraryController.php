@@ -30,7 +30,7 @@ final class MediaLibraryController extends Controller
 
         return Inertia::render('workspaces/media/index', [
             'can_download' => $canDownload,
-            'documents' => $getMediaLibraryDocuments(),
+            'documents' => $getMediaLibraryDocuments->handle(),
         ]);
     }
 }

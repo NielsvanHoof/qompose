@@ -69,7 +69,7 @@ final class GetDossierShowData
      *     }
      * }
      */
-    public function __invoke(Dossier $dossier): array
+    public function handle(Dossier $dossier): array
     {
         $dossier->load([
             'client:id,name,email',

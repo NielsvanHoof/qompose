@@ -19,7 +19,7 @@ final class CreateClientAccessGrant
      *
      * @return array{grant: ClientAccessGrant, plain_text_token: string}
      */
-    public function __invoke(Dossier $dossier, User $createdBy, int $expiresInDays = 7): array
+    public function handle(Dossier $dossier, User $createdBy, int $expiresInDays = 7): array
     {
         return DB::transaction(function () use ($dossier, $createdBy, $expiresInDays): array {
             $dossierQuery = Dossier::query()->whereKey($dossier->getKey());

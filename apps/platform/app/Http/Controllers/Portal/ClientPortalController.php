@@ -31,7 +31,7 @@ final class ClientPortalController extends Controller
         DB::transaction(function () use ($grant, $logAuditActivity): void {
             $grant->forceFill(['last_used_at' => now()])->save();
 
-            $logAuditActivity(
+            $logAuditActivity->handle(
                 AuditEvent::ClientPortalAccessed,
                 $grant,
                 [
@@ -43,7 +43,7 @@ final class ClientPortalController extends Controller
 
         return Inertia::render('portal/show', [
             'token' => $token,
-            ...$getClientPortalData($grant),
+            ...$getClientPortalData->handle($grant),
         ]);
     }
 

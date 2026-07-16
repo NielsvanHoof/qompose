@@ -15,7 +15,7 @@ final class CopyQuestionnaireTemplate
     /**
      * Deep-clone a system or firm template into the current tenant.
      */
-    public function __invoke(QuestionnaireTemplate $source): QuestionnaireTemplate
+    public function handle(QuestionnaireTemplate $source): QuestionnaireTemplate
     {
         $tenant = Tenant::current();
 

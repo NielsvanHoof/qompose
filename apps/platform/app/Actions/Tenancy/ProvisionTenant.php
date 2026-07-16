@@ -20,7 +20,7 @@ use function setPermissionsTeamId;
 
 final class ProvisionTenant
 {
-    public function __invoke(
+    public function handle(
         string $name,
         User $owner,
         ?string $slug = null,

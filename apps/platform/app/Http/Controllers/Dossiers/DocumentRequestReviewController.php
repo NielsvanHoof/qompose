@@ -36,7 +36,7 @@ final class DocumentRequestReviewController extends Controller
         $decision = DocumentRequestStatus::from((string) $request->validated('decision'));
         $rejectionReason = $request->validated('rejection_reason');
 
-        $reviewDocumentRequest(
+        $reviewDocumentRequest->handle(
             $documentRequest,
             $user,
             $decision,

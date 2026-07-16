@@ -35,7 +35,7 @@ final class ResolveClientPortalGrant
 
         $plainTextToken = (string) $request->route('token', '');
 
-        $grant = ($this->resolveClientAccessGrantFromToken)($plainTextToken);
+        $grant = $this->resolveClientAccessGrantFromToken->handle($plainTextToken);
 
         if (! $grant instanceof ClientAccessGrant) {
             abort(Response::HTTP_NOT_FOUND);

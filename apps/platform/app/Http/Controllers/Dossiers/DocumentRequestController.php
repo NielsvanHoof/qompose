@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dossiers;
 
-use App\Actions\Audit\LogAuditActivity;
 use App\Actions\Dossiers\ApplyQuestionnaireTemplateToDossier;
+use App\Actions\Dossiers\CreateDocumentRequest;
 use App\Actions\Dossiers\DeleteDocumentRequest;
+use App\Actions\Dossiers\ReorderDocumentRequests;
 use App\Actions\Dossiers\SubmitQuestionnaireAnswer;
-use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\ApplyQuestionnaireTemplateRequest;
 use App\Http\Requests\Dossiers\ReorderDocumentRequestsRequest;
@@ -20,7 +20,6 @@ use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 
 final class DocumentRequestController extends Controller
 {
@@ -28,19 +27,9 @@ final class DocumentRequestController extends Controller
         Tenant $tenant,
         StoreDocumentRequestRequest $request,
         Dossier $dossier,
+        CreateDocumentRequest $createDocumentRequest,
     ): RedirectResponse {
-        // Aggregates live on the base query builder for strict PHPStan.
-        $nextSortOrder = (int) $dossier->documentRequests()->toBase()->max('sort_order') + 1;
-
-        $documentRequest = $dossier->documentRequests()->create([
-            ...$request->validated(),
-            'sort_order' => $nextSortOrder,
-        ]);
-
-        app(LogAuditActivity::class)(
-            AuditEvent::DocumentRequestCreated,
-            $documentRequest,
-        );
+        $createDocumentRequest->handle($dossier, $request->validated());
 
         return $this->redirectToDossier($dossier);
     }
@@ -68,7 +57,7 @@ final class DocumentRequestController extends Controller
         $this->authorize('delete', $documentRequest);
         abort_unless($documentRequest->dossier_id === $dossier->id, 404);
 
-        $deleteDocumentRequest($documentRequest);
+        $deleteDocumentRequest->handle($documentRequest);
 
         return $this->redirectToDossier($dossier);
     }
@@ -77,27 +66,12 @@ final class DocumentRequestController extends Controller
         Tenant $tenant,
         ReorderDocumentRequestsRequest $request,
         Dossier $dossier,
+        ReorderDocumentRequests $reorderDocumentRequests,
     ): RedirectResponse {
-        $ids = array_map('intval', $request->validated('document_request_ids'));
-        $ownedIds = $dossier->documentRequests()
-            ->toBase()
-            ->pluck('id')
-            ->map(fn ($id): int => (int) $id)
-            ->all();
-
-        abort_unless(
-            count($ids) === count($ownedIds)
-            && array_diff($ids, $ownedIds) === [],
-            422,
+        $reorderDocumentRequests->handle(
+            $dossier,
+            $request->array('document_request_ids'),
         );
-
-        DB::transaction(function () use ($ids): void {
-            foreach ($ids as $index => $id) {
-                DocumentRequest::query()
-                    ->whereKey($id)
-                    ->update(['sort_order' => $index]);
-            }
-        });
 
         return $this->redirectToDossier($dossier);
     }
@@ -114,14 +88,7 @@ final class DocumentRequestController extends Controller
             ->whereKey($templateId)
             ->firstOrFail();
 
-        $created = $applyQuestionnaireTemplateToDossier($dossier, $template);
-
-        foreach ($created as $documentRequest) {
-            app(LogAuditActivity::class)(
-                AuditEvent::DocumentRequestCreated,
-                $documentRequest,
-            );
-        }
+        $applyQuestionnaireTemplateToDossier->handle($dossier, $template);
 
         return $this->redirectToDossier($dossier);
     }
@@ -137,7 +104,7 @@ final class DocumentRequestController extends Controller
 
         $validated = $request->validated();
 
-        $submitQuestionnaireAnswer(
+        $submitQuestionnaireAnswer->handle(
             $documentRequest,
             $validated['answer_text'] ?? null,
             array_key_exists('answer_boolean', $validated)

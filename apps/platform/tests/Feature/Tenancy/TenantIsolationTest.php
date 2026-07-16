@@ -24,7 +24,7 @@ beforeEach(function () {
 
 test('tenant member can view dossiers in their workspace', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -49,7 +49,7 @@ test('tenant member can view dossiers in their workspace', function () {
 test('users cannot access workspaces they do not belong to', function () {
     $owner = User::factory()->create();
     $outsider = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -70,8 +70,8 @@ test('users cannot read dossiers from another tenant via id guessing', function 
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
 
-    $tenantA = app(ProvisionTenant::class)('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenant::class)('Tenant B', $ownerB);
+    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $ownerA);
+    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $ownerB);
 
     $tenantB->makeCurrent();
     setPermissionsTeamId($tenantB->id);
@@ -91,8 +91,8 @@ test('users cannot read dossiers from another tenant via id guessing', function 
 test('the workspace in the url takes precedence over the session tenant', function () {
     $user = User::factory()->create();
 
-    $tenantA = app(ProvisionTenant::class)('Tenant A', $user, ownerRole: Role::Owner);
-    $tenantB = app(ProvisionTenant::class)('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
+    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $user, ownerRole: Role::Owner);
+    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenantB->id,
@@ -117,8 +117,8 @@ test('the workspace in the url takes precedence over the session tenant', functi
 test('members can switch their active firm', function () {
     $user = User::factory()->create();
 
-    $tenantA = app(ProvisionTenant::class)('Tenant A', $user, ownerRole: Role::Owner);
-    $tenantB = app(ProvisionTenant::class)('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
+    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $user, ownerRole: Role::Owner);
+    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenantB->id,
@@ -144,8 +144,8 @@ test('members can switch their active firm', function () {
 
 test('users cannot activate a firm they do not belong to', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Tenant A', $owner);
-    $foreignTenant = app(ProvisionTenant::class)('Tenant B', User::factory()->create());
+    $tenant = app(ProvisionTenant::class)->handle('Tenant A', $owner);
+    $foreignTenant = app(ProvisionTenant::class)->handle('Tenant B', User::factory()->create());
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -156,7 +156,7 @@ test('users cannot activate a firm they do not belong to', function () {
 test('read only members cannot create dossiers', function () {
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -186,7 +186,7 @@ test('tenant routes are registered with the expected middleware', function () {
 
 test('workspace pages load tenant memberships only once', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
 
     DB::flushQueryLog();
     DB::enableQueryLog();

@@ -20,7 +20,7 @@ final class CompleteDossier
         private readonly LogAuditActivity $logAuditActivity,
     ) {}
 
-    public function __invoke(Dossier $dossier, User $completedBy): Dossier
+    public function handle(Dossier $dossier, User $completedBy): Dossier
     {
         return DB::transaction(function () use ($dossier, $completedBy): Dossier {
             $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
@@ -53,7 +53,7 @@ final class CompleteDossier
 
             $lockedDossier->update(['status' => DossierStatus::Completed]);
 
-            ($this->logAuditActivity)(
+            $this->logAuditActivity->handle(
                 AuditEvent::DossierCompleted,
                 $lockedDossier,
                 ['document_request_count' => $requestCount],

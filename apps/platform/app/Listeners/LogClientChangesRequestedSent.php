@@ -45,7 +45,7 @@ final class LogClientChangesRequestedSent
             }
 
             $tenant->execute(function () use ($documentRequest, $event): void {
-                ($this->logAuditActivity)(
+                $this->logAuditActivity->handle(
                     AuditEvent::ClientChangesRequestedSent,
                     $documentRequest,
                     [

@@ -21,7 +21,7 @@ final class ClientController extends Controller
         $this->authorize('viewAny', Client::class);
 
         return Inertia::render('clients/index', [
-            'clients' => $getClientIndexData(),
+            'clients' => $getClientIndexData->handle(),
         ]);
     }
 

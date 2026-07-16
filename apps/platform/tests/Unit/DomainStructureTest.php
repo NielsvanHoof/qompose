@@ -63,3 +63,23 @@ test('frontend business code keeps inertia pages grouped by domain', function ()
         expect(is_file($root.'/'.$typeFile))->toBeTrue();
     }
 });
+
+test('controllers do not resolve dependencies through service locators', function () {
+    $controllers = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator(
+            dirname(__DIR__, 2).'/app/Http/Controllers',
+            FilesystemIterator::SKIP_DOTS,
+        ),
+    );
+
+    foreach ($controllers as $controller) {
+        if (! $controller->isFile() || $controller->getExtension() !== 'php') {
+            continue;
+        }
+
+        $contents = file_get_contents($controller->getPathname());
+
+        expect($contents)->not->toBeFalse()
+            ->and(preg_match('/\b(?:app|resolve)\s*\(/', (string) $contents))->toBe(0);
+    }
+});

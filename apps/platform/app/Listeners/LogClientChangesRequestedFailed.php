@@ -45,7 +45,7 @@ final class LogClientChangesRequestedFailed
             }
 
             $tenant->execute(function () use ($documentRequest, $event): void {
-                ($this->logAuditActivity)(
+                $this->logAuditActivity->handle(
                     AuditEvent::ClientChangesRequestedFailed,
                     $documentRequest,
                     [

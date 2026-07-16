@@ -24,7 +24,7 @@ test('profile page keeps the active firm in shared props for sidebar navigation'
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)('Acme Accountants', $user);
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $user);
 
     $this->actingAs($user)
         ->withSession(['active_tenant_id' => $tenant->id])
