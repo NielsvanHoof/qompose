@@ -9,17 +9,23 @@ use App\Enums\QuestionnaireItemType;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 use function is_int;
 use function is_string;
+use function sprintf;
 
 final class UploadDocumentForRequest
 {
+    public function __construct(
+        private readonly FilesystemManager $filesystems,
+    ) {}
+
     /**
      * Store a file for a document request and mark the request as submitted.
      * Replaces any previous upload for the same request.
@@ -37,39 +43,108 @@ final class UploadDocumentForRequest
             $documentRequest->dossier_id,
         );
 
-        return DB::transaction(function () use ($documentRequest, $file, $disk, $directory): UploadedDocument {
-            $existing = $documentRequest->uploadedDocument;
+        $extension = $file->getClientOriginalExtension();
+        $filename = Str::uuid()->toString().($extension !== '' ? '.'.$extension : '');
+        $path = $this->filesystems
+            ->disk($disk)
+            ->putFileAs($directory, $file, $filename);
 
-            if ($existing instanceof UploadedDocument) {
-                Storage::disk($existing->disk)->delete($existing->path);
-                $existing->delete();
-            }
+        if (! is_string($path) || $path === '') {
+            throw new RuntimeException('Failed to store the uploaded document.');
+        }
 
-            $extension = $file->getClientOriginalExtension();
-            $filename = Str::uuid()->toString().($extension !== '' ? '.'.$extension : '');
-            $path = $file->storeAs($directory, $filename, $disk);
+        $sizeBytes = $file->getSize();
 
-            if (! is_string($path) || $path === '') {
-                throw new RuntimeException('Failed to store the uploaded document.');
-            }
+        /** @var array{disk: string, path: string}|null $replacedFile */
+        $replacedFile = null;
 
-            $sizeBytes = $file->getSize();
+        try {
+            $uploadedDocument = DB::transaction(function () use (
+                $documentRequest,
+                $disk,
+                $path,
+                $file,
+                $sizeBytes,
+                &$replacedFile,
+            ): UploadedDocument {
+                $documentRequestQuery = DocumentRequest::query()
+                    ->whereKey($documentRequest->getKey());
+                $documentRequestQuery->getQuery()->lockForUpdate();
 
-            $uploadedDocument = $documentRequest->uploadedDocument()->create([
-                'disk' => $disk,
-                'path' => $path,
-                'original_filename' => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
-                'size_bytes' => is_int($sizeBytes) ? $sizeBytes : 0,
-                'uploaded_at' => now(),
-            ]);
+                $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
+                $existing = UploadedDocument::query()
+                    ->where('document_request_id', $lockedDocumentRequest->id)
+                    ->first();
 
-            $documentRequest->update([
-                'status' => DocumentRequestStatus::Submitted,
-                'answered_at' => now(),
-            ]);
+                $attributes = [
+                    'disk' => $disk,
+                    'path' => $path,
+                    'original_filename' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
+                    'size_bytes' => is_int($sizeBytes) ? $sizeBytes : 0,
+                    'uploaded_at' => now(),
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                    'rejection_reason' => null,
+                ];
 
-            return $uploadedDocument;
-        });
+                if ($existing instanceof UploadedDocument) {
+                    $replacedFile = [
+                        'disk' => $existing->disk,
+                        'path' => $existing->path,
+                    ];
+
+                    $existing->update($attributes);
+                    $uploadedDocument = $existing;
+                } else {
+                    $uploadedDocument = $lockedDocumentRequest
+                        ->uploadedDocument()
+                        ->create($attributes);
+                }
+
+                $lockedDocumentRequest->update([
+                    'status' => DocumentRequestStatus::Submitted,
+                    'answered_at' => now(),
+                ]);
+
+                return $uploadedDocument;
+            });
+        } catch (Throwable $exception) {
+            $this->deleteFileWithoutMaskingFailure(
+                $disk,
+                $path,
+                'Failed to remove a newly uploaded document after its database transaction rolled back.',
+            );
+
+            throw $exception;
+        }
+
+        if ($replacedFile !== null && $replacedFile['path'] !== $path) {
+            $this->deleteFileWithoutMaskingFailure(
+                $replacedFile['disk'],
+                $replacedFile['path'],
+                'Failed to remove the file replaced by a newer document upload.',
+            );
+        }
+
+        return $uploadedDocument;
+    }
+
+    private function deleteFileWithoutMaskingFailure(
+        string $disk,
+        string $path,
+        string $message,
+    ): void {
+        try {
+            $deleted = $this->filesystems->disk($disk)->delete($path);
+        } catch (Throwable $exception) {
+            report(new RuntimeException($message, previous: $exception));
+
+            return;
+        }
+
+        if (! $deleted) {
+            report(new RuntimeException($message));
+        }
     }
 }

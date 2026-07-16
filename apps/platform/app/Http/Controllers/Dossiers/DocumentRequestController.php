@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Dossiers;
 
 use App\Actions\Audit\LogAuditActivity;
 use App\Actions\Dossiers\ApplyQuestionnaireTemplateToDossier;
+use App\Actions\Dossiers\DeleteDocumentRequest;
 use App\Actions\Dossiers\SubmitQuestionnaireAnswer;
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
@@ -61,12 +62,13 @@ final class DocumentRequestController extends Controller
         Tenant $tenant,
         Dossier $dossier,
         DocumentRequest $documentRequest,
+        DeleteDocumentRequest $deleteDocumentRequest,
     ): RedirectResponse {
         $this->authorize('view', $dossier);
         $this->authorize('delete', $documentRequest);
         abort_unless($documentRequest->dossier_id === $dossier->id, 404);
 
-        $documentRequest->delete();
+        $deleteDocumentRequest($documentRequest);
 
         return $this->redirectToDossier($dossier);
     }
