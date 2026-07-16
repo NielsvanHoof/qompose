@@ -20,6 +20,56 @@ pest()->extend(TestCase::class)
  // ->use(RefreshDatabase::class)
     ->in('Feature');
 
+pest()->presets()->custom('qompose', function () {
+    return [
+        expect('App')
+            ->toUseStrictTypes(),
+
+        expect('App\Actions')
+            ->classes()
+            ->toBeFinal()
+            ->toBeInvokable()
+            ->ignoring([
+                'App\Actions\Accounts',
+                'App\Actions\Audit\LogTenantActivityAction',
+            ]),
+
+        expect('App\Queries')
+            ->classes()
+            ->toBeFinal()
+            ->toBeInvokable(),
+
+        expect('App\Http\Controllers\Controller')
+            ->toBeAbstract(),
+
+        expect('App\Http\Controllers')
+            ->classes()
+            ->toExtend('App\Http\Controllers\Controller')
+            ->toHaveSuffix('Controller')
+            ->not->toHavePublicMethodsBesides([
+                '__construct',
+                '__invoke',
+                'index',
+                'show',
+                'create',
+                'store',
+                'edit',
+                'update',
+                'destroy',
+                'middleware',
+                // Domain-specific controller actions beyond REST defaults.
+                'copy',
+                'reorder',
+                'applyTemplate',
+                'answer',
+                'download',
+            ]),
+
+        expect('App\Models\Activity')
+            ->toExtend('Spatie\Activitylog\Models\Activity'),
+    ];
+});
+
 /*
 |--------------------------------------------------------------------------
 | Expectations
