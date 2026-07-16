@@ -125,5 +125,14 @@ jobs:
       - name: Run Type Analysis
         run: composer types:check
 
-      - name: Tests
-        run: php artisan test
+      - name: Test Backend with Coverage
+        run: composer test:coverage
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: platform-backend-coverage
+          path: apps/platform/coverage
+          if-no-files-found: warn
+          retention-days: 14
