@@ -43,16 +43,6 @@ final class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
     }
 
-    private function configurePolicies(): void
-    {
-        Gate::policy(Client::class, ClientPolicy::class);
-        Gate::policy(ClientAccessGrant::class, ClientAccessGrantPolicy::class);
-        Gate::policy(DocumentRequest::class, DocumentRequestPolicy::class);
-        Gate::policy(Dossier::class, DossierPolicy::class);
-        Gate::policy(QuestionnaireTemplate::class, QuestionnaireTemplatePolicy::class);
-        Gate::policy(UploadedDocument::class, UploadedDocumentPolicy::class);
-    }
-
     /**
      * Configure default behaviors for production-ready applications.
      */
@@ -77,5 +67,15 @@ final class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict();
 
         Model::automaticallyEagerLoadRelationships();
+    }
+
+    private function configurePolicies(): void
+    {
+        Gate::policy(Client::class, ClientPolicy::class);
+        Gate::policy(ClientAccessGrant::class, ClientAccessGrantPolicy::class);
+        Gate::policy(DocumentRequest::class, DocumentRequestPolicy::class);
+        Gate::policy(Dossier::class, DossierPolicy::class);
+        Gate::policy(QuestionnaireTemplate::class, QuestionnaireTemplatePolicy::class);
+        Gate::policy(UploadedDocument::class, UploadedDocumentPolicy::class);
     }
 }

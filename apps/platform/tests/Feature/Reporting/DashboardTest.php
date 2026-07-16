@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Enums\Role;
+use App\Actions\Tenancy\ProvisionTenant;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Enums\Role;
+use App\Enums\TenantMembershipStatus;
 use App\Models\Client;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
@@ -99,7 +100,7 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
     DocumentRequest::factory()->create([
         'tenant_id' => $foreignTenant->id,
         'dossier_id' => $foreignDossier->id,
-        'status' => DocumentRequestStatus::Pending,
+        'status' => DocumentRequestStatus::Rejected,
     ]);
 
     $tenant->makeCurrent();
@@ -119,11 +120,17 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
 
 test('users with multiple firms can choose which firm to open', function () {
     $user = User::factory()->create();
-    $firstTenant = Tenant::factory()->create(['name' => 'Acme Accountants', 'slug' => 'acme-accountants']);
-    $secondTenant = Tenant::factory()->create(['name' => 'Beta Tax', 'slug' => 'beta-tax']);
+    $betaTenant = Tenant::factory()->create(['name' => 'Beta Tax', 'slug' => 'beta-tax']);
+    $acmeTenant = Tenant::factory()->create(['name' => 'Acme Accountants', 'slug' => 'acme-accountants']);
+    $inactiveTenant = Tenant::factory()->create(['name' => 'Dormant Firm', 'slug' => 'dormant-firm']);
 
-    TenantMembership::factory()->create(['tenant_id' => $firstTenant->id, 'user_id' => $user->id]);
-    TenantMembership::factory()->create(['tenant_id' => $secondTenant->id, 'user_id' => $user->id]);
+    TenantMembership::factory()->create(['tenant_id' => $betaTenant->id, 'user_id' => $user->id]);
+    TenantMembership::factory()->create(['tenant_id' => $acmeTenant->id, 'user_id' => $user->id]);
+    TenantMembership::factory()->create([
+        'tenant_id' => $inactiveTenant->id,
+        'user_id' => $user->id,
+        'status' => TenantMembershipStatus::Suspended,
+    ]);
 
     $this->actingAs($user)
         ->get(route('dashboard'))

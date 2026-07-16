@@ -10,8 +10,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Questionnaires\StoreQuestionnaireTemplateRequest;
 use App\Http\Requests\Questionnaires\UpdateQuestionnaireTemplateRequest;
 use App\Models\QuestionnaireTemplate;
-use App\Models\QuestionnaireTemplateItem;
 use App\Models\Tenant;
+use App\Queries\Questionnaires\GetQuestionnaireTemplateIndexData;
+use App\Queries\Questionnaires\GetQuestionnaireTemplateShowData;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,25 +20,13 @@ use RuntimeException;
 
 final class QuestionnaireTemplateController extends Controller
 {
-    public function index(): Response
-    {
+    public function index(
+        GetQuestionnaireTemplateIndexData $getQuestionnaireTemplateIndexData,
+    ): Response {
         $this->authorize('viewAny', QuestionnaireTemplate::class);
 
-        // oldest('name') instead of orderBy — Eloquent orderBy trips phpstan-strict-rules.
-        $templates = QuestionnaireTemplate::queryVisibleToCurrentTenant()
-            ->withCount('items')
-            ->oldest('name')
-            ->get();
-
         return Inertia::render('questionnaires/index', [
-            'system_templates' => $templates
-                ->filter(fn (QuestionnaireTemplate $template): bool => $template->isSystem())
-                ->values()
-                ->map(fn (QuestionnaireTemplate $template): array => $this->summary($template)),
-            'firm_templates' => $templates
-                ->filter(fn (QuestionnaireTemplate $template): bool => ! $template->isSystem())
-                ->values()
-                ->map(fn (QuestionnaireTemplate $template): array => $this->summary($template)),
+            ...$getQuestionnaireTemplateIndexData(),
             'categories' => collect(QuestionnaireTemplateCategory::cases())
                 ->map(fn (QuestionnaireTemplateCategory $category): array => [
                     'value' => $category->value,
@@ -76,28 +65,14 @@ final class QuestionnaireTemplateController extends Controller
         return to_route('workspaces.templates.show', $template);
     }
 
-    public function show(QuestionnaireTemplate $template): Response
-    {
+    public function show(
+        QuestionnaireTemplate $template,
+        GetQuestionnaireTemplateShowData $getQuestionnaireTemplateShowData,
+    ): Response {
         $this->authorize('view', $template);
 
-        $template->load(['items' => fn ($query) => $query->oldest('sort_order')->oldest('id')]);
-
         return Inertia::render('questionnaires/show', [
-            'template' => [
-                'id' => $template->id,
-                'name' => $template->name,
-                'description' => $template->description,
-                'category' => $template->category->value,
-                'category_label' => $template->category->label(),
-                'is_system' => $template->isSystem(),
-                'items' => $template->items->map(fn (QuestionnaireTemplateItem $item): array => [
-                    'id' => $item->id,
-                    'type' => $item->type->value,
-                    'title' => $item->title,
-                    'instructions' => $item->instructions,
-                    'sort_order' => $item->sort_order,
-                ]),
-            ],
+            'template' => $getQuestionnaireTemplateShowData($template),
             'categories' => collect(QuestionnaireTemplateCategory::cases())
                 ->map(fn (QuestionnaireTemplateCategory $category): array => [
                     'value' => $category->value,
@@ -135,21 +110,5 @@ final class QuestionnaireTemplateController extends Controller
         $copy = $copyQuestionnaireTemplate($template);
 
         return to_route('workspaces.templates.show', $copy);
-    }
-
-    /**
-     * @return array{id: int, name: string, description: string|null, category: string, category_label: string, items_count: int, is_system: bool}
-     */
-    private function summary(QuestionnaireTemplate $template): array
-    {
-        return [
-            'id' => $template->id,
-            'name' => $template->name,
-            'description' => $template->description,
-            'category' => $template->category->value,
-            'category_label' => $template->category->label(),
-            'items_count' => $template->items_count,
-            'is_system' => $template->isSystem(),
-        ];
     }
 }

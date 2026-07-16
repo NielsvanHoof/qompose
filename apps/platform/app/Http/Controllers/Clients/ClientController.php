@@ -8,28 +8,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Clients\StoreClientRequest;
 use App\Models\Client;
 use App\Models\Dossier;
+use App\Queries\Clients\GetClientIndexData;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final class ClientController extends Controller
 {
-    public function index(): Response
+    public function index(GetClientIndexData $getClientIndexData): Response
     {
         $this->authorize('viewAny', Client::class);
 
         return Inertia::render('clients/index', [
-            'clients' => Client::query()
-                ->withCount('dossiers')
-                ->get(['id', 'name', 'email'])
-                ->sortBy('name')
-                ->values()
-                ->map(fn (Client $client): array => [
-                    'id' => $client->id,
-                    'name' => $client->name,
-                    'email' => $client->email,
-                    'dossiers_count' => $client->dossiers_count,
-                ]),
+            'clients' => $getClientIndexData(),
         ]);
     }
 

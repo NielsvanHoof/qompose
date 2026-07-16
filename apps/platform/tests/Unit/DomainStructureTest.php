@@ -18,6 +18,12 @@ test('backend business code is organized by domain', function () {
         'app/Http/Requests/Dossiers',
         'app/Http/Requests/Portal',
         'app/Http/Requests/Questionnaires',
+        'app/Queries/Clients',
+        'app/Queries/Dossiers',
+        'app/Queries/Portal',
+        'app/Queries/Questionnaires',
+        'app/Queries/Reporting',
+        'app/Queries/Tenancy',
     ] as $directory) {
         expect(is_dir($root.'/'.$directory))->toBeTrue();
     }
@@ -26,6 +32,7 @@ test('backend business code is organized by domain', function () {
         'app/Actions/Workspace',
         'app/Http/Controllers/Workspace',
         'app/Http/Requests/Workspace',
+        'app/Queries/Workspace',
     ] as $legacyDirectory) {
         expect(glob($root.'/'.$legacyDirectory.'/*.php') ?: [])->toBeEmpty();
     }

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
 use App\Actions\Portal\CreateClientAccessGrant;
+use App\Actions\Tenancy\ProvisionTenant;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
 use App\Models\Client;

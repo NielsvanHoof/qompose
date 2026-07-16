@@ -24,12 +24,12 @@ final class SubmitQuestionnaireAnswer
         }
 
         if ($documentRequest->type === QuestionnaireItemType::Text) {
-            if ($answerText === null || trim($answerText) === '') {
+            if ($answerText === null || mb_trim($answerText) === '') {
                 throw new InvalidArgumentException('A text answer is required.');
             }
 
             $documentRequest->update([
-                'answer_text' => trim($answerText),
+                'answer_text' => mb_trim($answerText),
                 'answer_boolean' => null,
                 'answered_at' => now(),
                 'status' => DocumentRequestStatus::Submitted,
