@@ -21,6 +21,7 @@ final class GetWorkspaceDashboardData
      *         open_dossiers: int,
      *         awaiting_client: int,
      *         in_review: int,
+     *         submitted_document_requests: int,
      *         outstanding_document_requests: int
      *     },
      *     recent_dossiers: array<int, array{
@@ -53,6 +54,12 @@ final class GetWorkspaceDashboardData
             DocumentRequestStatus::Rejected->value,
         ]);
 
+        $submittedDocumentRequests = DocumentRequest::query()
+            ->whereBelongsTo($tenant)
+            ->where('status', DocumentRequestStatus::Submitted)
+            ->toBase()
+            ->count();
+
         return [
             'metrics' => [
                 'clients' => Client::query()
@@ -74,6 +81,7 @@ final class GetWorkspaceDashboardData
                     ->where('status', DossierStatus::InReview)
                     ->toBase()
                     ->count(),
+                'submitted_document_requests' => $submittedDocumentRequests,
                 'outstanding_document_requests' => $outstandingDocumentRequestsQuery
                     ->toBase()
                     ->count(),

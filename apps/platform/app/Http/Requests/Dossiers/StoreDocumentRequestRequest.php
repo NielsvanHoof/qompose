@@ -27,7 +27,7 @@ final class StoreDocumentRequestRequest extends FormRequest
         $user = $this->user();
 
         return $user !== null
-            && $user->can('view', $dossier)
+            && $user->can('update', $dossier)
             && $user->can('create', DocumentRequest::class);
     }
 

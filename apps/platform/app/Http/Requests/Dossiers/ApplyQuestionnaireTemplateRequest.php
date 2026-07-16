@@ -17,7 +17,7 @@ final class ApplyQuestionnaireTemplateRequest extends FormRequest
         $dossier = $this->route('dossier');
         $user = $this->user();
 
-        if ($user === null || ! $dossier instanceof Dossier || ! $user->can('view', $dossier)) {
+        if ($user === null || ! $dossier instanceof Dossier || ! $user->can('update', $dossier)) {
             return false;
         }
 

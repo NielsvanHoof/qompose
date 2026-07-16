@@ -91,6 +91,11 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
         'dossier_id' => $inReview->id,
         'status' => DocumentRequestStatus::Rejected,
     ]);
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $inReview->id,
+        'status' => DocumentRequestStatus::Submitted,
+    ]);
 
     $foreignTenant = Tenant::factory()->create();
     $foreignTenant->makeCurrent();
@@ -118,6 +123,7 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
             ->where('metrics.open_dossiers', 2)
             ->where('metrics.awaiting_client', 1)
             ->where('metrics.in_review', 1)
+            ->where('metrics.submitted_document_requests', 1)
             ->where('metrics.outstanding_document_requests', 2));
 });
 

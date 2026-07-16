@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Dossiers;
 
 use App\Actions\Audit\LogAuditActivity;
 use App\Enums\AuditEvent;
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreDossierRequest;
 use App\Models\Dossier;
@@ -68,6 +69,9 @@ final class DossierController extends Controller
         return Inertia::render('dossiers/show', [
             'access_grant_token' => $this->flashedAccessGrantToken($request),
             'access_grant_portal_url' => $this->flashedAccessGrantPortalUrl($request),
+            'can_manage' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
+            'can_review' => $request->user()?->can(Permission::ReviewDocuments->value) ?? false,
+            'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
             ...$data,
         ]);
     }

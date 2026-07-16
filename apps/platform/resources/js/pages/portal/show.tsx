@@ -57,9 +57,17 @@ export default function PortalShow({
                         </div>
                     )}
 
+                    {dossier.status === 'completed' && (
+                        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+                            This dossier has been completed. Your submitted
+                            information is now read-only.
+                        </div>
+                    )}
+
                     <PortalDocumentRequestsCard
                         token={token}
                         firmName={firm.name}
+                        dossierStatus={dossier.status}
                         documentRequests={dossier.document_requests}
                     />
 

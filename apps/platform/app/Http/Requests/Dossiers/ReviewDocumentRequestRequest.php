@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Dossiers;
 
-use App\Enums\QuestionnaireItemType;
+use App\Enums\DocumentRequestStatus;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-final class UpdateDocumentRequestRequest extends FormRequest
+final class ReviewDocumentRequestRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -23,17 +23,26 @@ final class UpdateDocumentRequestRequest extends FormRequest
             && $dossier instanceof Dossier
             && $documentRequest instanceof DocumentRequest
             && $documentRequest->dossier_id === $dossier->id
-            && $user->can('update', $dossier)
-            && $user->can('update', $documentRequest);
+            && $user->can('review', $documentRequest);
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
         return [
-            'type' => ['required', Rule::enum(QuestionnaireItemType::class)],
-            'title' => ['required', 'string', 'max:255'],
-            'instructions' => ['nullable', 'string', 'max:2000'],
+            'decision' => [
+                'required',
+                Rule::in([
+                    DocumentRequestStatus::Accepted->value,
+                    DocumentRequestStatus::Rejected->value,
+                ]),
+            ],
+            'rejection_reason' => [
+                Rule::requiredIf($this->input('decision') === DocumentRequestStatus::Rejected->value),
+                'nullable',
+                'string',
+                'max:2000',
+            ],
         ];
     }
 }

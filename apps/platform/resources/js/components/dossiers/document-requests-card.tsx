@@ -2,6 +2,7 @@ import { Form, router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
 import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
+import DocumentRequestReview from '@/components/dossiers/document-request-review';
 import DocumentRequestUpload from '@/components/dossiers/document-request-upload';
 import InputError from '@/components/input-error';
 import SortableList from '@/components/sortable/sortable-list';
@@ -26,19 +27,32 @@ import {
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';
-import type { DocumentRequest } from '@/types';
+import type {
+    DocumentRequest,
+    DocumentRequestStatus,
+    DossierStatus,
+} from '@/types';
 
 /**
  * Staff questionnaire editor: edit, drag-reorder, delete, and collect answers.
  */
 export default function DocumentRequestsCard({
     dossierId,
+    dossierStatus,
     documentRequests,
+    canManage,
+    canReview,
+    canDownload,
 }: {
     dossierId: number;
+    dossierStatus: DossierStatus;
     documentRequests: DocumentRequest[];
+    canManage: boolean;
+    canReview: boolean;
+    canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const canEdit = canManage && dossierStatus !== 'completed';
 
     const persistOrder = (orderedIds: number[]) => {
         router.post(
@@ -68,6 +82,7 @@ export default function DocumentRequestsCard({
                 ) : (
                     <SortableList
                         items={documentRequests}
+                        enabled={canEdit}
                         onReorder={persistOrder}
                         className="divide-y rounded-md border"
                         renderItem={(documentRequest, { DragHandle }) => (
@@ -79,14 +94,39 @@ export default function DocumentRequestsCard({
                                             {documentRequest.type}
                                         </Badge>
                                         <Badge variant="secondary">
-                                            {documentRequest.status.replaceAll(
-                                                '_',
-                                                ' ',
+                                            {statusLabel(
+                                                documentRequest.status,
                                             )}
                                         </Badge>
                                     </div>
+                                    {canEdit && (
+                                        <Form
+                                            {...DocumentRequestController.destroy.form(
+                                                {
+                                                    tenant: currentWorkspace,
+                                                    dossier: dossierId,
+                                                    documentRequest:
+                                                        documentRequest.id,
+                                                },
+                                            )}
+                                        >
+                                            {({ processing }) => (
+                                                <Button
+                                                    type="submit"
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    disabled={processing}
+                                                >
+                                                    <Trash2 />
+                                                </Button>
+                                            )}
+                                        </Form>
+                                    )}
+                                </div>
+
+                                {canEdit && (
                                     <Form
-                                        {...DocumentRequestController.destroy.form(
+                                        {...DocumentRequestController.update.form(
                                             {
                                                 tenant: currentWorkspace,
                                                 dossier: dossierId,
@@ -94,99 +134,80 @@ export default function DocumentRequestsCard({
                                                     documentRequest.id,
                                             },
                                         )}
+                                        className="grid gap-3"
                                     >
-                                        {({ processing }) => (
-                                            <Button
-                                                type="submit"
-                                                size="icon"
-                                                variant="ghost"
-                                                disabled={processing}
-                                            >
-                                                <Trash2 />
-                                            </Button>
+                                        {({ errors, processing }) => (
+                                            <>
+                                                <div className="grid gap-2">
+                                                    <Label>Type</Label>
+                                                    <Select
+                                                        required
+                                                        defaultValue={
+                                                            documentRequest.type
+                                                        }
+                                                        name="type"
+                                                    >
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="bg-background">
+                                                            <SelectItem value="file">
+                                                                File upload
+                                                            </SelectItem>
+                                                            <SelectItem value="text">
+                                                                Text answer
+                                                            </SelectItem>
+                                                            <SelectItem value="boolean">
+                                                                Yes / no
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <InputError
+                                                        message={errors.type}
+                                                    />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label>Title</Label>
+                                                    <Input
+                                                        name="title"
+                                                        required
+                                                        defaultValue={
+                                                            documentRequest.title
+                                                        }
+                                                    />
+                                                    <InputError
+                                                        message={errors.title}
+                                                    />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label>Instructions</Label>
+                                                    <textarea
+                                                        name="instructions"
+                                                        rows={2}
+                                                        defaultValue={
+                                                            documentRequest.instructions ??
+                                                            ''
+                                                        }
+                                                        className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors.instructions
+                                                        }
+                                                    />
+                                                </div>
+                                                <Button
+                                                    type="submit"
+                                                    size="sm"
+                                                    disabled={processing}
+                                                    className="w-fit"
+                                                >
+                                                    Save item
+                                                </Button>
+                                            </>
                                         )}
                                     </Form>
-                                </div>
-
-                                <Form
-                                    {...DocumentRequestController.update.form({
-                                        tenant: currentWorkspace,
-                                        dossier: dossierId,
-                                        documentRequest: documentRequest.id,
-                                    })}
-                                    className="grid gap-3"
-                                >
-                                    {({ errors, processing }) => (
-                                        <>
-                                            <div className="grid gap-2">
-                                                <Label>Type</Label>
-                                                <Select
-                                                    required
-                                                    defaultValue={
-                                                        documentRequest.type
-                                                    }
-                                                    name="type"
-                                                >
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="bg-background">
-                                                        <SelectItem value="file">
-                                                            File upload
-                                                        </SelectItem>
-                                                        <SelectItem value="text">
-                                                            Text answer
-                                                        </SelectItem>
-                                                        <SelectItem value="boolean">
-                                                            Yes / no
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <InputError
-                                                    message={errors.type}
-                                                />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label>Title</Label>
-                                                <Input
-                                                    name="title"
-                                                    required
-                                                    defaultValue={
-                                                        documentRequest.title
-                                                    }
-                                                />
-                                                <InputError
-                                                    message={errors.title}
-                                                />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label>Instructions</Label>
-                                                <textarea
-                                                    name="instructions"
-                                                    rows={2}
-                                                    defaultValue={
-                                                        documentRequest.instructions ??
-                                                        ''
-                                                    }
-                                                    className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                                />
-                                                <InputError
-                                                    message={
-                                                        errors.instructions
-                                                    }
-                                                />
-                                            </div>
-                                            <Button
-                                                type="submit"
-                                                size="sm"
-                                                disabled={processing}
-                                                className="w-fit"
-                                            >
-                                                Save item
-                                            </Button>
-                                        </>
-                                    )}
-                                </Form>
+                                )}
 
                                 <AnswerPreview
                                     documentRequest={documentRequest}
@@ -218,33 +239,48 @@ export default function DocumentRequestsCard({
                                                         )}
                                                     </p>
                                                 </div>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <a
-                                                        href={UploadedDocumentController.download.url(
-                                                            {
-                                                                tenant: currentWorkspace,
-                                                                uploadedDocument:
-                                                                    documentRequest
-                                                                        .uploaded_document
-                                                                        .id,
-                                                            },
-                                                        )}
+                                                {canDownload && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        asChild
                                                     >
-                                                        Download
-                                                    </a>
-                                                </Button>
+                                                        <a
+                                                            href={UploadedDocumentController.download.url(
+                                                                {
+                                                                    tenant: currentWorkspace,
+                                                                    uploadedDocument:
+                                                                        documentRequest
+                                                                            .uploaded_document
+                                                                            .id,
+                                                                },
+                                                            )}
+                                                        >
+                                                            Download
+                                                        </a>
+                                                    </Button>
+                                                )}
                                             </div>
                                         )}
-                                        <DocumentRequestUpload
-                                            dossierId={dossierId}
-                                            documentRequest={documentRequest}
-                                        />
+                                        {canEdit && (
+                                            <DocumentRequestUpload
+                                                dossierId={dossierId}
+                                                documentRequest={
+                                                    documentRequest
+                                                }
+                                            />
+                                        )}
                                     </>
                                 )}
+
+                                <DocumentRequestReview
+                                    dossierId={dossierId}
+                                    documentRequest={documentRequest}
+                                    canReview={
+                                        canReview &&
+                                        dossierStatus !== 'completed'
+                                    }
+                                />
                             </div>
                         )}
                     />
@@ -252,6 +288,10 @@ export default function DocumentRequestsCard({
             </CardContent>
         </Card>
     );
+}
+
+function statusLabel(status: DocumentRequestStatus): string {
+    return status === 'accepted' ? 'approved' : status.replaceAll('_', ' ');
 }
 
 function AnswerPreview({

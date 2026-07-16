@@ -2,6 +2,7 @@ import { Head, setLayoutProps } from '@inertiajs/react';
 import AddDocumentRequestCard from '@/components/dossiers/add-document-request-card';
 import ApplyTemplateCard from '@/components/dossiers/apply-template-card';
 import DocumentRequestsCard from '@/components/dossiers/document-requests-card';
+import DossierWorkflowCard from '@/components/dossiers/dossier-workflow-card';
 import Heading from '@/components/heading';
 import ClientAccessCard from '@/components/portal/client-access-card';
 import PortalLinkBanner from '@/components/portal/portal-link-banner';
@@ -21,11 +22,17 @@ export default function ShowDossier({
     templates = [],
     access_grant_token: accessGrantToken = null,
     access_grant_portal_url: accessGrantPortalUrl = null,
+    can_manage: canManage,
+    can_review: canReview,
+    can_download: canDownload,
 }: {
     dossier: Dossier;
     templates?: ApplyTemplateOption[];
     access_grant_token?: string | null;
     access_grant_portal_url?: string | null;
+    can_manage: boolean;
+    can_review: boolean;
+    can_download: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
 
@@ -71,7 +78,11 @@ export default function ShowDossier({
                     <div className="space-y-6">
                         <DocumentRequestsCard
                             dossierId={dossier.id}
+                            dossierStatus={dossier.status}
                             documentRequests={dossier.document_requests}
+                            canManage={canManage}
+                            canReview={canReview}
+                            canDownload={canDownload}
                         />
 
                         <ClientAccessCard
@@ -79,15 +90,28 @@ export default function ShowDossier({
                             clientName={dossier.client.name}
                             clientEmail={dossier.client.email}
                             accessGrants={dossier.access_grants}
+                            canCreate={
+                                canManage && dossier.status !== 'completed'
+                            }
                         />
                     </div>
 
                     <div className="space-y-6">
-                        <ApplyTemplateCard
-                            dossierId={dossier.id}
-                            templates={templates}
+                        <DossierWorkflowCard
+                            dossier={dossier}
+                            canReview={canReview}
                         />
-                        <AddDocumentRequestCard dossierId={dossier.id} />
+                        {canManage && dossier.status !== 'completed' && (
+                            <>
+                                <ApplyTemplateCard
+                                    dossierId={dossier.id}
+                                    templates={templates}
+                                />
+                                <AddDocumentRequestCard
+                                    dossierId={dossier.id}
+                                />
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

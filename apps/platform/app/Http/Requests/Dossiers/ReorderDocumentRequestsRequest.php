@@ -18,7 +18,7 @@ final class ReorderDocumentRequestsRequest extends FormRequest
 
         return $user !== null
             && $dossier instanceof Dossier
-            && $user->can('view', $dossier)
+            && $user->can('update', $dossier)
             && $user->can('create', DocumentRequest::class);
     }
 

@@ -1,5 +1,6 @@
 import PortalDocumentAnswer from '@/components/portal/portal-document-answer';
 import PortalDocumentUpload from '@/components/portal/portal-document-upload';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -9,7 +10,11 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { formatBytes } from '@/lib/format-bytes';
-import type { PortalDocumentRequest } from '@/types';
+import type {
+    DocumentRequestStatus,
+    DossierStatus,
+    PortalDocumentRequest,
+} from '@/types';
 
 /**
  * Client-portal questionnaire with uploads and typed answers.
@@ -17,14 +22,19 @@ import type { PortalDocumentRequest } from '@/types';
 export default function PortalDocumentRequestsCard({
     token,
     firmName,
+    dossierStatus,
     documentRequests,
 }: {
     token: string;
     firmName: string;
+    dossierStatus: DossierStatus;
     documentRequests: PortalDocumentRequest[];
 }) {
     const submittedCount = documentRequests.filter(
         (item) => item.status === 'submitted' || item.status === 'accepted',
+    ).length;
+    const approvedCount = documentRequests.filter(
+        (item) => item.status === 'accepted',
     ).length;
 
     return (
@@ -32,13 +42,15 @@ export default function PortalDocumentRequestsCard({
             <CardHeader>
                 <CardTitle>Questionnaire</CardTitle>
                 <CardDescription>
-                    Complete each item below. You can update answers until this
-                    link expires.
+                    Complete each item below. Submitted items are locked while
+                    they are reviewed; if changes are requested, correct and
+                    resubmit them.
                     {documentRequests.length > 0 && (
                         <>
                             {' '}
                             Progress: {submittedCount} /{' '}
-                            {documentRequests.length}
+                            {documentRequests.length} answered · {approvedCount}{' '}
+                            approved
                         </>
                     )}
                 </CardDescription>
@@ -73,12 +85,23 @@ export default function PortalDocumentRequestsCard({
                                         )}
                                     </div>
                                     <Badge variant="outline">
-                                        {documentRequest.status.replaceAll(
-                                            '_',
-                                            ' ',
-                                        )}
+                                        {statusLabel(documentRequest.status)}
                                     </Badge>
                                 </div>
+
+                                {documentRequest.status === 'rejected' &&
+                                    documentRequest.rejection_reason && (
+                                        <Alert variant="destructive">
+                                            <AlertTitle>
+                                                Changes requested
+                                            </AlertTitle>
+                                            <AlertDescription>
+                                                {
+                                                    documentRequest.rejection_reason
+                                                }
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
 
                                 {documentRequest.type === 'file' &&
                                     documentRequest.uploaded_document && (
@@ -113,17 +136,29 @@ export default function PortalDocumentRequestsCard({
                                         </div>
                                     )}
 
-                                {documentRequest.type === 'file' ? (
-                                    <PortalDocumentUpload
-                                        token={token}
-                                        documentRequest={documentRequest}
-                                    />
-                                ) : (
-                                    <PortalDocumentAnswer
-                                        token={token}
-                                        documentRequest={documentRequest}
-                                    />
-                                )}
+                                {dossierStatus !== 'completed' &&
+                                (documentRequest.status === 'pending' ||
+                                    documentRequest.status === 'rejected') ? (
+                                    documentRequest.type === 'file' ? (
+                                        <PortalDocumentUpload
+                                            token={token}
+                                            documentRequest={documentRequest}
+                                        />
+                                    ) : (
+                                        <PortalDocumentAnswer
+                                            token={token}
+                                            documentRequest={documentRequest}
+                                        />
+                                    )
+                                ) : documentRequest.status === 'submitted' ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        Submitted and waiting for review.
+                                    </p>
+                                ) : documentRequest.status === 'accepted' ? (
+                                    <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                                        Approved by {firmName}.
+                                    </p>
+                                ) : null}
                             </div>
                         ))}
                     </div>
@@ -131,4 +166,8 @@ export default function PortalDocumentRequestsCard({
             </CardContent>
         </Card>
     );
+}
+
+function statusLabel(status: DocumentRequestStatus): string {
+    return status === 'accepted' ? 'approved' : status.replaceAll('_', ' ');
 }

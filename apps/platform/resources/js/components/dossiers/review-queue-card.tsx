@@ -15,7 +15,9 @@ export default function ReviewQueueCard({
 }: {
     metrics: Pick<
         WorkspaceDashboardMetrics,
-        'in_review' | 'outstanding_document_requests'
+        | 'in_review'
+        | 'submitted_document_requests'
+        | 'outstanding_document_requests'
     >;
 }) {
     return (
@@ -37,10 +39,18 @@ export default function ReviewQueueCard({
                 </div>
                 <div>
                     <p className="text-3xl font-semibold">
+                        {metrics.submitted_document_requests}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                        submitted items ready for review
+                    </p>
+                </div>
+                <div>
+                    <p className="text-3xl font-semibold">
                         {metrics.outstanding_document_requests}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                        document requests to follow up on
+                        items still with the client
                     </p>
                 </div>
             </CardContent>

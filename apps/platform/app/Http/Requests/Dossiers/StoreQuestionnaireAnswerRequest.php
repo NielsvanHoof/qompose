@@ -22,7 +22,7 @@ final class StoreQuestionnaireAnswerRequest extends FormRequest
             && $dossier instanceof Dossier
             && $documentRequest instanceof DocumentRequest
             && $documentRequest->dossier_id === $dossier->id
-            && $user->can('view', $dossier)
+            && $user->can('update', $dossier)
             && $user->can('update', $documentRequest)
             && $documentRequest->type !== QuestionnaireItemType::File;
     }

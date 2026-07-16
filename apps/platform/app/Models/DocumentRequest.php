@@ -27,6 +27,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $answer_text
  * @property bool|null $answer_boolean
  * @property Carbon|null $answered_at
+ * @property int|null $reviewed_by
+ * @property Carbon|null $reviewed_at
+ * @property string|null $rejection_reason
  * @property DocumentRequestStatus $status
  * @property int $sort_order
  */
@@ -39,6 +42,9 @@ use Illuminate\Support\Carbon;
     'answer_text',
     'answer_boolean',
     'answered_at',
+    'reviewed_by',
+    'reviewed_at',
+    'rejection_reason',
     'status',
     'sort_order',
 ])]
@@ -73,6 +79,14 @@ final class DocumentRequest extends Model
     }
 
     /**
+     * @return BelongsTo<User, $this>
+     */
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -82,6 +96,7 @@ final class DocumentRequest extends Model
             'status' => DocumentRequestStatus::class,
             'answer_boolean' => 'boolean',
             'answered_at' => 'datetime',
+            'reviewed_at' => 'datetime',
             'sort_order' => 'integer',
         ];
     }

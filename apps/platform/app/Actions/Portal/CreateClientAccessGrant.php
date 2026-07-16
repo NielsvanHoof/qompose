@@ -10,6 +10,7 @@ use App\Models\Dossier;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 final class CreateClientAccessGrant
 {
@@ -24,6 +25,12 @@ final class CreateClientAccessGrant
             $dossierQuery = Dossier::query()->whereKey($dossier->getKey());
             $dossierQuery->getQuery()->lockForUpdate();
             $lockedDossier = $dossierQuery->firstOrFail();
+
+            if ($lockedDossier->status === DossierStatus::Completed) {
+                throw ValidationException::withMessages([
+                    'dossier' => 'A completed dossier cannot receive a new portal invitation.',
+                ]);
+            }
 
             $plainTextToken = Str::random(64);
 

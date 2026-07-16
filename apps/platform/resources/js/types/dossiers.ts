@@ -1,5 +1,11 @@
 import type { AccessGrant } from './portal';
 
+export type DossierStatus =
+    'draft' | 'awaiting_client' | 'in_review' | 'completed';
+
+export type DocumentRequestStatus =
+    'pending' | 'submitted' | 'accepted' | 'rejected';
+
 /** Uploaded file on a staff dossier document request. */
 export type UploadedDocument = {
     id: number;
@@ -14,10 +20,13 @@ export type DocumentRequest = {
     type: string;
     title: string;
     instructions: string | null;
-    status: string;
+    status: DocumentRequestStatus;
     answer_text: string | null;
     answer_boolean: boolean | null;
     answered_at: string | null;
+    reviewed_at: string | null;
+    reviewed_by_name: string | null;
+    rejection_reason: string | null;
     sort_order: number;
     uploaded_document: UploadedDocument | null;
 };
@@ -27,7 +36,15 @@ export type Dossier = {
     id: number;
     title: string;
     reference: string | null;
-    status: string;
+    status: DossierStatus;
+    ready_to_complete: boolean;
+    review_summary: {
+        total: number;
+        pending: number;
+        submitted: number;
+        accepted: number;
+        rejected: number;
+    };
     client: {
         name: string;
         email: string;

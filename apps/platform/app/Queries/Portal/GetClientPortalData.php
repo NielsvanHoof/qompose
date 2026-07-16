@@ -19,6 +19,7 @@ final class GetClientPortalData
      *     dossier: array{
      *         title: string,
      *         reference: string|null,
+     *         status: string,
      *         client: array{name: string},
      *         expires_at: string,
      *         document_requests: array<int, array{
@@ -29,6 +30,7 @@ final class GetClientPortalData
      *             status: string,
      *             answer_text: string|null,
      *             answer_boolean: bool|null,
+     *             rejection_reason: string|null,
      *             uploaded_document: array{
      *                 original_filename: string,
      *                 size_bytes: int,
@@ -61,6 +63,7 @@ final class GetClientPortalData
             'dossier' => [
                 'title' => $dossier->title,
                 'reference' => $dossier->reference,
+                'status' => $dossier->status->value,
                 'client' => [
                     'name' => $client->name,
                 ],
@@ -77,6 +80,7 @@ final class GetClientPortalData
                             'status' => $documentRequest->status->value,
                             'answer_text' => $documentRequest->answer_text,
                             'answer_boolean' => $documentRequest->answer_boolean,
+                            'rejection_reason' => $documentRequest->rejection_reason,
                             'uploaded_document' => $uploadedDocument === null
                                 ? null
                                 : [

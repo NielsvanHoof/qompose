@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Policies\Dossiers;
 
+use App\Enums\DossierStatus;
 use App\Enums\Permission;
 use App\Models\DocumentRequest;
+use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\User;
 
@@ -38,11 +40,7 @@ final class DocumentRequestPolicy
      */
     public function upload(User $user, DocumentRequest $documentRequest): bool
     {
-        $tenant = $documentRequest->tenant;
-
-        return $user->can(Permission::CreateDossiers->value)
-            && $tenant instanceof Tenant
-            && $user->belongsToTenant($tenant);
+        return $this->canActOnOpenDossier($user, $documentRequest, Permission::CreateDossiers);
     }
 
     public function update(User $user, DocumentRequest $documentRequest): bool
@@ -53,5 +51,25 @@ final class DocumentRequestPolicy
     public function delete(User $user, DocumentRequest $documentRequest): bool
     {
         return $this->upload($user, $documentRequest);
+    }
+
+    public function review(User $user, DocumentRequest $documentRequest): bool
+    {
+        return $this->canActOnOpenDossier($user, $documentRequest, Permission::ReviewDocuments);
+    }
+
+    private function canActOnOpenDossier(
+        User $user,
+        DocumentRequest $documentRequest,
+        Permission $permission,
+    ): bool {
+        $tenant = $documentRequest->tenant;
+        $dossier = $documentRequest->dossier;
+
+        return $user->can($permission->value)
+            && $tenant instanceof Tenant
+            && $dossier instanceof Dossier
+            && $dossier->status !== DossierStatus::Completed
+            && $user->belongsToTenant($tenant);
     }
 }

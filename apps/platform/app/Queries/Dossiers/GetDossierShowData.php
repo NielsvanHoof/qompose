@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Queries\Dossiers;
 
+use App\Enums\DocumentRequestStatus;
+use App\Enums\DossierStatus;
 use App\Models\Client;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
+use App\Models\User;
 use RuntimeException;
 
 final class GetDossierShowData
@@ -27,6 +30,14 @@ final class GetDossierShowData
      *         title: string,
      *         reference: string|null,
      *         status: string,
+     *         ready_to_complete: bool,
+     *         review_summary: array{
+     *             total: int,
+     *             pending: int,
+     *             submitted: int,
+     *             accepted: int,
+     *             rejected: int
+     *         },
      *         client: array{name: string, email: string},
      *         document_requests: array<int, array{
      *             id: int,
@@ -37,6 +48,9 @@ final class GetDossierShowData
      *             answer_text: string|null,
      *             answer_boolean: bool|null,
      *             answered_at: string|null,
+     *             reviewed_at: string|null,
+     *             reviewed_by_name: string|null,
+     *             rejection_reason: string|null,
      *             sort_order: int,
      *             uploaded_document: array{
      *                 id: int,
@@ -60,12 +74,17 @@ final class GetDossierShowData
         $dossier->load([
             'client:id,name,email',
             'documentRequests' => fn ($query) => $query
-                ->with('uploadedDocument')
+                ->with(['uploadedDocument', 'reviewedBy:id,name'])
                 ->oldest('sort_order'),
             'clientAccessGrants' => fn ($query) => $query->latest(),
         ]);
 
         $client = $this->resolveClient($dossier);
+        $documentRequests = $dossier->documentRequests;
+        $totalRequestCount = $documentRequests->count();
+        $acceptedRequestCount = $documentRequests
+            ->where('status', DocumentRequestStatus::Accepted)
+            ->count();
 
         $templates = QuestionnaireTemplate::queryVisibleToCurrentTenant()
             ->withCount('items')
@@ -87,6 +106,16 @@ final class GetDossierShowData
                 'title' => $dossier->title,
                 'reference' => $dossier->reference,
                 'status' => $dossier->status->value,
+                'ready_to_complete' => $dossier->status !== DossierStatus::Completed
+                    && $totalRequestCount > 0
+                    && $acceptedRequestCount === $totalRequestCount,
+                'review_summary' => [
+                    'total' => $totalRequestCount,
+                    'pending' => $documentRequests->where('status', DocumentRequestStatus::Pending)->count(),
+                    'submitted' => $documentRequests->where('status', DocumentRequestStatus::Submitted)->count(),
+                    'accepted' => $acceptedRequestCount,
+                    'rejected' => $documentRequests->where('status', DocumentRequestStatus::Rejected)->count(),
+                ],
                 'client' => [
                     'name' => $client->name,
                     'email' => $client->email,
@@ -94,6 +123,7 @@ final class GetDossierShowData
                 'document_requests' => $dossier->documentRequests
                     ->map(function (DocumentRequest $documentRequest): array {
                         $uploaded = $documentRequest->uploadedDocument;
+                        $reviewer = $documentRequest->reviewedBy;
 
                         return [
                             'id' => $documentRequest->id,
@@ -104,6 +134,9 @@ final class GetDossierShowData
                             'answer_text' => $documentRequest->answer_text,
                             'answer_boolean' => $documentRequest->answer_boolean,
                             'answered_at' => $documentRequest->answered_at?->toIso8601String(),
+                            'reviewed_at' => $documentRequest->reviewed_at?->toIso8601String(),
+                            'reviewed_by_name' => $reviewer instanceof User ? $reviewer->name : null,
+                            'rejection_reason' => $documentRequest->rejection_reason,
                             'sort_order' => $documentRequest->sort_order,
                             'uploaded_document' => $uploaded === null ? null : [
                                 'id' => $uploaded->id,

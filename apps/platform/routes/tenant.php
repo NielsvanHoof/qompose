@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Clients\ClientController;
 use App\Http\Controllers\Dossiers\DocumentRequestController;
+use App\Http\Controllers\Dossiers\DocumentRequestReviewController;
+use App\Http\Controllers\Dossiers\DossierCompletionController;
 use App\Http\Controllers\Dossiers\DossierController;
 use App\Http\Controllers\Dossiers\UploadedDocumentController;
 use App\Http\Controllers\Portal\ClientAccessGrantController;
@@ -57,6 +59,8 @@ Route::middleware([
         Route::get('dossiers/create', [DossierController::class, 'create'])->name('dossiers.create');
         Route::post('dossiers', [DossierController::class, 'store'])->name('dossiers.store');
         Route::get('dossiers/{dossier}', [DossierController::class, 'show'])->name('dossiers.show');
+        Route::post('dossiers/{dossier}/complete', [DossierCompletionController::class, 'store'])
+            ->name('dossiers.complete');
         Route::post('dossiers/{dossier}/document-requests', [DocumentRequestController::class, 'store'])
             ->name('dossiers.document-requests.store');
         Route::put('dossiers/{dossier}/document-requests/{documentRequest}', [DocumentRequestController::class, 'update'])
@@ -75,6 +79,10 @@ Route::middleware([
             'dossiers/{dossier}/document-requests/{documentRequest}/upload',
             [UploadedDocumentController::class, 'store'],
         )->name('dossiers.document-requests.upload');
+        Route::post(
+            'dossiers/{dossier}/document-requests/{documentRequest}/review',
+            [DocumentRequestReviewController::class, 'store'],
+        )->name('dossiers.document-requests.review');
         Route::get('uploaded-documents/{uploadedDocument}/download', [UploadedDocumentController::class, 'download'])
             ->name('uploaded-documents.download');
         Route::post('dossiers/{dossier}/access-grants', [ClientAccessGrantController::class, 'store'])

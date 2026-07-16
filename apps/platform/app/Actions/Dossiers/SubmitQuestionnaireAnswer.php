@@ -33,6 +33,9 @@ final class SubmitQuestionnaireAnswer
                 'answer_boolean' => null,
                 'answered_at' => now(),
                 'status' => DocumentRequestStatus::Submitted,
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+                'rejection_reason' => null,
             ]);
 
             return $documentRequest->fresh() ?? $documentRequest;
@@ -47,6 +50,9 @@ final class SubmitQuestionnaireAnswer
             'answer_text' => null,
             'answered_at' => now(),
             'status' => DocumentRequestStatus::Submitted,
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+            'rejection_reason' => null,
         ]);
 
         return $documentRequest->fresh() ?? $documentRequest;

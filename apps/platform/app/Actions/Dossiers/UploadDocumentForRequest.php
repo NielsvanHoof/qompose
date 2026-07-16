@@ -112,6 +112,9 @@ final class UploadDocumentForRequest
                 $lockedDocumentRequest->update([
                     'status' => DocumentRequestStatus::Submitted,
                     'answered_at' => now(),
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                    'rejection_reason' => null,
                 ]);
 
                 if ($afterPersist instanceof Closure) {

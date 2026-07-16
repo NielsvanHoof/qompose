@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Portal;
 
 use App\Models\ClientAccessGrant;
+use App\Models\Dossier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -15,7 +16,13 @@ final class StoreClientAccessGrantRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('create', ClientAccessGrant::class) ?? false;
+        $dossier = $this->route('dossier');
+        $user = $this->user();
+
+        return $user !== null
+            && $dossier instanceof Dossier
+            && $user->can('update', $dossier)
+            && $user->can('create', ClientAccessGrant::class);
     }
 
     /** @return array<string, list<ValidationRule|string>> */

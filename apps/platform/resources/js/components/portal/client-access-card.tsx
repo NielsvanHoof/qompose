@@ -22,11 +22,13 @@ export default function ClientAccessCard({
     clientName,
     clientEmail,
     accessGrants,
+    canCreate,
 }: {
     dossierId: number;
     clientName: string;
     clientEmail: string;
     accessGrants: AccessGrant[];
+    canCreate: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const [sendInvite, setSendInvite] = useState(true);
@@ -96,46 +98,51 @@ export default function ClientAccessCard({
                     </div>
                 )}
 
-                <Form
-                    {...ClientAccessGrantController.store.form({
-                        tenant: currentWorkspace,
-                        dossier: dossierId,
-                    })}
-                    className="space-y-3"
-                >
-                    {({ processing }) => (
-                        <>
-                            <input
-                                type="hidden"
-                                name="expires_in_days"
-                                value="7"
-                            />
-                            {/* Checkbox posts "1" when checked; omitted when unchecked. */}
-                            <input
-                                type="hidden"
-                                name="send_invite"
-                                value={sendInvite ? '1' : '0'}
-                            />
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="send_invite"
-                                    checked={sendInvite}
-                                    onCheckedChange={(checked) =>
-                                        setSendInvite(checked === true)
-                                    }
+                {canCreate && (
+                    <Form
+                        {...ClientAccessGrantController.store.form({
+                            tenant: currentWorkspace,
+                            dossier: dossierId,
+                        })}
+                        className="space-y-3"
+                    >
+                        {({ processing }) => (
+                            <>
+                                <input
+                                    type="hidden"
+                                    name="expires_in_days"
+                                    value="7"
                                 />
-                                <Label htmlFor="send_invite">
-                                    Email invite to {clientEmail}
-                                </Label>
-                            </div>
-                            <Button disabled={processing} variant="secondary">
-                                {sendInvite
-                                    ? 'Create link & email client'
-                                    : 'Create 7-day portal link'}
-                            </Button>
-                        </>
-                    )}
-                </Form>
+                                {/* Checkbox posts "1" when checked; omitted when unchecked. */}
+                                <input
+                                    type="hidden"
+                                    name="send_invite"
+                                    value={sendInvite ? '1' : '0'}
+                                />
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="send_invite"
+                                        checked={sendInvite}
+                                        onCheckedChange={(checked) =>
+                                            setSendInvite(checked === true)
+                                        }
+                                    />
+                                    <Label htmlFor="send_invite">
+                                        Email invite to {clientEmail}
+                                    </Label>
+                                </div>
+                                <Button
+                                    disabled={processing}
+                                    variant="secondary"
+                                >
+                                    {sendInvite
+                                        ? 'Create link & email client'
+                                        : 'Create 7-day portal link'}
+                                </Button>
+                            </>
+                        )}
+                    </Form>
+                )}
             </CardContent>
         </Card>
     );
