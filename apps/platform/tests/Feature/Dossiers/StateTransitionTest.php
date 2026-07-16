@@ -10,8 +10,8 @@ use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 uses(RefreshDatabase::class);
@@ -123,7 +123,7 @@ test('a submitted upload can be replaced but an accepted upload cannot', functio
     $documentRequest->submitUpload();
 
     expect($documentRequest->status)->toBe(DocumentRequestStatus::Submitted)
-        ->and($documentRequest->answered_at)->toBeInstanceOf(Carbon::class);
+        ->and($documentRequest->answered_at)->toBeInstanceOf(CarbonInterface::class);
 
     $documentRequest->accept($reviewer);
 

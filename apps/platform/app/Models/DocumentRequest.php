@@ -7,13 +7,13 @@ namespace App\Models;
 use App\Concerns\BelongsToTenant;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\QuestionnaireItemType;
+use Carbon\CarbonInterface;
 use Database\Factories\DocumentRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use function in_array;
@@ -29,9 +29,9 @@ use function in_array;
  * @property string|null $instructions
  * @property string|null $answer_text
  * @property bool|null $answer_boolean
- * @property Carbon|null $answered_at
+ * @property CarbonInterface|null $answered_at
  * @property int|null $reviewed_by
- * @property Carbon|null $reviewed_at
+ * @property CarbonInterface|null $reviewed_at
  * @property string|null $rejection_reason
  * @property DocumentRequestStatus $status
  * @property int $sort_order
@@ -212,7 +212,7 @@ final class DocumentRequest extends Model
     /**
      * @return array{
      *     status: DocumentRequestStatus,
-     *     answered_at: Carbon,
+     *     answered_at: CarbonInterface,
      *     reviewed_by: null,
      *     reviewed_at: null,
      *     rejection_reason: null
