@@ -11,6 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import type { DossierClientOption } from '@/types';
@@ -23,6 +24,8 @@ export default function CreateDossierForm({
 }: {
     clients: DossierClientOption[];
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     if (clients.length === 0) {
         return (
             <div className="mt-6 rounded-lg border p-6">
@@ -30,14 +33,19 @@ export default function CreateDossierForm({
                     Create a client before creating a dossier.
                 </p>
                 <Button className="mt-4" asChild>
-                    <Link href={clientIndex()}>Go to clients</Link>
+                    <Link href={clientIndex(currentWorkspace)}>
+                        Go to clients
+                    </Link>
                 </Button>
             </div>
         );
     }
 
     return (
-        <Form {...DossierController.store.form()} className="mt-6 space-y-6">
+        <Form
+            {...DossierController.store.form(currentWorkspace)}
+            className="mt-6 space-y-6"
+        >
             {({ errors, processing }) => (
                 <>
                     <div className="grid gap-2">
@@ -90,7 +98,9 @@ export default function CreateDossierForm({
                     <div className="flex items-center gap-3">
                         <Button disabled={processing}>Create dossier</Button>
                         <Button variant="ghost" asChild>
-                            <Link href={dossierIndex()}>Cancel</Link>
+                            <Link href={dossierIndex(currentWorkspace)}>
+                                Cancel
+                            </Link>
                         </Button>
                     </div>
                 </>

@@ -84,7 +84,7 @@ function TwoFactorSetupStep({
                                     <img
                                         src={qrCodeImageSrc}
                                         alt="Two-factor authentication QR code"
-                                        className="aspect-square w-full rounded-lg bg-white p-2 object-contain"
+                                        className="aspect-square w-full rounded-lg bg-white object-contain p-2"
                                         style={{
                                             filter:
                                                 resolvedAppearance === 'dark'

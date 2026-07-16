@@ -22,8 +22,7 @@ final class ActiveTenantController extends Controller
         }
 
         $request->session()->put('active_tenant_id', $tenant->id);
-        $request->session()->put('ensure_valid_tenant_session_tenant_id', $tenant->id);
 
-        return to_route('dashboard');
+        return to_route('workspaces.dashboard', ['tenant' => $tenant]);
     }
 }

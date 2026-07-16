@@ -7,7 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { activate } from '@/routes/firms';
+import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import type { Firm } from '@/types';
 
 /**
@@ -20,7 +20,7 @@ export default function FirmPickerGrid({ firms }: { firms: Firm[] }) {
                 <button
                     key={firm.slug}
                     type="button"
-                    onClick={() => router.post(activate.url(firm))}
+                    onClick={() => router.visit(workspaceDashboard.url(firm))}
                     className="group rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     <Card className="h-full transition-colors group-hover:bg-muted/50">

@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreUploadedDocumentRequest;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
+use App\Models\Tenant;
 use App\Models\UploadedDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +21,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 final class UploadedDocumentController extends Controller
 {
     public function store(
+        Tenant $tenant,
         StoreUploadedDocumentRequest $request,
         Dossier $dossier,
         DocumentRequest $documentRequest,
@@ -49,10 +51,13 @@ final class UploadedDocumentController extends Controller
             'message' => 'Document uploaded.',
         ]);
 
-        return to_route('workspaces.dossiers.show', $dossier);
+        return to_route(
+            'workspaces.dossiers.show',
+            $this->workspaceRouteParameters(['dossier' => $dossier]),
+        );
     }
 
-    public function download(UploadedDocument $uploadedDocument): StreamedResponse
+    public function download(Tenant $tenant, UploadedDocument $uploadedDocument): StreamedResponse
     {
         $this->authorize('download', $uploadedDocument);
 

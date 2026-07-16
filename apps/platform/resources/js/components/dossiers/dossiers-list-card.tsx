@@ -7,6 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { show } from '@/routes/workspaces/dossiers';
 import type { DossierSummary } from '@/types';
 
@@ -18,6 +19,8 @@ export default function DossiersListCard({
 }: {
     dossiers: DossierSummary[];
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     return (
         <Card>
             <CardHeader>
@@ -38,7 +41,10 @@ export default function DossiersListCard({
                         {dossiers.map((dossier) => (
                             <Link
                                 key={dossier.id}
-                                href={show(dossier.id)}
+                                href={show({
+                                    tenant: currentWorkspace,
+                                    dossier: dossier.id,
+                                })}
                                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
                             >
                                 <div>

@@ -1,7 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import ClientsListCard from '@/components/clients/clients-list-card';
 import { Button } from '@/components/ui/button';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     index as clientIndex,
     create as createClient,
@@ -13,6 +14,17 @@ import type { ClientSummary } from '@/types';
  * Clients index — people and organisations for document collection.
  */
 export default function ClientIndex({ clients }: { clients: ClientSummary[] }) {
+    const currentWorkspace = useCurrentWorkspace();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Clients',
+                href: clientIndex(currentWorkspace),
+            },
+        ],
+    });
+
     return (
         <>
             <Head title="Clients" />
@@ -31,10 +43,12 @@ export default function ClientIndex({ clients }: { clients: ClientSummary[] }) {
 
                     <div className="flex gap-2">
                         <Button variant="outline" asChild>
-                            <Link href={createDossier()}>New dossier</Link>
+                            <Link href={createDossier(currentWorkspace)}>
+                                New dossier
+                            </Link>
                         </Button>
                         <Button asChild>
-                            <Link href={createClient()}>
+                            <Link href={createClient(currentWorkspace)}>
                                 <Plus />
                                 New client
                             </Link>
@@ -47,12 +61,3 @@ export default function ClientIndex({ clients }: { clients: ClientSummary[] }) {
         </>
     );
 }
-
-ClientIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Clients',
-            href: clientIndex(),
-        },
-    ],
-};

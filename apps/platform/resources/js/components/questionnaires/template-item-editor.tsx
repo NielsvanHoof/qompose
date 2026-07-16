@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import type { TemplateItem } from '@/types';
 
 const ITEM_TYPES = [
@@ -34,9 +35,14 @@ export default function TemplateItemEditor({
     items: TemplateItem[];
     canManage: boolean;
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     const persistOrder = (orderedIds: number[]) => {
         router.post(
-            QuestionnaireTemplateItemController.reorder.url(templateId),
+            QuestionnaireTemplateItemController.reorder.url({
+                tenant: currentWorkspace,
+                template: templateId,
+            }),
             { item_ids: orderedIds },
             { preserveScroll: true },
         );
@@ -67,6 +73,7 @@ export default function TemplateItemEditor({
                                     <Form
                                         {...QuestionnaireTemplateItemController.destroy.form(
                                             {
+                                                tenant: currentWorkspace,
                                                 template: templateId,
                                                 item: item.id,
                                             },
@@ -90,6 +97,7 @@ export default function TemplateItemEditor({
                                 <Form
                                     {...QuestionnaireTemplateItemController.update.form(
                                         {
+                                            tenant: currentWorkspace,
                                             template: templateId,
                                             item: item.id,
                                         },
@@ -130,9 +138,10 @@ export default function TemplateItemEditor({
 
             {canManage && (
                 <Form
-                    {...QuestionnaireTemplateItemController.store.form(
-                        templateId,
-                    )}
+                    {...QuestionnaireTemplateItemController.store.form({
+                        tenant: currentWorkspace,
+                        template: templateId,
+                    })}
                     resetOnSuccess
                     className="space-y-3 rounded-md border p-4"
                 >

@@ -4,14 +4,20 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 
 /**
  * Form to create a new client (name + email).
  */
 export default function CreateClientForm() {
+    const currentWorkspace = useCurrentWorkspace();
+
     return (
-        <Form {...ClientController.store.form()} className="mt-6 space-y-6">
+        <Form
+            {...ClientController.store.form(currentWorkspace)}
+            className="mt-6 space-y-6"
+        >
             {({ errors, processing }) => (
                 <>
                     <div className="grid gap-2">
@@ -42,7 +48,9 @@ export default function CreateClientForm() {
                     <div className="flex items-center gap-3">
                         <Button disabled={processing}>Create client</Button>
                         <Button variant="ghost" asChild>
-                            <Link href={clientIndex()}>Cancel</Link>
+                            <Link href={clientIndex(currentWorkspace)}>
+                                Cancel
+                            </Link>
                         </Button>
                     </div>
                 </>

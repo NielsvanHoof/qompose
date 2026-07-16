@@ -1,5 +1,6 @@
-import { Head } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import MediaDocumentsCard from '@/components/media/media-documents-card';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { index as mediaIndex } from '@/routes/workspaces/media';
 import type { MediaDocument } from '@/types';
 
@@ -13,6 +14,17 @@ export default function MediaLibraryIndex({
     documents: MediaDocument[];
     can_download: boolean;
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Media Library',
+                href: mediaIndex(currentWorkspace),
+            },
+        ],
+    });
+
     return (
         <>
             <Head title="Media Library" />
@@ -36,12 +48,3 @@ export default function MediaLibraryIndex({
         </>
     );
 }
-
-MediaLibraryIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Media Library',
-            href: mediaIndex(),
-        },
-    ],
-};

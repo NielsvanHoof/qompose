@@ -17,6 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import type { ApplyTemplateOption } from '@/types';
 
 /**
@@ -29,6 +30,8 @@ export default function ApplyTemplateCard({
     dossierId: number;
     templates: ApplyTemplateOption[];
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     if (templates.length === 0) {
         return null;
     }
@@ -43,7 +46,10 @@ export default function ApplyTemplateCard({
             </CardHeader>
             <CardContent>
                 <Form
-                    {...DocumentRequestController.applyTemplate.form(dossierId)}
+                    {...DocumentRequestController.applyTemplate.form({
+                        tenant: currentWorkspace,
+                        dossier: dossierId,
+                    })}
                     className="space-y-4"
                 >
                     {({ errors, processing }) => (

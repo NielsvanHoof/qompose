@@ -1,9 +1,10 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import DashboardMetricsGrid from '@/components/dossiers/dashboard-metrics-grid';
 import RecentDossiersCard from '@/components/dossiers/recent-dossiers-card';
 import ReviewQueueCard from '@/components/dossiers/review-queue-card';
 import { Button } from '@/components/ui/button';
-import { dashboard } from '@/routes';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import { create as createClient } from '@/routes/workspaces/clients';
 import { create as createDossier } from '@/routes/workspaces/dossiers';
 import type { DossierSummary, WorkspaceDashboardMetrics } from '@/types';
@@ -18,7 +19,16 @@ export default function WorkspaceDashboard({
     metrics: WorkspaceDashboardMetrics;
     recent_dossiers: DossierSummary[];
 }) {
-    const { current_firm: currentFirm } = usePage().props;
+    const currentWorkspace = useCurrentWorkspace();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Dashboard',
+                href: workspaceDashboard(currentWorkspace),
+            },
+        ],
+    });
 
     return (
         <>
@@ -27,11 +37,9 @@ export default function WorkspaceDashboard({
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        {currentFirm && (
-                            <p className="text-sm font-medium text-muted-foreground">
-                                {currentFirm.name}
-                            </p>
-                        )}
+                        <p className="text-sm font-medium text-muted-foreground">
+                            {currentWorkspace.name}
+                        </p>
                         <h1 className="text-2xl font-semibold tracking-tight">
                             Dossier overview
                         </h1>
@@ -42,10 +50,14 @@ export default function WorkspaceDashboard({
 
                     <div className="flex gap-2">
                         <Button variant="outline" asChild>
-                            <Link href={createClient()}>New client</Link>
+                            <Link href={createClient(currentWorkspace)}>
+                                New client
+                            </Link>
                         </Button>
                         <Button asChild>
-                            <Link href={createDossier()}>New dossier</Link>
+                            <Link href={createDossier(currentWorkspace)}>
+                                New dossier
+                            </Link>
                         </Button>
                     </div>
                 </div>
@@ -60,12 +72,3 @@ export default function WorkspaceDashboard({
         </>
     );
 }
-
-WorkspaceDashboard.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-        },
-    ],
-};

@@ -1,7 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import DossiersListCard from '@/components/dossiers/dossiers-list-card';
 import { Button } from '@/components/ui/button';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { create, index as dossierIndex } from '@/routes/workspaces/dossiers';
 import type { DossierSummary } from '@/types';
@@ -14,6 +15,17 @@ export default function DossierIndex({
 }: {
     dossiers: DossierSummary[];
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Dossiers',
+                href: dossierIndex(currentWorkspace),
+            },
+        ],
+    });
+
     return (
         <>
             <Head title="Dossiers" />
@@ -31,10 +43,12 @@ export default function DossierIndex({
 
                     <div className="flex gap-2">
                         <Button variant="outline" asChild>
-                            <Link href={clientIndex()}>Clients</Link>
+                            <Link href={clientIndex(currentWorkspace)}>
+                                Clients
+                            </Link>
                         </Button>
                         <Button asChild>
-                            <Link href={create()}>
+                            <Link href={create(currentWorkspace)}>
                                 <Plus />
                                 New dossier
                             </Link>
@@ -47,12 +61,3 @@ export default function DossierIndex({
         </>
     );
 }
-
-DossierIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dossiers',
-            href: dossierIndex(),
-        },
-    ],
-};

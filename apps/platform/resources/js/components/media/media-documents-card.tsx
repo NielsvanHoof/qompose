@@ -10,6 +10,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { formatBytes } from '@/lib/format-bytes';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 import type { MediaDocument } from '@/types';
@@ -24,6 +25,8 @@ export default function MediaDocumentsCard({
     documents: MediaDocument[];
     canDownload: boolean;
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     return (
         <Card>
             <CardHeader>
@@ -89,9 +92,10 @@ export default function MediaDocumentsCard({
 
                                     <Button variant="outline" size="sm" asChild>
                                         <Link
-                                            href={showDossier(
-                                                document.dossier.id,
-                                            )}
+                                            href={showDossier({
+                                                tenant: currentWorkspace,
+                                                dossier: document.dossier.id,
+                                            })}
                                         >
                                             <FolderOpen />
                                             Dossier
@@ -107,9 +111,13 @@ export default function MediaDocumentsCard({
                                             >
                                                 <a
                                                     href={UploadedDocumentController.download.url(
-                                                        document
-                                                            .uploaded_document
-                                                            .id,
+                                                        {
+                                                            tenant: currentWorkspace,
+                                                            uploadedDocument:
+                                                                document
+                                                                    .uploaded_document
+                                                                    .id,
+                                                        },
                                                     )}
                                                 >
                                                     Download

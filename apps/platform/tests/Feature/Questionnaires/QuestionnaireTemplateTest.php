@@ -43,7 +43,7 @@ test('staff can view system and firm templates', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->get(route('workspaces.templates.index'))
+        ->get(workspaceRoute('workspaces.templates.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('questionnaires/index')
@@ -62,14 +62,14 @@ test('system templates cannot be updated or deleted', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->put(route('workspaces.templates.update', $system), [
+        ->put(workspaceRoute('workspaces.templates.update', $tenant, ['template' => $system]), [
             'name' => 'Hacked',
             'description' => 'Nope',
             'category' => QuestionnaireTemplateCategory::Custom->value,
         ])
         ->assertForbidden();
 
-    $this->delete(route('workspaces.templates.destroy', $system))
+    $this->delete(workspaceRoute('workspaces.templates.destroy', $tenant, ['template' => $system]))
         ->assertForbidden();
 
     expect($system->fresh()->name)->not->toBe('Hacked');
@@ -90,7 +90,7 @@ test('owner can copy a system template into the firm', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.templates.copy', $system))
+        ->post(workspaceRoute('workspaces.templates.copy', $tenant, ['template' => $system]))
         ->assertRedirect();
 
     $tenant->makeCurrent();
@@ -104,7 +104,8 @@ test('owner can copy a system template into the firm', function () {
         ->and($copy->isSystem())->toBeFalse();
 
     // Second copy is allowed.
-    $this->post(route('workspaces.templates.copy', $system))->assertRedirect();
+    $this->post(workspaceRoute('workspaces.templates.copy', $tenant, ['template' => $system]))
+        ->assertRedirect();
 
     expect(QuestionnaireTemplate::query()
         ->where('tenant_id', $tenant->id)
@@ -132,7 +133,7 @@ test('read only staff cannot copy templates', function () {
 
     $this->actingAs($reader)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.templates.copy', $system))
+        ->post(workspaceRoute('workspaces.templates.copy', $tenant, ['template' => $system]))
         ->assertForbidden();
 });
 
@@ -174,10 +175,12 @@ test('adviser can apply a template and edit dossier items', function () {
 
     $this->actingAs($adviser)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.dossiers.apply-template', $dossier), [
+        ->post(workspaceRoute('workspaces.dossiers.apply-template', $tenant, [
+            'dossier' => $dossier,
+        ]), [
             'questionnaire_template_id' => $system->id,
         ])
-        ->assertRedirect(route('workspaces.dossiers.show', $dossier));
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
 
     $tenant->makeCurrent();
     $requests = DocumentRequest::query()
@@ -191,21 +194,21 @@ test('adviser can apply a template and edit dossier items', function () {
 
     $firstTemplateItem = $requests->skip(1)->first();
 
-    $this->put(route('workspaces.dossiers.document-requests.update', [
+    $this->put(workspaceRoute('workspaces.dossiers.document-requests.update', $tenant, [
         'dossier' => $dossier,
         'documentRequest' => $firstTemplateItem,
     ]), [
         'type' => QuestionnaireItemType::Text->value,
         'title' => 'Customised title',
         'instructions' => 'Updated instructions',
-    ])->assertRedirect(route('workspaces.dossiers.show', $dossier));
+    ])->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
 
     expect($firstTemplateItem->fresh()->title)->toBe('Customised title');
 
-    $this->delete(route('workspaces.dossiers.document-requests.destroy', [
+    $this->delete(workspaceRoute('workspaces.dossiers.document-requests.destroy', $tenant, [
         'dossier' => $dossier,
         'documentRequest' => $firstTemplateItem,
-    ]))->assertRedirect(route('workspaces.dossiers.show', $dossier));
+    ]))->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
 
     expect(DocumentRequest::query()->whereKey($firstTemplateItem->id)->exists())->toBeFalse();
 });
@@ -224,7 +227,7 @@ test('firm templates are isolated between tenants', function () {
 
     $this->actingAs($ownerB)
         ->withSession(['active_tenant_id' => $tenantB->id])
-        ->get(route('workspaces.templates.show', $templateA))
+        ->get(workspaceRoute('workspaces.templates.show', $tenantB, ['template' => $templateA]))
         ->assertNotFound();
 });
 
@@ -240,12 +243,12 @@ test('owner can manage firm template items', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.templates.items.store', $template), [
+        ->post(workspaceRoute('workspaces.templates.items.store', $tenant, ['template' => $template]), [
             'type' => QuestionnaireItemType::Boolean->value,
             'title' => 'Confirm completeness',
             'instructions' => 'Yes or no',
         ])
-        ->assertRedirect(route('workspaces.templates.show', $template));
+        ->assertRedirect(workspaceRoute('workspaces.templates.show', $tenant, ['template' => $template]));
 
     $item = QuestionnaireTemplateItem::query()->where('questionnaire_template_id', $template->id)->sole();
 

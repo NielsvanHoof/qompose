@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 
 /**
  * Sidebar form to add one questionnaire item to a dossier.
@@ -27,6 +28,8 @@ export default function AddDocumentRequestCard({
 }: {
     dossierId: number;
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     return (
         <Card>
             <CardHeader>
@@ -37,7 +40,10 @@ export default function AddDocumentRequestCard({
             </CardHeader>
             <CardContent>
                 <Form
-                    {...DocumentRequestController.store.form(dossierId)}
+                    {...DocumentRequestController.store.form({
+                        tenant: currentWorkspace,
+                        dossier: dossierId,
+                    })}
                     resetOnSuccess
                     className="space-y-4"
                 >

@@ -16,11 +16,11 @@ use App\Queries\Questionnaires\GetQuestionnaireTemplateShowData;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use RuntimeException;
 
 final class QuestionnaireTemplateController extends Controller
 {
     public function index(
+        Tenant $tenant,
         GetQuestionnaireTemplateIndexData $getQuestionnaireTemplateIndexData,
     ): Response {
         $this->authorize('viewAny', QuestionnaireTemplate::class);
@@ -36,7 +36,7 @@ final class QuestionnaireTemplateController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Tenant $tenant): Response
     {
         $this->authorize('create', QuestionnaireTemplate::class);
 
@@ -49,23 +49,21 @@ final class QuestionnaireTemplateController extends Controller
         ]);
     }
 
-    public function store(StoreQuestionnaireTemplateRequest $request): RedirectResponse
+    public function store(Tenant $tenant, StoreQuestionnaireTemplateRequest $request): RedirectResponse
     {
-        $tenant = Tenant::current();
-
-        if (! $tenant instanceof Tenant) {
-            throw new RuntimeException('Cannot create a template without an active tenant.');
-        }
-
         $template = QuestionnaireTemplate::query()->create([
             ...$request->validated(),
             'tenant_id' => $tenant->getKey(),
         ]);
 
-        return to_route('workspaces.templates.show', $template);
+        return to_route(
+            'workspaces.templates.show',
+            $this->workspaceRouteParameters(['template' => $template]),
+        );
     }
 
     public function show(
+        Tenant $tenant,
         QuestionnaireTemplate $template,
         GetQuestionnaireTemplateShowData $getQuestionnaireTemplateShowData,
     ): Response {
@@ -84,24 +82,32 @@ final class QuestionnaireTemplateController extends Controller
     }
 
     public function update(
+        Tenant $tenant,
         UpdateQuestionnaireTemplateRequest $request,
         QuestionnaireTemplate $template,
     ): RedirectResponse {
         $template->update($request->validated());
 
-        return to_route('workspaces.templates.show', $template);
+        return to_route(
+            'workspaces.templates.show',
+            $this->workspaceRouteParameters(['template' => $template]),
+        );
     }
 
-    public function destroy(QuestionnaireTemplate $template): RedirectResponse
+    public function destroy(Tenant $tenant, QuestionnaireTemplate $template): RedirectResponse
     {
         $this->authorize('delete', $template);
 
         $template->delete();
 
-        return to_route('workspaces.templates.index');
+        return to_route(
+            'workspaces.templates.index',
+            $this->workspaceRouteParameters(),
+        );
     }
 
     public function copy(
+        Tenant $tenant,
         QuestionnaireTemplate $template,
         CopyQuestionnaireTemplate $copyQuestionnaireTemplate,
     ): RedirectResponse {
@@ -109,6 +115,9 @@ final class QuestionnaireTemplateController extends Controller
 
         $copy = $copyQuestionnaireTemplate($template);
 
-        return to_route('workspaces.templates.show', $copy);
+        return to_route(
+            'workspaces.templates.show',
+            $this->workspaceRouteParameters(['template' => $copy]),
+        );
     }
 }

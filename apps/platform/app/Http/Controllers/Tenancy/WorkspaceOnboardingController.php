@@ -32,14 +32,13 @@ final class WorkspaceOnboardingController extends Controller
         );
 
         $request->session()->put('active_tenant_id', $tenant->id);
-        $request->session()->put('ensure_valid_tenant_session_tenant_id', $tenant->id);
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => 'Firm created. Add your first client to get started.',
         ]);
 
-        return to_route('workspaces.clients.create');
+        return to_route('workspaces.clients.create', ['tenant' => $tenant]);
     }
 
     private function availableSlug(string $name): string

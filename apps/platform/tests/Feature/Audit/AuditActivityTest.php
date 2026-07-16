@@ -36,7 +36,7 @@ test('viewing a dossier writes a tenant scoped audit entry', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->get(route('workspaces.dossiers.show', $dossier->id))
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk();
 
     $activity = Activity::query()->latest('id')->first();

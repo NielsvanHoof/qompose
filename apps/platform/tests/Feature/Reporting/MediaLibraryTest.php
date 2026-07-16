@@ -57,7 +57,7 @@ test('staff can view the media library with pending and uploaded documents', fun
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->get(route('workspaces.media.index'))
+        ->get(workspaceRoute('workspaces.media.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/media/index')
@@ -113,7 +113,7 @@ test('media library does not include document requests from another tenant', fun
 
     $this->actingAs($ownerA)
         ->withSession(['active_tenant_id' => $tenantA->id])
-        ->get(route('workspaces.media.index'))
+        ->get(workspaceRoute('workspaces.media.index', $tenantA))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/media/index')
@@ -154,18 +154,22 @@ test('reviewer can browse the media library but cannot download', function () {
 
     $this->actingAs($reviewer)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->get(route('workspaces.media.index'))
+        ->get(workspaceRoute('workspaces.media.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/media/index')
             ->where('can_download', false)
             ->has('documents', 1));
 
-    $this->get(route('workspaces.uploaded-documents.download', $uploaded))
+    $this->get(workspaceRoute(
+        'workspaces.uploaded-documents.download',
+        $tenant,
+        ['uploadedDocument' => $uploaded],
+    ))
         ->assertForbidden();
 });
 
 test('guests cannot view the media library', function () {
-    $this->get(route('workspaces.media.index'))
+    $this->get(workspaceRoute('workspaces.media.index', 'acme-accountants'))
         ->assertRedirect(route('login'));
 });

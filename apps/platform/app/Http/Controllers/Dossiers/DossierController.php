@@ -9,6 +9,7 @@ use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreDossierRequest;
 use App\Models\Dossier;
+use App\Models\Tenant;
 use App\Queries\Dossiers\GetDossierCreateData;
 use App\Queries\Dossiers\GetDossierIndexData;
 use App\Queries\Dossiers\GetDossierShowData;
@@ -21,7 +22,7 @@ use function is_string;
 
 final class DossierController extends Controller
 {
-    public function index(GetDossierIndexData $getDossierIndexData): Response
+    public function index(Tenant $tenant, GetDossierIndexData $getDossierIndexData): Response
     {
         $this->authorize('viewAny', Dossier::class);
 
@@ -30,7 +31,7 @@ final class DossierController extends Controller
         ]);
     }
 
-    public function create(GetDossierCreateData $getDossierCreateData): Response
+    public function create(Tenant $tenant, GetDossierCreateData $getDossierCreateData): Response
     {
         $this->authorize('create', Dossier::class);
 
@@ -39,14 +40,18 @@ final class DossierController extends Controller
         ]);
     }
 
-    public function store(StoreDossierRequest $request): RedirectResponse
+    public function store(Tenant $tenant, StoreDossierRequest $request): RedirectResponse
     {
         $dossier = Dossier::query()->create($request->validated());
 
-        return to_route('workspaces.dossiers.show', $dossier);
+        return to_route(
+            'workspaces.dossiers.show',
+            $this->workspaceRouteParameters(['dossier' => $dossier]),
+        );
     }
 
     public function show(
+        Tenant $tenant,
         Request $request,
         Dossier $dossier,
         GetDossierShowData $getDossierShowData,

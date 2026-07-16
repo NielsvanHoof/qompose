@@ -1,6 +1,7 @@
-import { Head } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import CreateClientForm from '@/components/clients/create-client-form';
 import Heading from '@/components/heading';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     index as clientIndex,
     create as createClient,
@@ -10,6 +11,21 @@ import {
  * Create a new client for the current firm.
  */
 export default function CreateClient() {
+    const currentWorkspace = useCurrentWorkspace();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Clients',
+                href: clientIndex(currentWorkspace),
+            },
+            {
+                title: 'New client',
+                href: createClient(currentWorkspace),
+            },
+        ],
+    });
+
     return (
         <>
             <Head title="New client" />
@@ -25,16 +41,3 @@ export default function CreateClient() {
         </>
     );
 }
-
-CreateClient.layout = {
-    breadcrumbs: [
-        {
-            title: 'Clients',
-            href: clientIndex(),
-        },
-        {
-            title: 'New client',
-            href: createClient(),
-        },
-    ],
-};

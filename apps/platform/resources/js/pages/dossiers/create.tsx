@@ -1,6 +1,7 @@
-import { Head } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import CreateDossierForm from '@/components/dossiers/create-dossier-form';
 import Heading from '@/components/heading';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     create as createDossier,
     index as dossierIndex,
@@ -15,6 +16,21 @@ export default function CreateDossier({
 }: {
     clients: DossierClientOption[];
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Dossiers',
+                href: dossierIndex(currentWorkspace),
+            },
+            {
+                title: 'New dossier',
+                href: createDossier(currentWorkspace),
+            },
+        ],
+    });
+
     return (
         <>
             <Head title="New dossier" />
@@ -30,16 +46,3 @@ export default function CreateDossier({
         </>
     );
 }
-
-CreateDossier.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dossiers',
-            href: dossierIndex(),
-        },
-        {
-            title: 'New dossier',
-            href: createDossier(),
-        },
-    ],
-};

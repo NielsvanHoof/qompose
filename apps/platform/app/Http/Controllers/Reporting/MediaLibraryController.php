@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Reporting;
 use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
+use App\Models\Tenant;
 use App\Queries\Reporting\GetMediaLibraryDocuments;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,6 +19,7 @@ final class MediaLibraryController extends Controller
      * Cross-dossier list of file document requests (pending and submitted).
      */
     public function index(
+        Tenant $tenant,
         Request $request,
         GetMediaLibraryDocuments $getMediaLibraryDocuments,
     ): Response {

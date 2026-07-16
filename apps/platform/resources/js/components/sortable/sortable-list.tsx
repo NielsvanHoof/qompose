@@ -183,7 +183,9 @@ function SortableRow({
         <div
             ref={setNodeRef}
             style={style}
-            className={cn(isDragging && 'relative z-10 bg-background shadow-md')}
+            className={cn(
+                isDragging && 'relative z-10 bg-background shadow-md',
+            )}
         >
             {children(DragHandle)}
         </div>

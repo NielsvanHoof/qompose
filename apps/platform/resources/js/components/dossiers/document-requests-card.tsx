@@ -23,6 +23,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';
 import type { DocumentRequest } from '@/types';
@@ -37,9 +38,14 @@ export default function DocumentRequestsCard({
     dossierId: number;
     documentRequests: DocumentRequest[];
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     const persistOrder = (orderedIds: number[]) => {
         router.post(
-            DocumentRequestController.reorder.url(dossierId),
+            DocumentRequestController.reorder.url({
+                tenant: currentWorkspace,
+                dossier: dossierId,
+            }),
             { document_request_ids: orderedIds },
             { preserveScroll: true },
         );
@@ -82,6 +88,7 @@ export default function DocumentRequestsCard({
                                     <Form
                                         {...DocumentRequestController.destroy.form(
                                             {
+                                                tenant: currentWorkspace,
                                                 dossier: dossierId,
                                                 documentRequest:
                                                     documentRequest.id,
@@ -103,6 +110,7 @@ export default function DocumentRequestsCard({
 
                                 <Form
                                     {...DocumentRequestController.update.form({
+                                        tenant: currentWorkspace,
                                         dossier: dossierId,
                                         documentRequest: documentRequest.id,
                                     })}
@@ -217,9 +225,13 @@ export default function DocumentRequestsCard({
                                                 >
                                                     <a
                                                         href={UploadedDocumentController.download.url(
-                                                            documentRequest
-                                                                .uploaded_document
-                                                                .id,
+                                                            {
+                                                                tenant: currentWorkspace,
+                                                                uploadedDocument:
+                                                                    documentRequest
+                                                                        .uploaded_document
+                                                                        .id,
+                                                            },
                                                         )}
                                                     >
                                                         Download

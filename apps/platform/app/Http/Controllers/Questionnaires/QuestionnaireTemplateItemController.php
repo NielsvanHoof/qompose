@@ -10,6 +10,7 @@ use App\Http\Requests\Questionnaires\StoreQuestionnaireTemplateItemRequest;
 use App\Http\Requests\Questionnaires\UpdateQuestionnaireTemplateItemRequest;
 use App\Models\QuestionnaireTemplate;
 use App\Models\QuestionnaireTemplateItem;
+use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +19,7 @@ use function count;
 final class QuestionnaireTemplateItemController extends Controller
 {
     public function store(
+        Tenant $tenant,
         StoreQuestionnaireTemplateItemRequest $request,
         QuestionnaireTemplate $template,
     ): RedirectResponse {
@@ -29,10 +31,14 @@ final class QuestionnaireTemplateItemController extends Controller
             'sort_order' => $nextSortOrder,
         ]);
 
-        return to_route('workspaces.templates.show', $template);
+        return to_route(
+            'workspaces.templates.show',
+            $this->workspaceRouteParameters(['template' => $template]),
+        );
     }
 
     public function update(
+        Tenant $tenant,
         UpdateQuestionnaireTemplateItemRequest $request,
         QuestionnaireTemplate $template,
         QuestionnaireTemplateItem $item,
@@ -41,10 +47,14 @@ final class QuestionnaireTemplateItemController extends Controller
 
         $item->update($request->validated());
 
-        return to_route('workspaces.templates.show', $template);
+        return to_route(
+            'workspaces.templates.show',
+            $this->workspaceRouteParameters(['template' => $template]),
+        );
     }
 
     public function destroy(
+        Tenant $tenant,
         QuestionnaireTemplate $template,
         QuestionnaireTemplateItem $item,
     ): RedirectResponse {
@@ -53,10 +63,14 @@ final class QuestionnaireTemplateItemController extends Controller
 
         $item->delete();
 
-        return to_route('workspaces.templates.show', $template);
+        return to_route(
+            'workspaces.templates.show',
+            $this->workspaceRouteParameters(['template' => $template]),
+        );
     }
 
     public function reorder(
+        Tenant $tenant,
         ReorderQuestionnaireTemplateItemsRequest $request,
         QuestionnaireTemplate $template,
     ): RedirectResponse {
@@ -81,6 +95,9 @@ final class QuestionnaireTemplateItemController extends Controller
             }
         });
 
-        return to_route('workspaces.templates.show', $template);
+        return to_route(
+            'workspaces.templates.show',
+            $this->workspaceRouteParameters(['template' => $template]),
+        );
     }
 }

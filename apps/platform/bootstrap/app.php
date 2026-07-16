@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\InitializeTenantFromRoute;
 use App\Http\Middleware\InitializeTenantFromSession;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use Illuminate\Foundation\Application;
@@ -30,6 +31,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(
             before: SubstituteBindings::class,
             prepend: InitializeTenantFromSession::class,
+        );
+
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: InitializeTenantFromRoute::class,
         );
 
         // Portal magic-link grants must resolve tenant before any tenant-scoped binding.

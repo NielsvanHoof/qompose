@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/sidebar';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
 import { dashboard } from '@/routes';
+import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import { index as mediaIndex } from '@/routes/workspaces/media';
@@ -27,35 +28,37 @@ import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    // Shared from HandleInertiaRequests — present when a firm is active.
     const { current_firm: currentFirm } = usePage().props;
+    const dashboardRoute = currentFirm
+        ? workspaceDashboard(currentFirm)
+        : dashboard();
 
     const mainNavItems: NavItem[] = [
         {
             title: 'Dashboard',
-            href: dashboard(),
+            href: dashboardRoute,
             icon: LayoutGrid,
         },
         ...(currentFirm
             ? [
                   {
                       title: 'Dossiers',
-                      href: dossierIndex(),
+                      href: dossierIndex(currentFirm),
                       icon: FolderGit2,
                   },
                   {
                       title: 'Clients',
-                      href: clientIndex(),
+                      href: clientIndex(currentFirm),
                       icon: Users,
                   },
                   {
                       title: 'Templates',
-                      href: templateIndex(),
+                      href: templateIndex(currentFirm),
                       icon: ClipboardList,
                   },
                   {
                       title: 'Media Library',
-                      href: mediaIndex(),
+                      href: mediaIndex(currentFirm),
                       icon: Images,
                   },
               ]
@@ -68,7 +71,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={dashboardRoute} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

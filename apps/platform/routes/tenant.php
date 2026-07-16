@@ -9,27 +9,28 @@ use App\Http\Controllers\Dossiers\UploadedDocumentController;
 use App\Http\Controllers\Portal\ClientAccessGrantController;
 use App\Http\Controllers\Questionnaires\QuestionnaireTemplateController;
 use App\Http\Controllers\Questionnaires\QuestionnaireTemplateItemController;
+use App\Http\Controllers\Reporting\DashboardController;
 use App\Http\Controllers\Reporting\MediaLibraryController;
 use App\Http\Middleware\EnsureValidTenantMembership;
-use App\Http\Middleware\InitializeTenantFromSession;
+use App\Http\Middleware\InitializeTenantFromRoute;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
-use Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 Route::middleware([
     'web',
     'auth',
     'verified',
-    InitializeTenantFromSession::class,
+    InitializeTenantFromRoute::class,
     EnsureValidTenantMembership::class,
     SetPermissionTeamContext::class,
     NeedsTenant::class,
-    EnsureValidTenantSession::class,
 ])
-    ->prefix('')
+    ->prefix('workspaces/{tenant:slug}')
     ->name('workspaces.')
     ->group(function () {
+        Route::get('dashboard', [DashboardController::class, 'show'])->name('dashboard');
+
         Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
         Route::get('clients/create', [ClientController::class, 'create'])->name('clients.create');
         Route::post('clients', [ClientController::class, 'store'])->name('clients.store');

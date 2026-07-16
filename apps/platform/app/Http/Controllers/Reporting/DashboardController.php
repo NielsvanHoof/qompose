@@ -20,7 +20,6 @@ final class DashboardController extends Controller
 {
     public function index(
         GetActiveTenantMembershipsForUser $getActiveTenantMembershipsForUser,
-        GetWorkspaceDashboardData $getWorkspaceDashboardData,
     ): RedirectResponse|Response {
         $user = request()->user();
 
@@ -37,12 +36,7 @@ final class DashboardController extends Controller
         $tenant = Tenant::current();
 
         if ($tenant instanceof Tenant) {
-            $this->authorize('viewAny', Dossier::class);
-
-            return Inertia::render(
-                'workspaces/dashboard',
-                $getWorkspaceDashboardData($tenant),
-            );
+            return to_route('workspaces.dashboard', ['tenant' => $tenant]);
         }
 
         return Inertia::render('dashboard', [
@@ -57,6 +51,16 @@ final class DashboardController extends Controller
                 })
                 ->all(),
         ]);
+    }
+
+    public function show(Tenant $tenant, GetWorkspaceDashboardData $getWorkspaceDashboardData): Response
+    {
+        $this->authorize('viewAny', Dossier::class);
+
+        return Inertia::render(
+            'workspaces/dashboard',
+            $getWorkspaceDashboardData($tenant),
+        );
     }
 
     private function resolveMembershipTenant(TenantMembership $membership): Tenant

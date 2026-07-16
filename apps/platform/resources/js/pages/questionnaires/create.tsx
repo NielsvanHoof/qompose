@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import QuestionnaireTemplateController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     create as createTemplate,
     index as templateIndex,
@@ -26,6 +27,21 @@ export default function CreateTemplate({
 }: {
     categories: TemplateCategoryOption[];
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Templates',
+                href: templateIndex(currentWorkspace),
+            },
+            {
+                title: 'New template',
+                href: createTemplate(currentWorkspace),
+            },
+        ],
+    });
+
     return (
         <>
             <Head title="New template" />
@@ -37,7 +53,9 @@ export default function CreateTemplate({
                 />
 
                 <Form
-                    {...QuestionnaireTemplateController.store.form()}
+                    {...QuestionnaireTemplateController.store.form(
+                        currentWorkspace,
+                    )}
                     className="mt-6 space-y-6"
                 >
                     {({ errors, processing }) => (
@@ -101,16 +119,3 @@ export default function CreateTemplate({
         </>
     );
 }
-
-CreateTemplate.layout = {
-    breadcrumbs: [
-        {
-            title: 'Templates',
-            href: templateIndex(),
-        },
-        {
-            title: 'New template',
-            href: createTemplate(),
-        },
-    ],
-};

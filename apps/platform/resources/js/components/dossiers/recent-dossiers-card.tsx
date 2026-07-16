@@ -8,6 +8,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     index as dossierIndex,
     show as showDossier,
@@ -22,6 +23,8 @@ export default function RecentDossiersCard({
 }: {
     dossiers: DossierSummary[];
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -32,7 +35,7 @@ export default function RecentDossiersCard({
                     </CardDescription>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
-                    <Link href={dossierIndex()}>View all</Link>
+                    <Link href={dossierIndex(currentWorkspace)}>View all</Link>
                 </Button>
             </CardHeader>
             <CardContent>
@@ -45,7 +48,10 @@ export default function RecentDossiersCard({
                         {dossiers.map((dossier) => (
                             <Link
                                 key={dossier.id}
-                                href={showDossier(dossier.id)}
+                                href={showDossier({
+                                    tenant: currentWorkspace,
+                                    dossier: dossier.id,
+                                })}
                                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
                             >
                                 <div>

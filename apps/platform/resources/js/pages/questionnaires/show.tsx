@@ -21,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     show as showTemplate,
     index as templateIndex,
@@ -41,15 +42,20 @@ export default function ShowTemplate({
     can_manage: boolean;
     can_copy: boolean;
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     setLayoutProps({
         breadcrumbs: [
             {
                 title: 'Templates',
-                href: templateIndex(),
+                href: templateIndex(currentWorkspace),
             },
             {
                 title: template.name,
-                href: showTemplate(template.id),
+                href: showTemplate({
+                    tenant: currentWorkspace,
+                    template: template.id,
+                }),
             },
         ],
     });
@@ -80,9 +86,10 @@ export default function ShowTemplate({
                     <div className="flex flex-wrap gap-2">
                         {canCopy && (
                             <Form
-                                {...QuestionnaireTemplateController.copy.form(
-                                    template.id,
-                                )}
+                                {...QuestionnaireTemplateController.copy.form({
+                                    tenant: currentWorkspace,
+                                    template: template.id,
+                                })}
                             >
                                 {({ processing }) => (
                                     <Button
@@ -98,7 +105,10 @@ export default function ShowTemplate({
                         {canManage && (
                             <Form
                                 {...QuestionnaireTemplateController.destroy.form(
-                                    template.id,
+                                    {
+                                        tenant: currentWorkspace,
+                                        template: template.id,
+                                    },
                                 )}
                             >
                                 {({ processing }) => (
@@ -113,7 +123,9 @@ export default function ShowTemplate({
                             </Form>
                         )}
                         <Button variant="outline" asChild>
-                            <Link href={templateIndex()}>Back</Link>
+                            <Link href={templateIndex(currentWorkspace)}>
+                                Back
+                            </Link>
                         </Button>
                     </div>
                 </div>
@@ -129,7 +141,10 @@ export default function ShowTemplate({
                         <CardContent>
                             <Form
                                 {...QuestionnaireTemplateController.update.form(
-                                    template.id,
+                                    {
+                                        tenant: currentWorkspace,
+                                        template: template.id,
+                                    },
                                 )}
                                 className="space-y-4"
                             >

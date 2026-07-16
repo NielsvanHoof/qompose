@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\StoreClientAccessGrantRequest;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\URL;
@@ -19,6 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class ClientAccessGrantController extends Controller
 {
     public function store(
+        Tenant $tenant,
         StoreClientAccessGrantRequest $request,
         Dossier $dossier,
         CreateClientAccessGrant $createClientAccessGrant,
@@ -61,10 +63,13 @@ final class ClientAccessGrantController extends Controller
             ]);
         }
 
-        return to_route('workspaces.dossiers.show', $dossier);
+        return to_route(
+            'workspaces.dossiers.show',
+            $this->workspaceRouteParameters(['dossier' => $dossier]),
+        );
     }
 
-    public function destroy(ClientAccessGrant $grant): RedirectResponse
+    public function destroy(Tenant $tenant, ClientAccessGrant $grant): RedirectResponse
     {
         $this->authorize('revoke', $grant);
 
@@ -77,6 +82,9 @@ final class ClientAccessGrantController extends Controller
             'message' => 'Client access grant revoked.',
         ]);
 
-        return to_route('workspaces.dossiers.show', $grant->dossier_id);
+        return to_route(
+            'workspaces.dossiers.show',
+            $this->workspaceRouteParameters(['dossier' => $grant->dossier_id]),
+        );
     }
 }

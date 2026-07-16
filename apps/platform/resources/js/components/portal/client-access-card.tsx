@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import type { AccessGrant } from '@/types';
 
 /**
@@ -27,7 +28,7 @@ export default function ClientAccessCard({
     clientEmail: string;
     accessGrants: AccessGrant[];
 }) {
-    // Default on: email the client a magic link when creating a grant.
+    const currentWorkspace = useCurrentWorkspace();
     const [sendInvite, setSendInvite] = useState(true);
 
     return (
@@ -76,7 +77,10 @@ export default function ClientAccessCard({
                                         onClick={() =>
                                             router.delete(
                                                 ClientAccessGrantController.destroy.url(
-                                                    grant.id,
+                                                    {
+                                                        tenant: currentWorkspace,
+                                                        grant: grant.id,
+                                                    },
                                                 ),
                                                 {
                                                     preserveScroll: true,
@@ -93,7 +97,10 @@ export default function ClientAccessCard({
                 )}
 
                 <Form
-                    {...ClientAccessGrantController.store.form(dossierId)}
+                    {...ClientAccessGrantController.store.form({
+                        tenant: currentWorkspace,
+                        dossier: dossierId,
+                    })}
                     className="space-y-3"
                 >
                     {({ processing }) => (

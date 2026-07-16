@@ -13,7 +13,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { activate } from '@/routes/firms';
+import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 
 export function WorkspaceSwitcher() {
     const { current_firm: currentFirm, workspaces = [] } = usePage().props;
@@ -50,7 +50,9 @@ export function WorkspaceSwitcher() {
                                 key={firm.slug}
                                 onSelect={() => {
                                     if (firm.slug !== currentFirm.slug) {
-                                        router.post(activate.url(firm));
+                                        router.visit(
+                                            workspaceDashboard.url(firm),
+                                        );
                                     }
                                 }}
                             >

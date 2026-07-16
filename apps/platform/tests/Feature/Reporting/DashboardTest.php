@@ -46,10 +46,13 @@ test('users with one firm see its dashboard', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
-    app(ProvisionTenant::class)('Acme Accountants', $user);
+    $tenant = app(ProvisionTenant::class)('Acme Accountants', $user);
 
     $this->actingAs($user)
         ->get(route('dashboard'))
+        ->assertRedirect(workspaceRoute('workspaces.dashboard', $tenant));
+
+    $this->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/dashboard'));
@@ -107,7 +110,7 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->get(route('dashboard'))
+        ->get(workspaceRoute('workspaces.dashboard', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/dashboard')
@@ -150,7 +153,7 @@ test('verified users can set up their firm', function () {
 
     $this->actingAs($user)
         ->post(route('onboarding.firm.store'), ['name' => 'Acme Accountants'])
-        ->assertRedirect(route('workspaces.clients.create'));
+        ->assertRedirect(workspaceRoute('workspaces.clients.create', 'acme-accountants'));
 
     $tenant = Tenant::query()->sole();
     $membership = TenantMembership::query()->sole();

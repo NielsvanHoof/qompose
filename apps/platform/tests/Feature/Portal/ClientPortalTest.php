@@ -167,11 +167,13 @@ test('staff can email a portal invite when creating an access grant', function (
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.dossiers.access-grants.store', $dossier), [
+        ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
             'expires_in_days' => 7,
             'send_invite' => true,
         ])
-        ->assertRedirect(route('workspaces.dossiers.show', $dossier))
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertSessionHas('access_grant_token')
         ->assertSessionHas('access_grant_portal_url');
 
@@ -195,11 +197,13 @@ test('staff can create a portal link without emailing', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.dossiers.access-grants.store', $dossier), [
+        ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
             'expires_in_days' => 7,
             'send_invite' => false,
         ])
-        ->assertRedirect(route('workspaces.dossiers.show', $dossier));
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
 
     Notification::assertNothingSent();
 });

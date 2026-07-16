@@ -39,7 +39,7 @@ test('tenant member can view dossiers in their workspace', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->get(route('workspaces.dossiers.show', $dossier->id))
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('dossiers/show')
@@ -62,8 +62,8 @@ test('users cannot access workspaces they do not belong to', function () {
 
     $this->actingAs($outsider)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->get(route('workspaces.dossiers.show', $dossier->id))
-        ->assertForbidden();
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
+        ->assertNotFound();
 });
 
 test('users cannot read dossiers from another tenant via id guessing', function () {
@@ -84,8 +84,34 @@ test('users cannot read dossiers from another tenant via id guessing', function 
 
     $this->actingAs($ownerA)
         ->withSession(['active_tenant_id' => $tenantA->id])
-        ->get(route('workspaces.dossiers.show', $foreignDossier->id))
+        ->get(workspaceRoute('workspaces.dossiers.show', $tenantA, ['dossier' => $foreignDossier]))
         ->assertNotFound();
+});
+
+test('the workspace in the url takes precedence over the session tenant', function () {
+    $user = User::factory()->create();
+
+    $tenantA = app(ProvisionTenant::class)('Tenant A', $user, ownerRole: Role::Owner);
+    $tenantB = app(ProvisionTenant::class)('Tenant B', User::factory()->create(), ownerRole: Role::Owner);
+
+    TenantMembership::query()->create([
+        'tenant_id' => $tenantB->id,
+        'user_id' => $user->id,
+        'status' => TenantMembershipStatus::Active,
+        'joined_at' => now(),
+    ]);
+
+    setPermissionsTeamId($tenantB->id);
+    $user->unsetRelation('roles');
+    $user->assignRole(Role::ReadOnly->value);
+
+    $this->actingAs($user)
+        ->withSession(['active_tenant_id' => $tenantA->id])
+        ->get(workspaceRoute('workspaces.dossiers.index', $tenantB))
+        ->assertOk()
+        ->assertSessionHas('active_tenant_id', $tenantB->id)
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('current_firm.slug', $tenantB->slug));
 });
 
 test('members can switch their active firm', function () {
@@ -107,14 +133,10 @@ test('members can switch their active firm', function () {
 
     $this->actingAs($user)
         ->withSession(['active_tenant_id' => $tenantA->id])
-        ->get(route('workspaces.dossiers.index'))
-        ->assertOk();
-
-    $this->actingAs($user)
         ->post(route('firms.activate', $tenantB))
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(workspaceRoute('workspaces.dashboard', $tenantB));
 
-    $this->get(route('dashboard'))
+    $this->get(workspaceRoute('workspaces.dashboard', $tenantB))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/dashboard'));
@@ -155,9 +177,11 @@ test('tenant routes are registered with the expected middleware', function () {
 
     expect($route)->not->toBeNull();
     expect($route->middleware())->toContain('auth');
-    expect($route->middleware())->toContain(App\Http\Middleware\InitializeTenantFromSession::class);
+    expect($route->middleware())->toContain(App\Http\Middleware\InitializeTenantFromRoute::class);
     expect($route->middleware())->toContain(App\Http\Middleware\EnsureValidTenantMembership::class);
     expect($route->middleware())->toContain(App\Http\Middleware\SetPermissionTeamContext::class);
+    expect($route->middleware())->not->toContain(Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession::class);
+    expect($route->uri())->toBe('workspaces/{tenant}/dossiers');
 });
 
 test('workspace pages load tenant memberships only once', function () {
@@ -169,10 +193,10 @@ test('workspace pages load tenant memberships only once', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->get(route('workspaces.dossiers.index'))
+        ->get(workspaceRoute('workspaces.dossiers.index', $tenant))
         ->assertOk();
 
-    // Count only the relation eager-load, not InitializeTenantFromSession's whereHas exists subquery.
+    // Count only the relation eager-load, not the route initializer's whereHas exists subquery.
     $membershipEagerLoads = collect(DB::getQueryLog())
         ->filter(fn (array $query): bool => str_contains($query['query'], 'from "tenant_memberships"')
             && str_contains($query['query'], '"user_id" in'));

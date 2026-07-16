@@ -17,12 +17,14 @@ use App\Http\Requests\Dossiers\UpdateDocumentRequestRequest;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
+use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 
 final class DocumentRequestController extends Controller
 {
     public function store(
+        Tenant $tenant,
         StoreDocumentRequestRequest $request,
         Dossier $dossier,
     ): RedirectResponse {
@@ -39,10 +41,11 @@ final class DocumentRequestController extends Controller
             $documentRequest,
         );
 
-        return to_route('workspaces.dossiers.show', $dossier);
+        return $this->redirectToDossier($dossier);
     }
 
     public function update(
+        Tenant $tenant,
         UpdateDocumentRequestRequest $request,
         Dossier $dossier,
         DocumentRequest $documentRequest,
@@ -51,10 +54,11 @@ final class DocumentRequestController extends Controller
 
         $documentRequest->update($request->validated());
 
-        return to_route('workspaces.dossiers.show', $dossier);
+        return $this->redirectToDossier($dossier);
     }
 
     public function destroy(
+        Tenant $tenant,
         Dossier $dossier,
         DocumentRequest $documentRequest,
     ): RedirectResponse {
@@ -64,10 +68,11 @@ final class DocumentRequestController extends Controller
 
         $documentRequest->delete();
 
-        return to_route('workspaces.dossiers.show', $dossier);
+        return $this->redirectToDossier($dossier);
     }
 
     public function reorder(
+        Tenant $tenant,
         ReorderDocumentRequestsRequest $request,
         Dossier $dossier,
     ): RedirectResponse {
@@ -92,10 +97,11 @@ final class DocumentRequestController extends Controller
             }
         });
 
-        return to_route('workspaces.dossiers.show', $dossier);
+        return $this->redirectToDossier($dossier);
     }
 
     public function applyTemplate(
+        Tenant $tenant,
         ApplyQuestionnaireTemplateRequest $request,
         Dossier $dossier,
         ApplyQuestionnaireTemplateToDossier $applyQuestionnaireTemplateToDossier,
@@ -115,10 +121,11 @@ final class DocumentRequestController extends Controller
             );
         }
 
-        return to_route('workspaces.dossiers.show', $dossier);
+        return $this->redirectToDossier($dossier);
     }
 
     public function answer(
+        Tenant $tenant,
         StoreQuestionnaireAnswerRequest $request,
         Dossier $dossier,
         DocumentRequest $documentRequest,
@@ -136,6 +143,14 @@ final class DocumentRequestController extends Controller
                 : null,
         );
 
-        return to_route('workspaces.dossiers.show', $dossier);
+        return $this->redirectToDossier($dossier);
+    }
+
+    private function redirectToDossier(Dossier $dossier): RedirectResponse
+    {
+        return to_route(
+            'workspaces.dossiers.show',
+            $this->workspaceRouteParameters(['dossier' => $dossier]),
+        );
     }
 }

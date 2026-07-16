@@ -6,6 +6,7 @@ import Heading from '@/components/heading';
 import ClientAccessCard from '@/components/portal/client-access-card';
 import PortalLinkBanner from '@/components/portal/portal-link-banner';
 import { Badge } from '@/components/ui/badge';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     index as dossierIndex,
     show as showDossier,
@@ -26,16 +27,20 @@ export default function ShowDossier({
     access_grant_token?: string | null;
     access_grant_portal_url?: string | null;
 }) {
-    // Dynamic trail: dossier title comes from page props.
+    const currentWorkspace = useCurrentWorkspace();
+
     setLayoutProps({
         breadcrumbs: [
             {
                 title: 'Dossiers',
-                href: dossierIndex(),
+                href: dossierIndex(currentWorkspace),
             },
             {
                 title: dossier.title,
-                href: showDossier(dossier.id),
+                href: showDossier({
+                    tenant: currentWorkspace,
+                    dossier: dossier.id,
+                }),
             },
         ],
     });

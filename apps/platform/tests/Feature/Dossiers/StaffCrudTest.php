@@ -34,21 +34,21 @@ test('staff can create a client, dossier, and document request', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->get(route('workspaces.clients.index'))
+        ->get(workspaceRoute('workspaces.clients.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('clients/index')
             ->has('clients', 0));
 
-    $this->post(route('workspaces.clients.store'), [
+    $this->post(workspaceRoute('workspaces.clients.store', $tenant), [
         'name' => 'Jane Client',
         'email' => 'jane@example.com',
-    ])->assertRedirect(route('workspaces.dossiers.create'));
+    ])->assertRedirect(workspaceRoute('workspaces.dossiers.create', $tenant));
 
     $tenant->makeCurrent();
     $client = Client::query()->sole();
 
-    $this->post(route('workspaces.dossiers.store'), [
+    $this->post(workspaceRoute('workspaces.dossiers.store', $tenant), [
         'client_id' => $client->id,
         'title' => '2025 Payroll dossier',
         'reference' => 'PAY-2025-001',
@@ -56,13 +56,15 @@ test('staff can create a client, dossier, and document request', function () {
 
     $dossier = Dossier::query()->sole();
 
-    $this->post(route('workspaces.dossiers.document-requests.store', $dossier), [
+    $this->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
+        'dossier' => $dossier,
+    ]), [
         'type' => 'file',
         'title' => 'Payslip January 2025',
         'instructions' => 'Upload the original PDF.',
-    ])->assertRedirect(route('workspaces.dossiers.show', $dossier));
+    ])->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
 
-    $this->get(route('workspaces.dossiers.show', $dossier))
+    $this->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('dossiers/show')
@@ -86,7 +88,7 @@ test('staff cannot attach a dossier to a client in another tenant', function () 
 
     $this->actingAs($ownerA)
         ->withSession(['active_tenant_id' => $tenantA->id])
-        ->post(route('workspaces.dossiers.store'), [
+        ->post(workspaceRoute('workspaces.dossiers.store', $tenantA), [
             'client_id' => $foreignClient->id,
             'title' => 'Invalid dossier',
         ])
@@ -113,13 +115,13 @@ test('read only staff cannot create clients or dossiers', function () {
 
     $this->actingAs($reader)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.clients.store'), [
+        ->post(workspaceRoute('workspaces.clients.store', $tenant), [
             'name' => 'Jane Client',
             'email' => 'jane@example.com',
         ])
         ->assertForbidden();
 
-    $this->post(route('workspaces.dossiers.store'), [
+    $this->post(workspaceRoute('workspaces.dossiers.store', $tenant), [
         'client_id' => 1,
         'title' => 'Should not create',
     ])->assertForbidden();
@@ -140,11 +142,13 @@ test('staff can issue and revoke a client access grant', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.dossiers.access-grants.store', $dossier), [
+        ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
             'expires_in_days' => 7,
             'send_invite' => false,
         ])
-        ->assertRedirect(route('workspaces.dossiers.show', $dossier))
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertSessionHas('access_grant_token')
         ->assertSessionHas('access_grant_portal_url');
 
@@ -152,8 +156,8 @@ test('staff can issue and revoke a client access grant', function () {
     expect($grant->isValid())->toBeTrue()
         ->and($grant->created_by)->toBe($owner->id);
 
-    $this->delete(route('workspaces.access-grants.destroy', $grant))
-        ->assertRedirect(route('workspaces.dossiers.show', $dossier));
+    $this->delete(workspaceRoute('workspaces.access-grants.destroy', $tenant, ['grant' => $grant]))
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
 
     expect($grant->fresh()->isValid())->toBeFalse()
         ->and($grant->fresh()->revoked_at)->not->toBeNull();
@@ -184,7 +188,9 @@ test('read only staff cannot issue client access grants', function () {
 
     $this->actingAs($reader)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.dossiers.access-grants.store', $dossier))
+        ->post(workspaceRoute('workspaces.dossiers.access-grants.store', $tenant, [
+            'dossier' => $dossier,
+        ]))
         ->assertForbidden();
 });
 
@@ -210,13 +216,13 @@ test('staff can upload a document for a document request', function () {
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.dossiers.document-requests.upload', [
+        ->post(workspaceRoute('workspaces.dossiers.document-requests.upload', $tenant, [
             'dossier' => $dossier,
             'documentRequest' => $documentRequest,
         ]), [
             'document' => $file,
         ])
-        ->assertRedirect(route('workspaces.dossiers.show', $dossier));
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
 
     $uploaded = UploadedDocument::query()->sole();
 
@@ -226,7 +232,9 @@ test('staff can upload a document for a document request', function () {
 
     Storage::disk($uploaded->disk)->assertExists($uploaded->path);
 
-    $this->get(route('workspaces.uploaded-documents.download', $uploaded))
+    $this->get(workspaceRoute('workspaces.uploaded-documents.download', $tenant, [
+        'uploadedDocument' => $uploaded,
+    ]))
         ->assertOk();
 
     expect(Activity::query()
@@ -265,7 +273,7 @@ test('read only staff cannot upload documents', function () {
 
     $this->actingAs($reader)
         ->withSession(['active_tenant_id' => $tenant->id])
-        ->post(route('workspaces.dossiers.document-requests.upload', [
+        ->post(workspaceRoute('workspaces.dossiers.document-requests.upload', $tenant, [
             'dossier' => $dossier,
             'documentRequest' => $documentRequest,
         ]), [

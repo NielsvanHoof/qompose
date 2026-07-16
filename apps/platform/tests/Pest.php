@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\Tenant;
 use Tests\TestCase;
 
 /*
@@ -96,7 +97,14 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * @param  array<string, mixed>  $parameters
+ */
+function workspaceRoute(
+    string $name,
+    Tenant|string $tenant,
+    array $parameters = [],
+): string
 {
-    // ..
+    return route($name, ['tenant' => $tenant, ...$parameters]);
 }

@@ -1,4 +1,4 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import QuestionnaireTemplateController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateController';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     create as createTemplate,
     show as showTemplate,
@@ -29,6 +30,17 @@ export default function TemplateIndex({
     firm_templates: TemplateSummary[];
     can_manage: boolean;
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Templates',
+                href: templateIndex(currentWorkspace),
+            },
+        ],
+    });
+
     return (
         <>
             <Head title="Templates" />
@@ -48,7 +60,7 @@ export default function TemplateIndex({
 
                     {canManage && (
                         <Button asChild>
-                            <Link href={createTemplate()}>
+                            <Link href={createTemplate(currentWorkspace)}>
                                 <Plus />
                                 New template
                             </Link>
@@ -89,6 +101,8 @@ function TemplateSection({
     canManage: boolean;
     empty: string;
 }) {
+    const currentWorkspace = useCurrentWorkspace();
+
     return (
         <Card>
             <CardHeader>
@@ -108,7 +122,10 @@ function TemplateSection({
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <Link
-                                            href={showTemplate(template.id)}
+                                            href={showTemplate({
+                                                tenant: currentWorkspace,
+                                                template: template.id,
+                                            })}
                                             className="font-medium hover:underline"
                                         >
                                             {template.name}
@@ -129,7 +146,12 @@ function TemplateSection({
 
                                 <div className="flex flex-wrap gap-2">
                                     <Button variant="outline" size="sm" asChild>
-                                        <Link href={showTemplate(template.id)}>
+                                        <Link
+                                            href={showTemplate({
+                                                tenant: currentWorkspace,
+                                                template: template.id,
+                                            })}
+                                        >
                                             {template.is_system
                                                 ? 'View'
                                                 : 'Edit'}
@@ -138,7 +160,10 @@ function TemplateSection({
                                     {canManage && (
                                         <Form
                                             {...QuestionnaireTemplateController.copy.form(
-                                                template.id,
+                                                {
+                                                    tenant: currentWorkspace,
+                                                    template: template.id,
+                                                },
                                             )}
                                         >
                                             {({ processing }) => (
@@ -162,12 +187,3 @@ function TemplateSection({
         </Card>
     );
 }
-
-TemplateIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Templates',
-            href: templateIndex(),
-        },
-    ],
-};

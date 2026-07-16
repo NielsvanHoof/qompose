@@ -53,17 +53,13 @@ final class InitializeTenantFromSession
             ->first();
 
         if (! $tenant instanceof Tenant) {
-            $request->session()->forget([
-                'active_tenant_id',
-                'ensure_valid_tenant_session_tenant_id',
-            ]);
+            $request->session()->forget('active_tenant_id');
 
             return $next($request);
         }
 
         $tenant->makeCurrent();
         $request->session()->put('active_tenant_id', $tenant->id);
-        $request->session()->put('ensure_valid_tenant_session_tenant_id', $tenant->id);
 
         return $next($request);
     }
