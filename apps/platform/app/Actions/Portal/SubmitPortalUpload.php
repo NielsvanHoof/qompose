@@ -7,7 +7,6 @@ namespace App\Actions\Portal;
 use App\Actions\Audit\LogAuditActivity;
 use App\Actions\Dossiers\UploadDocumentForRequest;
 use App\Enums\AuditEvent;
-use App\Enums\DossierStatus;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
@@ -38,10 +37,7 @@ final class SubmitPortalUpload
                 $dossierQuery->getQuery()->lockForUpdate();
                 $dossier = $dossierQuery->firstOrFail();
 
-                if ($dossier->status === DossierStatus::Draft
-                    || $dossier->status === DossierStatus::AwaitingClient) {
-                    $dossier->update(['status' => DossierStatus::InReview]);
-                }
+                $dossier->markInReview();
 
                 $grantQuery = ClientAccessGrant::query()->whereKey($grant->getKey());
                 $grantQuery->getQuery()->lockForUpdate();

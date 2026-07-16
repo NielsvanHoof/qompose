@@ -12,7 +12,6 @@ use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use function in_array;
 
@@ -43,41 +42,19 @@ final class ReviewDocumentRequest
             $documentRequestQuery->getQuery()->lockForUpdate();
             $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
 
-            if ($lockedDocumentRequest->status !== DocumentRequestStatus::Submitted) {
-                throw ValidationException::withMessages([
-                    'decision' => 'Only submitted items can be reviewed.',
-                ]);
+            if ($decision === DocumentRequestStatus::Accepted) {
+                $lockedDocumentRequest->accept($reviewer);
+            } else {
+                $lockedDocumentRequest->reject($reviewer, $rejectionReason);
             }
-
-            $normalizedRejectionReason = $rejectionReason === null
-                ? null
-                : mb_trim($rejectionReason);
-
-            if ($decision === DocumentRequestStatus::Rejected && $normalizedRejectionReason === '') {
-                throw ValidationException::withMessages([
-                    'rejection_reason' => 'Explain what the client needs to correct.',
-                ]);
-            }
-
-            $reviewedAt = now();
-            $storedRejectionReason = $decision === DocumentRequestStatus::Rejected
-                ? $normalizedRejectionReason
-                : null;
-
-            $lockedDocumentRequest->update([
-                'status' => $decision,
-                'reviewed_by' => $reviewer->id,
-                'reviewed_at' => $reviewedAt,
-                'rejection_reason' => $storedRejectionReason,
-            ]);
 
             $uploadedDocument = $lockedDocumentRequest->uploadedDocument;
 
             if ($uploadedDocument instanceof UploadedDocument) {
                 $uploadedDocument->update([
                     'reviewed_by' => $reviewer->id,
-                    'reviewed_at' => $reviewedAt,
-                    'rejection_reason' => $storedRejectionReason,
+                    'reviewed_at' => $lockedDocumentRequest->reviewed_at,
+                    'rejection_reason' => $lockedDocumentRequest->rejection_reason,
                 ]);
             }
 

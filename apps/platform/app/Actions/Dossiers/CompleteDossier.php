@@ -7,7 +7,6 @@ namespace App\Actions\Dossiers;
 use App\Actions\Audit\LogAuditActivity;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
-use App\Enums\DossierStatus;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\User;
@@ -27,12 +26,6 @@ final class CompleteDossier
             $dossierQuery->getQuery()->lockForUpdate();
             $lockedDossier = $dossierQuery->firstOrFail();
 
-            if ($lockedDossier->status === DossierStatus::Completed) {
-                throw ValidationException::withMessages([
-                    'dossier' => 'This dossier is already completed.',
-                ]);
-            }
-
             $documentRequestQuery = DocumentRequest::query()
                 ->whereBelongsTo($lockedDossier)
                 ->oldest('id');
@@ -51,7 +44,7 @@ final class CompleteDossier
                 ]);
             }
 
-            $lockedDossier->update(['status' => DossierStatus::Completed]);
+            $lockedDossier->complete();
 
             $this->logAuditActivity->handle(
                 AuditEvent::DossierCompleted,

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Dossiers;
 
-use App\Enums\DocumentRequestStatus;
 use App\Enums\QuestionnaireItemType;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
@@ -109,13 +108,7 @@ final class UploadDocumentForRequest
                         ->create($attributes);
                 }
 
-                $lockedDocumentRequest->update([
-                    'status' => DocumentRequestStatus::Submitted,
-                    'answered_at' => now(),
-                    'reviewed_by' => null,
-                    'reviewed_at' => null,
-                    'rejection_reason' => null,
-                ]);
+                $lockedDocumentRequest->submitUpload();
 
                 if ($afterPersist instanceof Closure) {
                     $afterPersist($uploadedDocument, $lockedDocumentRequest);

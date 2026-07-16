@@ -7,14 +7,11 @@ namespace App\Actions\Portal;
 use App\Actions\Audit\LogAuditActivity;
 use App\Actions\Dossiers\SubmitQuestionnaireAnswer;
 use App\Enums\AuditEvent;
-use App\Enums\DossierStatus;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
-
-use function in_array;
 
 final class SubmitPortalAnswer
 {
@@ -60,9 +57,7 @@ final class SubmitPortalAnswer
                 $answerBoolean,
             );
 
-            if (in_array($dossier->status, [DossierStatus::Draft, DossierStatus::AwaitingClient], true)) {
-                $dossier->update(['status' => DossierStatus::InReview]);
-            }
+            $dossier->markInReview();
 
             $lockedGrant->forceFill(['last_used_at' => now()])->save();
 

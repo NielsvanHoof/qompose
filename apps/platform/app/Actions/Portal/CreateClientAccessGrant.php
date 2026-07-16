@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\Portal;
 
-use App\Enums\DossierStatus;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 final class CreateClientAccessGrant
 {
@@ -26,11 +24,7 @@ final class CreateClientAccessGrant
             $dossierQuery->getQuery()->lockForUpdate();
             $lockedDossier = $dossierQuery->firstOrFail();
 
-            if ($lockedDossier->status === DossierStatus::Completed) {
-                throw ValidationException::withMessages([
-                    'dossier' => 'A completed dossier cannot receive a new portal invitation.',
-                ]);
-            }
+            $lockedDossier->markAwaitingClient();
 
             $plainTextToken = Str::random(64);
 
@@ -39,11 +33,6 @@ final class CreateClientAccessGrant
                 'expires_at' => now()->addDays($expiresInDays),
                 'created_by' => $createdBy->id,
             ]);
-
-            // Issuing access means we are waiting on the client (unless already further along).
-            if ($lockedDossier->status === DossierStatus::Draft) {
-                $lockedDossier->update(['status' => DossierStatus::AwaitingClient]);
-            }
 
             return [
                 'grant' => $grant,
