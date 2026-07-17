@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Ocr;
+namespace App\Services\Ocr\Drivers;
 
 use App\Contracts\Ocr\StartsDocumentOcr;
 use App\Enums\DocumentProcessingStatus;

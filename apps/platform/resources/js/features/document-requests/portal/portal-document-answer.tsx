@@ -35,7 +35,7 @@ export function PortalTextDocumentAnswer({
                             rows={3}
                             required
                             defaultValue={documentRequest.answer_text ?? ''}
-                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                         />
                         <InputError message={errors.answer_text} />
                     </div>

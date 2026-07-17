@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Ocr;
+namespace App\Services\Ocr\Normalization;
 
 use function array_key_exists;
 use function is_array;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\Ocr\StartsDocumentOcr;
+use App\Enums\OcrDriver;
 use App\Models\Client;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
@@ -17,8 +18,8 @@ use App\Policies\Dossiers\DossierPolicy;
 use App\Policies\Dossiers\UploadedDocumentPolicy;
 use App\Policies\Portal\ClientAccessGrantPolicy;
 use App\Policies\Questionnaires\QuestionnaireTemplatePolicy;
-use App\Services\Ocr\MockOcrExtractor;
-use App\Services\Ocr\TextractDocumentOcr;
+use App\Services\Ocr\Configuration\OcrConfigurationValidator;
+use App\Services\Ocr\Drivers\OcrDriverFactory;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Carbon\CarbonImmutable;
@@ -44,8 +45,9 @@ final class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(OcrConfigurationValidator $ocrConfigurationValidator): void
     {
+        $ocrConfigurationValidator->validate();
         $this->configurePolicies();
         $this->configureDefaults();
     }
@@ -89,18 +91,16 @@ final class AppServiceProvider extends ServiceProvider
             return new SqsClient($this->awsClientConfig());
         });
 
-        $this->app->bind(StartsDocumentOcr::class, function ($app): StartsDocumentOcr {
-            $driver = (string) config('ocr.driver', 'mock');
-
-            return match ($driver) {
-                'textract' => $app->make(TextractDocumentOcr::class),
-                default => $app->make(MockOcrExtractor::class),
-            };
-        });
+        $this->app->bind(
+            StartsDocumentOcr::class,
+            fn ($app): StartsDocumentOcr => $app->make(OcrDriverFactory::class)->make(
+                (string) config('ocr.driver', OcrDriver::Mock->value),
+            ),
+        );
     }
 
     /**
-     * @return array{version: string, region: string, credentials: array{key: string, secret: string}}
+     * @return array{version: string, region: string, credentials?: array{key: string, secret: string}}
      */
     private function awsClientConfig(): array
     {
@@ -108,14 +108,20 @@ final class AppServiceProvider extends ServiceProvider
         $secret = config('ocr.textract.secret');
         $region = config('ocr.textract.region', 'eu-west-1');
 
-        return [
+        /** @var array{version: string, region: string, credentials?: array{key: string, secret: string}} $clientConfig */
+        $clientConfig = [
             'version' => 'latest',
             'region' => is_string($region) && $region !== '' ? $region : 'eu-west-1',
-            'credentials' => [
-                'key' => is_string($key) ? $key : '',
-                'secret' => is_string($secret) ? $secret : '',
-            ],
         ];
+
+        if (is_string($key) && $key !== '' && is_string($secret) && $secret !== '') {
+            $clientConfig['credentials'] = [
+                'key' => $key,
+                'secret' => $secret,
+            ];
+        }
+
+        return $clientConfig;
     }
 
     private function configurePolicies(): void

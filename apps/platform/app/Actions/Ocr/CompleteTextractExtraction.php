@@ -9,7 +9,7 @@ use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
-use App\Services\Ocr\TextractAnalyzeDocumentNormalizer;
+use App\Services\Ocr\Normalization\TextractAnalyzeDocumentNormalizer;
 use Aws\Textract\TextractClient;
 use JsonException;
 use RuntimeException;

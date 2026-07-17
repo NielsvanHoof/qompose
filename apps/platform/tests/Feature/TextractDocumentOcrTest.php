@@ -10,7 +10,7 @@ use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
-use App\Services\Ocr\TextractDocumentOcr;
+use App\Services\Ocr\Drivers\TextractDocumentOcr;
 use Aws\Result;
 use Aws\Textract\TextractClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
