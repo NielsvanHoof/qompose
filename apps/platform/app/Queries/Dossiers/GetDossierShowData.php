@@ -58,7 +58,6 @@ final class GetDossierShowData
      *                 size_bytes: int,
      *                 uploaded_at: string,
      *                 processing_status: string,
-     *                 extracted_text: string|null,
      *                 processing_error: string|null
      *             }|null
      *         }>,
@@ -147,7 +146,6 @@ final class GetDossierShowData
                                 'size_bytes' => $uploaded->size_bytes,
                                 'uploaded_at' => $uploaded->uploaded_at->toIso8601String(),
                                 'processing_status' => $uploaded->processing_status->value,
-                                'extracted_text' => $uploaded->extracted_text,
                                 'processing_error' => $uploaded->processing_error,
                             ],
                         ];

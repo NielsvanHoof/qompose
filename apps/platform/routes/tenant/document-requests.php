@@ -35,5 +35,7 @@ Route::scopeBindings()->group(function (): void {
 });
 
 // Not nested under a dossier — BelongsToTenant global scope is enough.
+Route::get('uploaded-documents/{uploadedDocument}', [UploadedDocumentController::class, 'show'])
+    ->name('uploaded-documents.show');
 Route::get('uploaded-documents/{uploadedDocument}/download', [UploadedDocumentController::class, 'download'])
     ->name('uploaded-documents.download');

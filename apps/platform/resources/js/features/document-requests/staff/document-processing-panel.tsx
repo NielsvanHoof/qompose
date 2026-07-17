@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';
 
 /**
- * Staff view of an uploaded file: metadata, OCR status, and extracted text.
+ * Compact file strip on the dossier: status + download + link to extraction page.
  */
 export default function DocumentProcessingPanel({
     uploadedDocument,
@@ -20,6 +21,7 @@ export default function DocumentProcessingPanel({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const isComplete = uploadedDocument.processing_status === 'completed';
 
     return (
         <div className="space-y-3 rounded-md bg-muted/50 px-3 py-2 text-sm">
@@ -45,18 +47,32 @@ export default function DocumentProcessingPanel({
                         {formatDateTime(uploadedDocument.uploaded_at)}
                     </p>
                 </div>
-                {canDownload && (
-                    <Button variant="outline" size="sm" asChild>
-                        <a
-                            href={UploadedDocumentController.download.url({
-                                tenant: currentWorkspace,
-                                uploadedDocument: uploadedDocument.id,
-                            })}
-                        >
-                            Download
-                        </a>
-                    </Button>
-                )}
+                <div className="flex flex-wrap gap-2">
+                    {isComplete && (
+                        <Button variant="secondary" size="sm" asChild>
+                            <Link
+                                href={UploadedDocumentController.show.url({
+                                    tenant: currentWorkspace,
+                                    uploadedDocument: uploadedDocument.id,
+                                })}
+                            >
+                                View extraction
+                            </Link>
+                        </Button>
+                    )}
+                    {canDownload && (
+                        <Button variant="outline" size="sm" asChild>
+                            <a
+                                href={UploadedDocumentController.download.url({
+                                    tenant: currentWorkspace,
+                                    uploadedDocument: uploadedDocument.id,
+                                })}
+                            >
+                                Download
+                            </a>
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {uploadedDocument.processing_status === 'failed' &&
@@ -72,31 +88,8 @@ export default function DocumentProcessingPanel({
                     Analyzing document structure (forms and tables)…
                 </p>
             )}
-
-            {uploadedDocument.processing_status === 'completed' &&
-                uploadedDocument.extracted_text && (
-                    <div className="space-y-1">
-                        <p className="font-medium text-muted-foreground">
-                            Extracted JSON
-                        </p>
-                        <pre className="max-h-64 overflow-auto rounded-md border bg-background px-3 py-2 font-mono text-xs whitespace-pre-wrap">
-                            {formatExtractedPayload(
-                                uploadedDocument.extracted_text,
-                            )}
-                        </pre>
-                    </div>
-                )}
         </div>
     );
-}
-
-/** Pretty-print JSON when OCR returned AnalyzeDocument output. */
-function formatExtractedPayload(raw: string): string {
-    try {
-        return JSON.stringify(JSON.parse(raw), null, 2);
-    } catch {
-        return raw;
-    }
 }
 
 function processingLabel(status: DocumentProcessingStatus): string {

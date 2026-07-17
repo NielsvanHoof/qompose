@@ -90,7 +90,7 @@ test('staff dossier show includes processing fields for uploaded documents', fun
             ->has('dossier.document_requests.0.uploaded_document', fn (Assert $document) => $document
                 ->where('original_filename', 'payslip.pdf')
                 ->where('processing_status', DocumentProcessingStatus::Pending->value)
-                ->where('extracted_text', null)
+                ->missing('extracted_text')
                 ->etc()
             )
         );

@@ -11,6 +11,18 @@ use App\Models\User;
 
 final class UploadedDocumentPolicy
 {
+    /**
+     * Staff can open the OCR extraction page when they can view dossiers.
+     */
+    public function view(User $user, UploadedDocument $uploadedDocument): bool
+    {
+        $tenant = $uploadedDocument->tenant;
+
+        return $user->can(Permission::ViewDossiers->value)
+            && $tenant instanceof Tenant
+            && $user->belongsToTenant($tenant);
+    }
+
     public function download(User $user, UploadedDocument $uploadedDocument): bool
     {
         $tenant = $uploadedDocument->tenant;

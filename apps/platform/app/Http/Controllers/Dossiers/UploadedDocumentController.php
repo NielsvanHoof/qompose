@@ -18,7 +18,13 @@ use App\Transitions\DossierTransitions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Inertia\Response;
+use JsonException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+
+use function is_array;
+use function is_string;
+use function json_decode;
 
 final class UploadedDocumentController extends Controller
 {
@@ -77,6 +83,44 @@ final class UploadedDocumentController extends Controller
     }
 
     /**
+     * Dedicated OCR extraction page — key/values and tables off the dossier list.
+     */
+    public function show(Tenant $tenant, UploadedDocument $uploadedDocument): Response
+    {
+        $this->authorize('view', $uploadedDocument);
+
+        $uploadedDocument->load([
+            'documentRequest:id,dossier_id,title,tenant_id',
+            'documentRequest.dossier:id,title,tenant_id',
+        ]);
+
+        $documentRequest = $uploadedDocument->documentRequest;
+        $dossier = $documentRequest?->dossier;
+
+        return Inertia::render('uploaded-documents/show', [
+            'uploaded_document' => [
+                'id' => $uploadedDocument->id,
+                'original_filename' => $uploadedDocument->original_filename,
+                'size_bytes' => $uploadedDocument->size_bytes,
+                'uploaded_at' => $uploadedDocument->uploaded_at->toIso8601String(),
+                'processing_status' => $uploadedDocument->processing_status->value,
+                'processing_error' => $uploadedDocument->processing_error,
+                'extraction' => $this->parseExtraction($uploadedDocument->extracted_text),
+                'raw_json' => $uploadedDocument->extracted_text,
+            ],
+            'document_request' => $documentRequest === null ? null : [
+                'id' => $documentRequest->id,
+                'title' => $documentRequest->title,
+            ],
+            'dossier' => $dossier === null ? null : [
+                'id' => $dossier->id,
+                'title' => $dossier->title,
+            ],
+            'can_download' => request()->user()?->can('download', $uploadedDocument) ?? false,
+        ]);
+    }
+
+    /**
      * Authorize, audit, then either redirect to a signed S3 URL or stream locally.
      */
     public function download(
@@ -108,5 +152,45 @@ final class UploadedDocumentController extends Controller
             $uploadedDocument->path,
             $uploadedDocument->original_filename,
         );
+    }
+
+    /**
+     * Decode stored AnalyzeDocument JSON into a typed extraction payload for Inertia.
+     *
+     * Trusts our own OCR-written shape; only guards against missing/invalid JSON.
+     *
+     * @return array{key_values: array<string, string|list<string>>, tables: list<list<list<string>>>}|null
+     */
+    private function parseExtraction(?string $raw): ?array
+    {
+        if (! is_string($raw) || $raw === '') {
+            return null;
+        }
+
+        try {
+            /** @var mixed $decoded */
+            $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return null;
+        }
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $keyValues = $decoded['key_values'] ?? [];
+        $tables = $decoded['tables'] ?? [];
+
+        if (! is_array($keyValues) || ! is_array($tables)) {
+            return null;
+        }
+
+        /** @var array{key_values: array<string, string|list<string>>, tables: list<list<list<string>>>} $payload */
+        $payload = [
+            'key_values' => $keyValues,
+            'tables' => array_values($tables),
+        ];
+
+        return $payload;
     }
 }

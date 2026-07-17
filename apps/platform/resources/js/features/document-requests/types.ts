@@ -11,15 +11,20 @@ export type DocumentRequestStatus =
 export type DocumentProcessingStatus =
     'pending' | 'processing' | 'completed' | 'failed';
 
-/** Uploaded file on a staff dossier document request. */
+/** Uploaded file on a staff dossier document request (list payload — no OCR body). */
 export type UploadedDocument = {
     id: number;
     original_filename: string;
     size_bytes: number;
     uploaded_at: string;
     processing_status: DocumentProcessingStatus;
-    extracted_text: string | null;
     processing_error: string | null;
+};
+
+/** Parsed AnalyzeDocument payload on the extraction page. */
+export type DocumentExtraction = {
+    key_values: Record<string, string | string[]>;
+    tables: string[][][];
 };
 
 /** Document request as shown on the staff dossier page. */
