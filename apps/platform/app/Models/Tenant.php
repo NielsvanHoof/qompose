@@ -13,6 +13,8 @@ use Spatie\Multitenancy\Concerns\UsesMultitenancyConfig;
 use Spatie\Multitenancy\Contracts\IsTenant;
 use Spatie\Multitenancy\Models\Concerns\ImplementsTenant;
 
+use function in_array;
+
 /**
  * @property int $id
  * @property string $name
@@ -51,5 +53,23 @@ final class Tenant extends Model implements IsTenant
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * Scoped bindings under this tenant. System questionnaire templates
+     * (tenant_id null) are intentionally visible across firms, so they
+     * must not be resolved through a strict hasMany(tenant_id) relation.
+     */
+    public function resolveChildRouteBinding($childType, $value, $field)
+    {
+        if (in_array($childType, ['template', 'templates'], true)) {
+            $field ??= (new QuestionnaireTemplate)->getRouteKeyName();
+
+            return QuestionnaireTemplate::queryVisibleToCurrentTenant()
+                ->where($field, $value)
+                ->first();
+        }
+
+        return parent::resolveChildRouteBinding($childType, $value, $field);
     }
 }

@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { ArrowRight, Building2 } from 'lucide-react';
+import { ArrowRight, Building2, Plus } from 'lucide-react';
 import {
     Card,
     CardContent,
@@ -8,6 +8,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import type { Firm } from '@/features/workspaces/types';
+import { create as createFirm } from '@/routes/firms';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 
 /**
@@ -38,6 +39,30 @@ export default function FirmPickerGrid({ firms }: { firms: Firm[] }) {
                     </Card>
                 </button>
             ))}
+
+            {/* Entry point for creating an additional firm. */}
+            <button
+                type="button"
+                onClick={() => router.visit(createFirm.url())}
+                className="group rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+                <Card className="h-full border-dashed transition-colors group-hover:bg-muted/50">
+                    <CardHeader>
+                        <Plus className="size-8 text-muted-foreground" />
+                        <CardTitle>Add a firm</CardTitle>
+                        <CardDescription>
+                            Create another firm to manage its own clients and
+                            dossiers.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <span className="inline-flex items-center gap-2 text-sm font-medium">
+                            Create firm
+                            <ArrowRight className="size-4" />
+                        </span>
+                    </CardContent>
+                </Card>
+            </button>
         </div>
     );
 }

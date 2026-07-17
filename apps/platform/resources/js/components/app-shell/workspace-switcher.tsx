@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { Building2, Check, ChevronsUpDown } from 'lucide-react';
+import { Building2, Check, ChevronsUpDown, Plus } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,6 +13,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { create as createFirm } from '@/routes/firms';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 
 export function WorkspaceSwitcher() {
@@ -63,6 +64,13 @@ export function WorkspaceSwitcher() {
                                 )}
                             </DropdownMenuItem>
                         ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onSelect={() => router.visit(createFirm.url())}
+                        >
+                            <Plus />
+                            <span>Create new firm</span>
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>

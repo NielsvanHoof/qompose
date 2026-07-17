@@ -22,7 +22,6 @@ final class ReviewDocumentRequestRequest extends FormRequest
         return $user !== null
             && $dossier instanceof Dossier
             && $documentRequest instanceof DocumentRequest
-            && $documentRequest->dossier_id === $dossier->id
             && $user->can('review', $documentRequest);
     }
 

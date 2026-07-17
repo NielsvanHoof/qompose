@@ -1,8 +1,5 @@
-import { Form } from '@inertiajs/react';
 import { Building2 } from 'lucide-react';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -10,8 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import CreateFirmForm from '@/features/workspaces/create-firm-form';
 import { store } from '@/routes/onboarding/firm';
 
 /**
@@ -34,28 +30,10 @@ export default function FirmOnboardingCard() {
                     description="Next, you will add your first client and create a dossier."
                 />
 
-                <Form {...store.form()} className="space-y-4">
-                    {({ errors, processing }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Firm name</Label>
-                                <Input
-                                    id="name"
-                                    name="name"
-                                    required
-                                    autoComplete="organization"
-                                    placeholder="Acme Accountants"
-                                    autoFocus
-                                />
-                                <InputError message={errors.name} />
-                            </div>
-
-                            <Button disabled={processing}>
-                                Continue to your first client
-                            </Button>
-                        </>
-                    )}
-                </Form>
+                <CreateFirmForm
+                    action={store.form()}
+                    submitLabel="Continue to your first client"
+                />
             </CardContent>
         </Card>
     );

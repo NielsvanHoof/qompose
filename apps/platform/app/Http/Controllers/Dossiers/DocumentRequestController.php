@@ -40,8 +40,6 @@ final class DocumentRequestController extends Controller
         Dossier $dossier,
         DocumentRequest $documentRequest,
     ): RedirectResponse {
-        abort_unless($documentRequest->dossier_id === $dossier->id, 404);
-
         $documentRequest->update($request->validated());
 
         return $this->redirectToDossier($dossier);
@@ -55,7 +53,6 @@ final class DocumentRequestController extends Controller
     ): RedirectResponse {
         $this->authorize('view', $dossier);
         $this->authorize('delete', $documentRequest);
-        abort_unless($documentRequest->dossier_id === $dossier->id, 404);
 
         $deleteDocumentRequest->handle($documentRequest);
 
@@ -100,8 +97,6 @@ final class DocumentRequestController extends Controller
         DocumentRequest $documentRequest,
         SubmitQuestionnaireAnswer $submitQuestionnaireAnswer,
     ): RedirectResponse {
-        abort_unless($documentRequest->dossier_id === $dossier->id, 404);
-
         $validated = $request->validated();
 
         $submitQuestionnaireAnswer->handle(

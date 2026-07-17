@@ -37,8 +37,6 @@ final class QuestionnaireTemplateItemController extends Controller
         QuestionnaireTemplate $template,
         QuestionnaireTemplateItem $item,
     ): RedirectResponse {
-        abort_unless($item->questionnaire_template_id === $template->id, 404);
-
         $item->update($request->validated());
 
         return to_route(
@@ -53,7 +51,6 @@ final class QuestionnaireTemplateItemController extends Controller
         QuestionnaireTemplateItem $item,
     ): RedirectResponse {
         $this->authorize('update', $template);
-        abort_unless($item->questionnaire_template_id === $template->id, 404);
 
         $item->delete();
 

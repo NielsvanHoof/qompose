@@ -28,9 +28,8 @@ final class UploadedDocumentController extends Controller
         UploadDocumentForRequest $uploadDocumentForRequest,
         LogAuditActivity $logAuditActivity,
     ): RedirectResponse {
-        // Ensure the request belongs to this dossier (tenant scope already applied).
-        abort_unless($documentRequest->dossier_id === $dossier->id, 404);
-
+        // Parent ownership is enforced by scoped route bindings
+        // (dossier → documentRequest). Tenant scope is already applied.
         $this->authorize('view', $dossier);
 
         $file = $request->file('document');

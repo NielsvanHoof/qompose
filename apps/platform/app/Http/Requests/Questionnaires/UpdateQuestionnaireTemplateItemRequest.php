@@ -22,7 +22,6 @@ final class UpdateQuestionnaireTemplateItemRequest extends FormRequest
         return $user !== null
             && $template instanceof QuestionnaireTemplate
             && $item instanceof QuestionnaireTemplateItem
-            && $item->questionnaire_template_id === $template->id
             && $user->can('update', $template);
     }
 
