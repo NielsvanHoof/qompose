@@ -10,6 +10,7 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Filesystem\FilesystemManager;
 use RuntimeException;
 
+use function is_array;
 use function is_string;
 use function parse_url;
 

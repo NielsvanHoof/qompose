@@ -1,7 +1,9 @@
 import { Head, setLayoutProps, usePoll } from '@inertiajs/react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AddDocumentRequestCard from '@/features/document-requests/staff/add-document-request-card';
 import DocumentRequestsCard from '@/features/document-requests/staff/document-requests-card';
@@ -18,7 +20,15 @@ import {
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
 
-type DossierStageTab = 'prepare' | 'invite' | 'review';
+const STAGE_ORDER = ['prepare', 'invite', 'review'] as const;
+
+type DossierStageTab = (typeof STAGE_ORDER)[number];
+
+const STAGE_LABELS: Record<DossierStageTab, string> = {
+    prepare: 'Prepare',
+    invite: 'Invite',
+    review: 'Review',
+};
 
 /**
  * Pick the tab that matches where the dossier is in the workflow.
@@ -103,6 +113,16 @@ export default function ShowDossier({
     });
 
     const canEditStructure = canManage && dossier.status !== 'completed';
+    const stageIndex = STAGE_ORDER.indexOf(tab);
+    const previousStage = stageIndex > 0 ? STAGE_ORDER[stageIndex - 1] : null;
+    const nextStage =
+        stageIndex < STAGE_ORDER.length - 1
+            ? STAGE_ORDER[stageIndex + 1]
+            : null;
+
+    // Soft gate: don't advance to Invite with an empty questionnaire.
+    const canAdvanceFromPrepare = dossier.document_requests.length > 0;
+    const nextDisabled = tab === 'prepare' && !canAdvanceFromPrepare;
 
     return (
         <>
@@ -138,9 +158,9 @@ export default function ShowDossier({
 
                     <p className="text-sm text-muted-foreground">
                         {tab === 'prepare' &&
-                            'Build the questionnaire, then invite the client.'}
+                            'Build the questionnaire, then continue to Invite.'}
                         {tab === 'invite' &&
-                            'Send a portal link so the client can upload. After uploads arrive, use Review.'}
+                            'Send a portal link so the client can upload. Then continue to Review.'}
                         {tab === 'review' &&
                             'Check OCR results, approve or request changes, then complete the dossier.'}
                     </p>
@@ -202,6 +222,42 @@ export default function ShowDossier({
                             />
                         </div>
                     </TabsContent>
+
+                    {/* Linear stage controls — tabs stay available for jumping back. */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                        <div>
+                            {previousStage ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setTab(previousStage)}
+                                >
+                                    <ArrowLeft />
+                                    Back to {STAGE_LABELS[previousStage]}
+                                </Button>
+                            ) : (
+                                <span />
+                            )}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1">
+                            {nextStage ? (
+                                <Button
+                                    type="button"
+                                    disabled={nextDisabled}
+                                    onClick={() => setTab(nextStage)}
+                                >
+                                    Next: {STAGE_LABELS[nextStage]}
+                                    <ArrowRight />
+                                </Button>
+                            ) : null}
+                            {nextDisabled && (
+                                <p className="text-xs text-muted-foreground">
+                                    Add at least one questionnaire item first.
+                                </p>
+                            )}
+                        </div>
+                    </div>
                 </Tabs>
             </div>
         </>
