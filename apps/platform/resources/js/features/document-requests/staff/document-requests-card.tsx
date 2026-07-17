@@ -51,7 +51,8 @@ export default function DocumentRequestsCard({
                 <CardTitle>Questionnaire</CardTitle>
                 <CardDescription>
                     Tailor items for this dossier. Drag the grip to reorder.
-                    Clients answer via the portal.
+                    Clients upload via the portal. Staff can upload on behalf of
+                    a client when needed (for example email or walk-in).
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -68,6 +69,7 @@ export default function DocumentRequestsCard({
                         renderItem={(documentRequest, { DragHandle }) => (
                             <DocumentRequestListItem
                                 dossierId={dossierId}
+                                dossierStatus={dossierStatus}
                                 documentRequest={documentRequest}
                                 canEdit={canEdit}
                                 canReview={

@@ -15,6 +15,9 @@ enum AuditEvent: string
     case DossierCompleted = 'dossier.completed';
     case DocumentViewed = 'document.viewed';
     case DocumentDownloaded = 'document.downloaded';
+    case DocumentProcessingStarted = 'document.processing_started';
+    case DocumentProcessingCompleted = 'document.processing_completed';
+    case DocumentProcessingFailed = 'document.processing_failed';
     case ClientPortalAccessGrantCreated = 'client_portal.access_grant_created';
     case ClientPortalAccessGrantRevoked = 'client_portal.access_grant_revoked';
     case ClientPortalAccessed = 'client_portal.accessed';
@@ -39,6 +42,9 @@ enum AuditEvent: string
             self::DossierCompleted => 'Dossier completed',
             self::DocumentViewed => 'Document viewed',
             self::DocumentDownloaded => 'Document downloaded',
+            self::DocumentProcessingStarted => 'Document processing started',
+            self::DocumentProcessingCompleted => 'Document processing completed',
+            self::DocumentProcessingFailed => 'Document processing failed',
             self::ClientPortalAccessGrantCreated => 'Client portal access grant created',
             self::ClientPortalAccessGrantRevoked => 'Client portal access grant revoked',
             self::ClientPortalAccessed => 'Client portal accessed',

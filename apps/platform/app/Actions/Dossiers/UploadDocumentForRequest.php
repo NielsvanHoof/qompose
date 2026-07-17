@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Dossiers;
 
+use App\Enums\DocumentProcessingStatus;
 use App\Enums\QuestionnaireItemType;
+use App\Jobs\ProcessUploadedDocument;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
 use App\Transitions\DocumentRequestTransitions;
@@ -94,6 +96,11 @@ final class UploadDocumentForRequest
                     'reviewed_by' => null,
                     'reviewed_at' => null,
                     'rejection_reason' => null,
+                    'processing_status' => DocumentProcessingStatus::Pending,
+                    'extracted_text' => null,
+                    'processing_error' => null,
+                    'processing_started_at' => null,
+                    'processing_finished_at' => null,
                 ];
 
                 if ($existing instanceof UploadedDocument) {
@@ -135,6 +142,8 @@ final class UploadDocumentForRequest
                 'Failed to remove the file replaced by a newer document upload.',
             );
         }
+
+        ProcessUploadedDocument::dispatch($uploadedDocument->id);
 
         return $uploadedDocument;
     }

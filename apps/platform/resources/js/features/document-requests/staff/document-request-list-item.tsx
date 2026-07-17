@@ -14,10 +14,12 @@ import type {
     DocumentRequest,
     DocumentRequestStatus,
 } from '@/features/document-requests/types';
+import type { DossierStatus } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 
 type DocumentRequestListItemProps = {
     dossierId: number;
+    dossierStatus: DossierStatus;
     documentRequest: DocumentRequest;
     canEdit: boolean;
     canReview: boolean;
@@ -30,6 +32,7 @@ type DocumentRequestListItemProps = {
  */
 export default function DocumentRequestListItem({
     dossierId,
+    dossierStatus,
     documentRequest,
     canEdit,
     canReview,
@@ -125,6 +128,7 @@ export default function DocumentRequestListItem({
 
             <StaffContent
                 dossierId={dossierId}
+                dossierStatus={dossierStatus}
                 documentRequest={documentRequest}
                 canEdit={canEdit}
                 canDownload={canDownload}

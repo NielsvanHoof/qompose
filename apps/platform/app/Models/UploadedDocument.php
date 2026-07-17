@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTenant;
+use App\Enums\DocumentProcessingStatus;
 use Database\Factories\UploadedDocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +26,12 @@ use Illuminate\Support\Carbon;
  * @property int|null $reviewed_by
  * @property Carbon|null $reviewed_at
  * @property string|null $rejection_reason
+ * @property DocumentProcessingStatus $processing_status
+ * @property string|null $extracted_text
+ * @property string|null $processing_error
+ * @property Carbon|null $processing_started_at
+ * @property Carbon|null $processing_finished_at
+ * @property string|null $textract_job_id
  */
 #[Fillable([
     'tenant_id',
@@ -38,6 +45,12 @@ use Illuminate\Support\Carbon;
     'reviewed_by',
     'reviewed_at',
     'rejection_reason',
+    'processing_status',
+    'extracted_text',
+    'processing_error',
+    'processing_started_at',
+    'processing_finished_at',
+    'textract_job_id',
 ])]
 final class UploadedDocument extends Model
 {
@@ -69,6 +82,9 @@ final class UploadedDocument extends Model
             'size_bytes' => 'integer',
             'uploaded_at' => 'datetime',
             'reviewed_at' => 'datetime',
+            'processing_status' => DocumentProcessingStatus::class,
+            'processing_started_at' => 'datetime',
+            'processing_finished_at' => 'datetime',
         ];
     }
 }

@@ -1,73 +1,116 @@
-import type { ReactNode } from 'react';
-import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
+import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import DocumentProcessingPanel from '@/features/document-requests/staff/document-processing-panel';
 import DocumentRequestUpload from '@/features/document-requests/staff/document-request-upload';
 import type { DocumentRequest } from '@/features/document-requests/types';
-import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { formatBytes } from '@/lib/format-bytes';
-import { formatDateTime } from '@/lib/format-date-time';
+import type { DossierStatus } from '@/features/dossiers/types';
 
 export type StaffDocumentRequestTypeProps = {
     dossierId: number;
+    dossierStatus: DossierStatus;
     documentRequest: DocumentRequest;
     canEdit: boolean;
     canDownload: boolean;
 };
 
 /**
- * File requests include their uploaded file and staff upload controls.
+ * File requests: OCR/review first; staff upload is a collapsed fallback.
  */
 export function StaffFileRequestContent({
     dossierId,
+    dossierStatus,
     documentRequest,
     canEdit,
     canDownload,
 }: StaffDocumentRequestTypeProps) {
-    const currentWorkspace = useCurrentWorkspace();
+    const hasUpload = documentRequest.uploaded_document !== null;
 
     return (
         <>
-            {documentRequest.uploaded_document && (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-2 text-sm">
-                    <div>
-                        <p className="font-medium">
-                            {
-                                documentRequest.uploaded_document
-                                    .original_filename
-                            }
-                        </p>
-                        <p className="text-muted-foreground">
-                            {formatBytes(
-                                documentRequest.uploaded_document.size_bytes,
-                            )}{' '}
-                            ·{' '}
-                            {formatDateTime(
-                                documentRequest.uploaded_document.uploaded_at,
-                            )}
-                        </p>
-                    </div>
-                    {canDownload && (
-                        <Button variant="outline" size="sm" asChild>
-                            <a
-                                href={UploadedDocumentController.download.url({
-                                    tenant: currentWorkspace,
-                                    uploadedDocument:
-                                        documentRequest.uploaded_document.id,
-                                })}
-                            >
-                                Download
-                            </a>
-                        </Button>
-                    )}
-                </div>
+            {hasUpload && documentRequest.uploaded_document && (
+                <DocumentProcessingPanel
+                    uploadedDocument={documentRequest.uploaded_document}
+                    canDownload={canDownload}
+                />
             )}
+
+            {!hasUpload && (
+                <WaitingForClientUpload dossierStatus={dossierStatus} />
+            )}
+
             {canEdit && (
+                <StaffUploadOnBehalfFallback
+                    dossierId={dossierId}
+                    documentRequest={documentRequest}
+                    hasUpload={hasUpload}
+                />
+            )}
+        </>
+    );
+}
+
+/**
+ * Quiet empty state — clients should upload via the portal.
+ */
+function WaitingForClientUpload({
+    dossierStatus,
+}: {
+    dossierStatus: DossierStatus;
+}) {
+    return (
+        <div className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+            <p>Waiting for the client to upload via the portal.</p>
+            {dossierStatus === 'draft' && (
+                <p className="mt-1">
+                    Invite the client from Client Access so they can upload
+                    securely.
+                </p>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Staff upload stays available for email / walk-in, but is not the primary CTA.
+ */
+function StaffUploadOnBehalfFallback({
+    dossierId,
+    documentRequest,
+    hasUpload,
+}: {
+    dossierId: number;
+    documentRequest: DocumentRequest;
+    hasUpload: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const triggerLabel = hasUpload
+        ? 'Replace on behalf of client'
+        : 'Upload on behalf of client';
+
+    return (
+        <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
+            <CollapsibleTrigger asChild>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="px-0"
+                >
+                    {open ? 'Hide staff upload' : triggerLabel}
+                </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
                 <DocumentRequestUpload
                     dossierId={dossierId}
                     documentRequest={documentRequest}
                 />
-            )}
-        </>
+            </CollapsibleContent>
+        </Collapsible>
     );
 }
 

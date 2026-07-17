@@ -1,0 +1,8 @@
+name: platform-ocr
+description: AWS infra for platform document OCR (S3, Textract SNS/SQS)
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+backend:
+  url: file://~

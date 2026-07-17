@@ -9,8 +9,8 @@ import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 
 /**
- * Staff-side file upload for a single document request.
- * Posts multipart form data to the workspace upload endpoint.
+ * Staff fallback file upload (email / walk-in).
+ * Shown only after expanding “Upload/Replace on behalf of client”.
  */
 export default function DocumentRequestUpload({
     dossierId,
@@ -42,7 +42,7 @@ export default function DocumentRequestUpload({
     };
 
     return (
-        <form onSubmit={submit} className="mt-3 space-y-2">
+        <form onSubmit={submit} className="mt-2 space-y-2">
             <div className="flex flex-wrap items-end gap-2">
                 <div className="grid min-w-48 flex-1 gap-1">
                     <Label htmlFor={`document-${documentRequest.id}`}>

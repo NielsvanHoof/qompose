@@ -7,12 +7,19 @@ export type QuestionnaireItemType = 'file' | 'text' | 'boolean';
 export type DocumentRequestStatus =
     'pending' | 'submitted' | 'accepted' | 'rejected';
 
+/** Parallel OCR lifecycle on the uploaded file (independent of review status). */
+export type DocumentProcessingStatus =
+    'pending' | 'processing' | 'completed' | 'failed';
+
 /** Uploaded file on a staff dossier document request. */
 export type UploadedDocument = {
     id: number;
     original_filename: string;
     size_bytes: number;
     uploaded_at: string;
+    processing_status: DocumentProcessingStatus;
+    extracted_text: string | null;
+    processing_error: string | null;
 };
 
 /** Document request as shown on the staff dossier page. */

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Tenancy\ProvisionTenant;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
+use App\Enums\DossierStatus;
 use App\Enums\Role;
 use App\Enums\TenantMembershipStatus;
 use App\Models\Activity;
@@ -69,7 +70,8 @@ test('staff can create a client, dossier, and document request', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('dossiers/show')
-            ->has('dossier.document_requests', 1));
+            ->has('dossier.document_requests', 1)
+            ->where('dossier.status', 'draft'));
 
     expect(DocumentRequest::query()->where('dossier_id', $dossier->id)->first())
         ->not->toBeNull()
@@ -294,6 +296,7 @@ test('read only staff cannot issue client access grants', function () {
 });
 
 test('staff can upload a document for a document request', function () {
+    config(['filesystems.default' => 'local']);
     Storage::fake('local');
 
     $owner = User::factory()->create();
@@ -326,6 +329,7 @@ test('staff can upload a document for a document request', function () {
     $uploaded = UploadedDocument::query()->sole();
 
     expect($documentRequest->fresh()->status)->toBe(DocumentRequestStatus::Submitted)
+        ->and($dossier->fresh()->status)->toBe(DossierStatus::InReview)
         ->and($uploaded->original_filename)->toBe('payslip.pdf')
         ->and($uploaded->document_request_id)->toBe($documentRequest->id);
 

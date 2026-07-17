@@ -36,7 +36,8 @@ final class DocumentRequestPolicy
     }
 
     /**
-     * Staff upload onto a request (e.g. files received by email).
+     * Staff fallback upload onto a request (e.g. files received by email or walk-in).
+     * Clients remain the primary upload path via the portal.
      */
     public function upload(User $user, DocumentRequest $documentRequest): bool
     {

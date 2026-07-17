@@ -36,5 +36,6 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="PERMISSION_TESTING" value="true"/>
+        <env name="OCR_DRIVER" value="mock"/>
     </php>
 </phpunit>
