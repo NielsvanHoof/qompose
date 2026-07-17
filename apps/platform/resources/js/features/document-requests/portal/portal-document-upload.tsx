@@ -9,13 +9,11 @@ import type { PortalDocumentRequest } from '@/features/document-requests/types';
 
 /**
  * Client-portal file upload for a single document request.
- * Uses the magic-link token, not staff auth.
+ * Uses the restricted client portal session, not staff auth.
  */
 export default function PortalDocumentUpload({
-    token,
     documentRequest,
 }: {
-    token: string;
     documentRequest: PortalDocumentRequest;
 }) {
     const form = useForm<{ document: File | null }>({
@@ -27,7 +25,6 @@ export default function PortalDocumentUpload({
 
         form.post(
             ClientPortalUploadController.store.url({
-                token,
                 documentRequest: documentRequest.id,
             }),
             {

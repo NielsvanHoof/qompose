@@ -43,7 +43,7 @@ final class ClientAccessGrantController extends Controller
         );
 
         $plainTextToken = $result['plain_text_token'];
-        $portalUrl = URL::route('portal.show', ['token' => $plainTextToken]);
+        $portalUrl = URL::route('portal.exchange', ['token' => $plainTextToken]);
 
         // Flash plaintext once — the DB only stores the hash.
         $request->session()->flash('access_grant_token', $plainTextToken);

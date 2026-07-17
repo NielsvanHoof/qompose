@@ -39,7 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             prepend: InitializeTenantFromRoute::class,
         );
 
-        // Portal magic-link grants must resolve tenant before any tenant-scoped binding.
+        // Restricted portal sessions must resolve tenant before tenant-scoped bindings.
         $middleware->prependToPriorityList(
             before: SubstituteBindings::class,
             prepend: ResolveClientPortalGrant::class,

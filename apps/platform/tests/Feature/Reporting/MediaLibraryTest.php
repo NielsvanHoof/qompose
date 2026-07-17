@@ -153,7 +153,10 @@ test('reviewer can browse the media library but cannot download', function () {
     ]);
 
     $this->actingAs($reviewer)
-        ->withSession(['active_tenant_id' => $tenant->id])
+        ->withSession([
+            'active_tenant_id' => $tenant->id,
+            'auth.password_confirmed_at' => now()->getTimestamp(),
+        ])
         ->get(workspaceRoute('workspaces.media.index', $tenant))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page

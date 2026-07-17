@@ -36,7 +36,7 @@ final class SendClientPortalInvite
             : (string) config('app.name');
 
         // Absolute portal URL embedding the one-time plain token.
-        $portalUrl = URL::route('portal.show', ['token' => $plainTextToken]);
+        $portalUrl = URL::route('portal.exchange', ['token' => $plainTextToken]);
 
         Notification::route('mail', $client->email)
             ->notify(new ClientPortalInviteNotification(

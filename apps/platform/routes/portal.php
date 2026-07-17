@@ -4,33 +4,36 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Portal\ClientPortalAnswerController;
 use App\Http\Controllers\Portal\ClientPortalController;
+use App\Http\Controllers\Portal\ClientPortalSessionController;
 use App\Http\Controllers\Portal\ClientPortalUploadController;
 use App\Http\Middleware\HardenClientPortalResponse;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use Illuminate\Support\Facades\Route;
 
-/*
-| Guest client portal — accessed via magic-link token (no login).
-| ResolveClientPortalGrant makes the grant's tenant current before bindings.
-*/
+/* Guest client portal — magic links are exchanged for restricted sessions. */
 Route::middleware([
     'web',
     'throttle:30,1',
     HardenClientPortalResponse::class,
-    ResolveClientPortalGrant::class,
 ])
     ->prefix('portal')
     ->name('portal.')
     ->group(function (): void {
-        Route::get('{token}', [ClientPortalController::class, 'show'])
+        Route::get('access/{token}', ClientPortalSessionController::class)
             ->where('token', '[A-Za-z0-9]+')
-            ->name('show');
+            ->middleware('throttle:10,1')
+            ->name('exchange');
 
-        Route::post('{token}/document-requests/{documentRequest}/upload', [ClientPortalUploadController::class, 'store'])
-            ->where(['token' => '[A-Za-z0-9]+', 'documentRequest' => '[0-9]+'])
-            ->name('document-requests.upload');
+        Route::middleware(ResolveClientPortalGrant::class)->group(function (): void {
+            Route::get('/', [ClientPortalController::class, 'show'])
+                ->name('show');
 
-        Route::post('{token}/document-requests/{documentRequest}/answer', [ClientPortalAnswerController::class, 'store'])
-            ->where(['token' => '[A-Za-z0-9]+', 'documentRequest' => '[0-9]+'])
-            ->name('document-requests.answer');
+            Route::post('document-requests/{documentRequest}/upload', [ClientPortalUploadController::class, 'store'])
+                ->where('documentRequest', '[0-9]+')
+                ->name('document-requests.upload');
+
+            Route::post('document-requests/{documentRequest}/answer', [ClientPortalAnswerController::class, 'store'])
+                ->where('documentRequest', '[0-9]+')
+                ->name('document-requests.answer');
+        });
     });

@@ -200,7 +200,10 @@ test('rejected items show feedback and a client correction returns them to revie
         ->where('subject_id', $documentRequest->id)
         ->exists())->toBeTrue();
 
-    $this->get(route('portal.show', $grantResult['plain_text_token']))
+    $this->get(route('portal.exchange', $grantResult['plain_text_token']))
+        ->assertRedirect(route('portal.show'));
+
+    $this->get(route('portal.show'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where(
@@ -209,13 +212,12 @@ test('rejected items show feedback and a client correction returns them to revie
             ));
 
     $answerUrl = route('portal.document-requests.answer', [
-        'token' => $grantResult['plain_text_token'],
         'documentRequest' => $documentRequest,
     ]);
 
     $this->post($answerUrl, [
         'answer_text' => '221B Baker Street, London',
-    ])->assertRedirect(route('portal.show', $grantResult['plain_text_token']));
+    ])->assertRedirect(route('portal.show'));
 
     $correctedRequest = $documentRequest->fresh();
 
@@ -336,8 +338,9 @@ test('a dossier can only be completed after every item is approved', function ()
             fn (string $query): bool => str_contains($query, 'count(*)'),
         ))->toBeFalse();
 
+    $this->get(route('portal.exchange', $grantResult['plain_text_token']));
+
     $this->post(route('portal.document-requests.answer', [
-        'token' => $grantResult['plain_text_token'],
         'documentRequest' => $rejectedRequest,
     ]), [
         'answer_text' => 'A late change',

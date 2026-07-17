@@ -18,12 +18,10 @@ import type { DossierStatus } from '@/features/dossiers/types';
  * Client-portal questionnaire with uploads and typed answers.
  */
 export default function PortalDocumentRequestsCard({
-    token,
     firmName,
     dossierStatus,
     documentRequests,
 }: {
-    token: string;
     firmName: string;
     dossierStatus: DossierStatus;
     documentRequests: PortalDocumentRequest[];
@@ -106,7 +104,6 @@ export default function PortalDocumentRequestsCard({
                                     )}
 
                                 <PortalRequestTypeContent
-                                    token={token}
                                     documentRequest={documentRequest}
                                     canRespond={canRespondToDocumentRequest(
                                         dossierStatus,
@@ -154,11 +151,9 @@ function canRespondToDocumentRequest(
  * Resolve type-specific portal content through the exhaustive registry.
  */
 function PortalRequestTypeContent({
-    token,
     documentRequest,
     canRespond,
 }: {
-    token: string;
     documentRequest: PortalDocumentRequest;
     canRespond: boolean;
 }) {
@@ -168,7 +163,6 @@ function PortalRequestTypeContent({
 
     return (
         <PortalContent
-            token={token}
             documentRequest={documentRequest}
             canRespond={canRespond}
         />

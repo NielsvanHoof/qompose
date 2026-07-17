@@ -335,9 +335,10 @@ test('staff can upload a document for a document request', function () {
 
     Storage::disk($uploaded->disk)->assertExists($uploaded->path);
 
-    $this->get(workspaceRoute('workspaces.uploaded-documents.download', $tenant, [
-        'uploadedDocument' => $uploaded,
-    ]))
+    $this->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])
+        ->get(workspaceRoute('workspaces.uploaded-documents.download', $tenant, [
+            'uploadedDocument' => $uploaded,
+        ]))
         ->assertOk();
 
     expect(Activity::query()

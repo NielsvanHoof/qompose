@@ -52,11 +52,20 @@ test('local disk downloads stream through the application', function () {
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
+        ->withSession([
+            'active_tenant_id' => $tenant->id,
+            'auth.password_confirmed_at' => now()->getTimestamp(),
+        ])
         ->get(workspaceRoute('workspaces.uploaded-documents.download', $tenant, [
             'uploadedDocument' => $uploaded,
         ]))
         ->assertOk();
+
+    $this->travel(16)->minutes();
+
+    $this->get(workspaceRoute('workspaces.uploaded-documents.download', $tenant, [
+        'uploadedDocument' => $uploaded,
+    ]))->assertRedirect(route('password.confirm'));
 
     expect(Activity::query()
         ->where('event', AuditEvent::DocumentDownloaded->value)

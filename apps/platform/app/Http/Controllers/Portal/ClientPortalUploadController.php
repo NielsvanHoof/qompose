@@ -20,7 +20,6 @@ final class ClientPortalUploadController extends Controller
      */
     public function store(
         StorePortalUploadedDocumentRequest $request,
-        string $token,
         int $documentRequest,
         SubmitPortalUpload $submitPortalUpload,
     ): RedirectResponse {
@@ -47,7 +46,7 @@ final class ClientPortalUploadController extends Controller
             'message' => 'Document uploaded. Thank you.',
         ]);
 
-        return to_route('portal.show', ['token' => $token]);
+        return to_route('portal.show');
     }
 
     private function grantFromRequest(StorePortalUploadedDocumentRequest $request): ClientAccessGrant

@@ -7,7 +7,6 @@ import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { formatBytes } from '@/lib/format-bytes';
 
 export type PortalDocumentRequestTypeProps = {
-    token: string;
     documentRequest: PortalDocumentRequest;
     canRespond: boolean;
 };
@@ -16,7 +15,6 @@ export type PortalDocumentRequestTypeProps = {
  * File requests show the current upload before offering a replacement.
  */
 export function PortalFileRequestContent({
-    token,
     documentRequest,
     canRespond,
 }: PortalDocumentRequestTypeProps) {
@@ -45,17 +43,13 @@ export function PortalFileRequestContent({
                 </div>
             )}
             {canRespond && (
-                <PortalDocumentUpload
-                    token={token}
-                    documentRequest={documentRequest}
-                />
+                <PortalDocumentUpload documentRequest={documentRequest} />
             )}
         </>
     );
 }
 
 export function PortalTextRequestContent({
-    token,
     documentRequest,
     canRespond,
 }: PortalDocumentRequestTypeProps) {
@@ -63,16 +57,10 @@ export function PortalTextRequestContent({
         return null;
     }
 
-    return (
-        <PortalTextDocumentAnswer
-            token={token}
-            documentRequest={documentRequest}
-        />
-    );
+    return <PortalTextDocumentAnswer documentRequest={documentRequest} />;
 }
 
 export function PortalBooleanRequestContent({
-    token,
     documentRequest,
     canRespond,
 }: PortalDocumentRequestTypeProps) {
@@ -80,10 +68,5 @@ export function PortalBooleanRequestContent({
         return null;
     }
 
-    return (
-        <PortalBooleanDocumentAnswer
-            token={token}
-            documentRequest={documentRequest}
-        />
-    );
+    return <PortalBooleanDocumentAnswer documentRequest={documentRequest} />;
 }

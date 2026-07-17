@@ -9,16 +9,13 @@ import type { PortalDocumentRequest } from '@/features/document-requests/types';
  * Portal form for a text questionnaire answer.
  */
 export function PortalTextDocumentAnswer({
-    token,
     documentRequest,
 }: {
-    token: string;
     documentRequest: PortalDocumentRequest;
 }) {
     return (
         <Form
             {...ClientPortalAnswerController.store.form({
-                token,
                 documentRequest: documentRequest.id,
             })}
             className="space-y-3"
@@ -54,23 +51,19 @@ export function PortalTextDocumentAnswer({
  * Portal form for a yes or no questionnaire answer.
  */
 export function PortalBooleanDocumentAnswer({
-    token,
     documentRequest,
 }: {
-    token: string;
     documentRequest: PortalDocumentRequest;
 }) {
     return (
         <div className="flex flex-wrap gap-2">
             <BooleanAnswerButton
-                token={token}
                 documentRequestId={documentRequest.id}
                 value={true}
                 label="Yes"
                 active={documentRequest.answer_boolean === true}
             />
             <BooleanAnswerButton
-                token={token}
                 documentRequestId={documentRequest.id}
                 value={false}
                 label="No"
@@ -81,13 +74,11 @@ export function PortalBooleanDocumentAnswer({
 }
 
 function BooleanAnswerButton({
-    token,
     documentRequestId,
     value,
     label,
     active,
 }: {
-    token: string;
     documentRequestId: number;
     value: boolean;
     label: string;
@@ -96,7 +87,6 @@ function BooleanAnswerButton({
     return (
         <Form
             {...ClientPortalAnswerController.store.form({
-                token,
                 documentRequest: documentRequestId,
             })}
         >

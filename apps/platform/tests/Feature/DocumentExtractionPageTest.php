@@ -49,7 +49,10 @@ test('staff can open the OCR extraction page for an uploaded document', function
     ]);
 
     $this->actingAs($owner)
-        ->withSession(['active_tenant_id' => $tenant->id])
+        ->withSession([
+            'active_tenant_id' => $tenant->id,
+            'auth.password_confirmed_at' => now()->getTimestamp(),
+        ])
         ->get(workspaceRoute('workspaces.uploaded-documents.show', $tenant, [
             'uploadedDocument' => $uploaded,
         ]))
@@ -86,11 +89,41 @@ test('staff from another tenant cannot open an extraction page', function () {
     ]);
 
     $this->actingAs($ownerB)
-        ->withSession(['active_tenant_id' => $tenantB->id])
+        ->withSession([
+            'active_tenant_id' => $tenantB->id,
+            'auth.password_confirmed_at' => now()->getTimestamp(),
+        ])
         ->get(workspaceRoute('workspaces.uploaded-documents.show', $tenantA, [
             'uploadedDocument' => $uploaded,
         ]))
         ->assertNotFound();
+});
+
+test('staff must recently confirm their password before opening an extraction page', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant->makeCurrent();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+    ]);
+    $uploaded = UploadedDocument::factory()->processed()->create([
+        'tenant_id' => $tenant->id,
+        'document_request_id' => $documentRequest->id,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.uploaded-documents.show', $tenant, [
+            'uploadedDocument' => $uploaded,
+        ]))
+        ->assertRedirect(route('password.confirm'));
 });
 
 test('guest cannot open the OCR extraction page', function () {

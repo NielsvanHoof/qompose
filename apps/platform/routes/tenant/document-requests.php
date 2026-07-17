@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Dossiers\DocumentRequestController;
 use App\Http\Controllers\Dossiers\DocumentRequestReviewController;
 use App\Http\Controllers\Dossiers\UploadedDocumentController;
+use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -36,6 +37,12 @@ Route::scopeBindings()->group(function (): void {
 
 // Not nested under a dossier — BelongsToTenant global scope is enough.
 Route::get('uploaded-documents/{uploadedDocument}', [UploadedDocumentController::class, 'show'])
+    ->middleware(RequirePassword::using(
+        passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+    ))
     ->name('uploaded-documents.show');
 Route::get('uploaded-documents/{uploadedDocument}/download', [UploadedDocumentController::class, 'download'])
+    ->middleware(RequirePassword::using(
+        passwordTimeoutSeconds: (int) config('auth.document_access_timeout', 900),
+    ))
     ->name('uploaded-documents.download');

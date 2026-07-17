@@ -355,7 +355,10 @@ test('guest can submit text and boolean answers through the portal', function ()
     $grant = $result['grant'];
 
     // The frontend registry relies on these enum values being serialized unchanged.
-    $this->get(route('portal.show', $plainTextToken))
+    $this->get(route('portal.exchange', $plainTextToken))
+        ->assertRedirect(route('portal.show'));
+
+    $this->get(route('portal.show'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('portal/show')
@@ -366,18 +369,16 @@ test('guest can submit text and boolean answers through the portal', function ()
                 ->all() === ['boolean', 'file', 'text']));
 
     $this->post(route('portal.document-requests.answer', [
-        'token' => $plainTextToken,
         'documentRequest' => $textRequest->id,
     ]), [
         'answer_text' => 'Keizersgracht 1, Amsterdam',
-    ])->assertRedirect(route('portal.show', $plainTextToken));
+    ])->assertRedirect(route('portal.show'));
 
     $this->post(route('portal.document-requests.answer', [
-        'token' => $plainTextToken,
         'documentRequest' => $booleanRequest->id,
     ]), [
         'answer_boolean' => true,
-    ])->assertRedirect(route('portal.show', $plainTextToken));
+    ])->assertRedirect(route('portal.show'));
 
     $tenant->makeCurrent();
 

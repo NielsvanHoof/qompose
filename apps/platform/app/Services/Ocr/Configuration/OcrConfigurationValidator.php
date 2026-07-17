@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Ocr\Configuration;
 
-use function in_array;
 use const FILTER_VALIDATE_URL;
 
 use App\Enums\OcrDriver;
@@ -13,6 +12,7 @@ use Illuminate\Foundation\Application;
 use LogicException;
 
 use function filter_var;
+use function in_array;
 use function is_int;
 use function is_string;
 use function mb_trim;

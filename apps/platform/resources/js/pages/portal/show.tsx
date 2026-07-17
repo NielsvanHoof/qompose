@@ -11,11 +11,9 @@ type FlashToast = {
  * Client portal dossier page — magic-link access, no staff layout.
  */
 export default function PortalShow({
-    token,
     firm,
     dossier,
 }: {
-    token: string;
     firm: { name: string };
     dossier: PortalDossier;
 }) {
@@ -65,7 +63,6 @@ export default function PortalShow({
                     )}
 
                     <PortalDocumentRequestsCard
-                        token={token}
                         firmName={firm.name}
                         dossierStatus={dossier.status}
                         documentRequests={dossier.document_requests}

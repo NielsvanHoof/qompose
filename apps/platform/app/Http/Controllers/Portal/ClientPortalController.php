@@ -22,7 +22,6 @@ final class ClientPortalController extends Controller
      */
     public function show(
         Request $request,
-        string $token,
         GetClientPortalData $getClientPortalData,
         LogAuditActivity $logAuditActivity,
     ): Response {
@@ -42,7 +41,6 @@ final class ClientPortalController extends Controller
         });
 
         return Inertia::render('portal/show', [
-            'token' => $token,
             ...$getClientPortalData->handle($grant),
         ]);
     }

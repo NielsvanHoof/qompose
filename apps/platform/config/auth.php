@@ -116,4 +116,6 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    'document_access_timeout' => (int) env('AUTH_DOCUMENT_ACCESS_TIMEOUT', 900),
+
 ];

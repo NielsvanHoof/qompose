@@ -22,7 +22,6 @@ final class ClientPortalAnswerController extends Controller
      */
     public function store(
         StorePortalQuestionnaireAnswerRequest $request,
-        string $token,
         DocumentRequest $documentRequest,
         SubmitPortalAnswer $submitPortalAnswer,
     ): RedirectResponse {
@@ -46,7 +45,7 @@ final class ClientPortalAnswerController extends Controller
             'message' => 'Answer saved. Thank you.',
         ]);
 
-        return to_route('portal.show', ['token' => $token]);
+        return to_route('portal.show');
     }
 
     private function grantFromRequest(StorePortalQuestionnaireAnswerRequest $request): ClientAccessGrant

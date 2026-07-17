@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Actions\Portal\ResolveClientAccessGrantFromToken;
 use App\Models\ClientAccessGrant;
 use App\Models\Tenant;
 use Closure;
@@ -12,32 +11,44 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Resolves the portal magic-link token and makes the grant's tenant current
+ * Resolves a short-lived portal session and makes the grant's tenant current
  * before route model binding runs (see bootstrap/app.php priority list).
  */
 final class ResolveClientPortalGrant
 {
     public const string REQUEST_ATTRIBUTE = 'client_access_grant';
 
-    public function __construct(
-        private ResolveClientAccessGrantFromToken $resolveClientAccessGrantFromToken,
-    ) {}
+    public const string SESSION_EXPIRES_AT = 'portal.expires_at';
+
+    public const string SESSION_GRANT_ID = 'portal.grant_id';
 
     /**
      * @param  Closure(Request): Response  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Only portal routes carry a magic-link token.
+        // Only token-free portal session routes use this resolver.
         if (! $request->routeIs('portal.*')) {
             return $next($request);
         }
 
-        $plainTextToken = (string) $request->route('token', '');
+        $grantId = $request->session()->get(self::SESSION_GRANT_ID);
+        $expiresAt = $request->session()->get(self::SESSION_EXPIRES_AT);
 
-        $grant = $this->resolveClientAccessGrantFromToken->handle($plainTextToken);
+        if (! is_int($grantId) || ! is_int($expiresAt) || $expiresAt <= now()->getTimestamp()) {
+            $this->clearPortalSession($request);
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        $grant = ClientAccessGrant::query()
+            ->withoutGlobalScopes()
+            ->whereKey($grantId)
+            ->where('revoked_at', null)
+            ->where('expires_at', '>', now())
+            ->first();
 
         if (! $grant instanceof ClientAccessGrant) {
+            $this->clearPortalSession($request);
             abort(Response::HTTP_NOT_FOUND);
         }
 
@@ -53,5 +64,13 @@ final class ResolveClientPortalGrant
         $request->attributes->set(self::REQUEST_ATTRIBUTE, $grant);
 
         return $next($request);
+    }
+
+    private function clearPortalSession(Request $request): void
+    {
+        $request->session()->forget([
+            self::SESSION_GRANT_ID,
+            self::SESSION_EXPIRES_AT,
+        ]);
     }
 }
