@@ -35,6 +35,26 @@ test('validation is skipped outside production', function () {
     expect(true)->toBeTrue();
 });
 
+test('validation is skipped during package discovery even in production', function () {
+    $this->app->instance('env', 'production');
+    config(['ocr.driver' => 'mock']);
+
+    $originalArgv = $_SERVER['argv'] ?? null;
+    $_SERVER['argv'] = ['artisan', 'package:discover', '--ansi'];
+
+    try {
+        app(OcrConfigurationValidator::class)->validate();
+    } finally {
+        if ($originalArgv === null) {
+            unset($_SERVER['argv']);
+        } else {
+            $_SERVER['argv'] = $originalArgv;
+        }
+    }
+
+    expect(true)->toBeTrue();
+});
+
 test('production requires the textract driver', function (mixed $driver) {
     $this->app->instance('env', 'production');
     config(['ocr.driver' => $driver]);

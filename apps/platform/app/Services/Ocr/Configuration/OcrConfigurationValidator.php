@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Ocr\Configuration;
 
+use function in_array;
 use const FILTER_VALIDATE_URL;
 
 use App\Enums\OcrDriver;
@@ -27,6 +28,12 @@ final class OcrConfigurationValidator
 
     public function validate(): void
     {
+        // Composer runs `package:discover` before .env exists. Laravel then
+        // defaults APP_ENV to production, which must not fail the install.
+        if ($this->isPackageDiscovery()) {
+            return;
+        }
+
         if (! $this->application->isProduction()) {
             return;
         }
@@ -48,6 +55,20 @@ final class OcrConfigurationValidator
                 implode(', ', $invalidKeys),
             ));
         }
+    }
+
+    /**
+     * True while Composer triggers `php artisan package:discover`.
+     */
+    private function isPackageDiscovery(): bool
+    {
+        if (! $this->application->runningInConsole()) {
+            return false;
+        }
+
+        $argv = $_SERVER['argv'] ?? [];
+
+        return in_array('package:discover', $argv, true);
     }
 
     /**
