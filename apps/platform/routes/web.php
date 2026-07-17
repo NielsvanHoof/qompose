@@ -6,11 +6,12 @@ use App\Http\Middleware\InitializeTenantFromSession;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
-
 /*
  * Authenticated (non-workspace) routes, split per domain under routes/web/.
  * These resolve the tenant from the session instead of the URL.
+ *
+ * The root `/` is the global dashboard (auth required), so guests are
+ * redirected to login by the auth middleware.
  */
 Route::middleware([
     'auth',

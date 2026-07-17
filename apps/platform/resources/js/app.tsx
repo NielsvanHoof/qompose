@@ -12,8 +12,6 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            case name === 'welcome':
-                return null;
             case name.startsWith('portal/'):
                 // Guest magic-link portal — no staff chrome.
                 return null;

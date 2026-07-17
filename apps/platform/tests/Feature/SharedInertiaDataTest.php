@@ -29,11 +29,12 @@ function sharedDataInertiaHeaders(array $additionalHeaders = []): array
 test('shared authenticated user data is explicitly projected', function () {
     $user = User::factory()->create();
 
+    // Profile is always reachable for verified users (unlike `/`, which may redirect).
     $this->actingAs($user)
-        ->get(route('home'))
+        ->get(route('profile.edit'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('welcome')
+            ->component('settings/profile')
             ->where('auth.user', [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -50,7 +51,7 @@ test('workspace navigation is remembered as a once prop', function () {
 
     $this->actingAs($user)
         ->withHeaders(sharedDataInertiaHeaders())
-        ->get(route('home'))
+        ->get(route('profile.edit'))
         ->assertOk()
         ->assertJsonPath('props.workspaces', [
             ['name' => 'Acme Accountants', 'slug' => 'acme-accountants'],
@@ -63,6 +64,8 @@ test('remembered workspace navigation is not queried on every inertia response',
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
+    // Two firms so session middleware does not auto-select a tenant (and query further).
+    app(ProvisionTenant::class)->handle('Beta Tax', $user);
     app(ProvisionTenant::class)->handle('Acme Accountants', $user);
 
     DB::flushQueryLog();
@@ -72,14 +75,16 @@ test('remembered workspace navigation is not queried on every inertia response',
         ->withHeaders(sharedDataInertiaHeaders([
             Header::EXCEPT_ONCE_PROPS => 'workspaces',
         ]))
-        ->get(route('home'))
+        ->get(route('profile.edit'))
         ->assertOk()
         ->assertJsonMissingPath('props.workspaces');
 
-    $workspaceQueries = collect(DB::getQueryLog())
-        ->filter(fn (array $query): bool => str_contains($query['query'], 'tenant_memberships'));
+    // Navigation loads tenants (name/slug); session middleware only touches memberships.
+    $workspaceNavigationQueries = collect(DB::getQueryLog())
+        ->filter(fn (array $query): bool => str_contains($query['query'], 'from `tenants`')
+            || str_contains($query['query'], 'from "tenants"'));
 
-    expect($workspaceQueries)->toBeEmpty();
+    expect($workspaceNavigationQueries)->toBeEmpty();
 });
 
 test('workspace navigation is refreshed after provisioning a workspace', function () {
@@ -89,7 +94,7 @@ test('workspace navigation is refreshed after provisioning a workspace', functio
 
     $this->actingAs($user)
         ->withHeaders(sharedDataInertiaHeaders())
-        ->get(route('home'))
+        ->get(route('profile.edit'))
         ->assertOk()
         ->assertJsonPath('props.workspaces', []);
 
@@ -99,7 +104,7 @@ test('workspace navigation is refreshed after provisioning a workspace', functio
     $this->withHeaders(sharedDataInertiaHeaders([
         Header::EXCEPT_ONCE_PROPS => 'workspaces',
     ]))
-        ->get(route('home'))
+        ->get(route('profile.edit'))
         ->assertOk()
         ->assertJsonPath('props.workspaces', [
             ['name' => 'Acme Accountants', 'slug' => 'acme-accountants'],
