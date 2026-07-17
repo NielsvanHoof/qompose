@@ -1,6 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
-import PortalDocumentRequestsCard from '@/components/portal/portal-document-requests-card';
-import type { PortalDossier } from '@/types';
+import PortalDocumentRequestsCard from '@/features/document-requests/portal/portal-document-requests-card';
+import type { PortalDossier } from '@/features/portal/types';
 
 type FlashToast = {
     type: 'success' | 'error' | 'info' | 'warning';

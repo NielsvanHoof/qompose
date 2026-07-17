@@ -10,6 +10,7 @@ use App\Enums\AuditEvent;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
+use App\Transitions\DossierTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +19,7 @@ final class SubmitPortalAnswer
     public function __construct(
         private readonly SubmitQuestionnaireAnswer $submitQuestionnaireAnswer,
         private readonly LogAuditActivity $logAuditActivity,
+        private readonly DossierTransitions $dossierTransitions,
     ) {}
 
     public function handle(
@@ -57,7 +59,7 @@ final class SubmitPortalAnswer
                 $answerBoolean,
             );
 
-            $dossier->markInReview();
+            $this->dossierTransitions->markInReview($dossier);
 
             $lockedGrant->forceFill(['last_used_at' => now()])->save();
 

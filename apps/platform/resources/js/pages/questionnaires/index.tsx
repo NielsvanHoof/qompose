@@ -10,13 +10,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import type { TemplateSummary } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     create as createTemplate,
     show as showTemplate,
     index as templateIndex,
 } from '@/routes/workspaces/templates';
-import type { TemplateSummary } from '@/types';
 
 /**
  * Template library — system packs plus firm-owned copies.

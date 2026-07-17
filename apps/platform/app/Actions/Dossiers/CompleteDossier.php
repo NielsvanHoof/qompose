@@ -10,6 +10,7 @@ use App\Enums\DocumentRequestStatus;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\User;
+use App\Transitions\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -17,6 +18,7 @@ final class CompleteDossier
 {
     public function __construct(
         private readonly LogAuditActivity $logAuditActivity,
+        private readonly DossierTransitions $dossierTransitions,
     ) {}
 
     public function handle(Dossier $dossier, User $completedBy): Dossier
@@ -44,7 +46,7 @@ final class CompleteDossier
                 ]);
             }
 
-            $lockedDossier->complete();
+            $this->dossierTransitions->complete($lockedDossier);
 
             $this->logAuditActivity->handle(
                 AuditEvent::DossierCompleted,

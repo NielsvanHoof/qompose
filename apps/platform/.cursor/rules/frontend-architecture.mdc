@@ -1,0 +1,32 @@
+---
+description: Feature-based frontend architecture conventions for resources/js
+globs: resources/js/**/*.ts,resources/js/**/*.tsx
+alwaysApply: false
+---
+
+# Frontend architecture (feature-based)
+
+## Where files go
+
+- `resources/js/features/<domain>/` — all domain code (components + a co-located `types.ts`). Domains: `dossiers`, `document-requests`, `portal`, `questionnaires`, `clients`, `media`, `dashboard`, `workspaces`, `security`, `settings`.
+- `resources/js/components/` — only domain-agnostic shared code: `ui/` (shadcn), `app-shell/` (chrome: nav, sidebar, breadcrumbs), `sortable/`, and generic primitives (`heading`, `input-error`, `text-link`, `alert-error`, `password-input`).
+- `resources/js/pages/` — thin Inertia entry points only. Pages compose feature components; they hold no reusable logic.
+- `resources/js/types/` — only cross-cutting types (`auth`, `navigation`, `ui`). Domain types live in `features/<domain>/types.ts` and are imported directly, never re-exported through `@/types`.
+
+## Import boundaries (enforced by Biome noRestrictedImports)
+
+- Nothing imports from `@/pages/**`.
+- `components/**` never imports from `@/features/**`.
+- `features/document-requests/staff/**` and `.../portal/**` never import each other. Only the registry at the feature root (`questionnaire-item-type-registry.tsx`) wires both sides.
+- `pages/portal/**` (guest magic-link portal) never imports staff-side UI or `components/app-shell`.
+
+Cross-feature imports of another feature's `types.ts` are fine and intentional (e.g. `@/features/dossiers/types` from document-requests).
+
+## Document request types
+
+New questionnaire item types (currently `file` | `text` | `boolean`) are added by:
+
+1. Extending `QuestionnaireItemType` in `features/document-requests/types.ts` (mirrors the PHP `QuestionnaireItemType` enum).
+2. Adding a registry entry in `questionnaire-item-type-registry.tsx` with a label, a `StaffContent` renderer (`staff/`), and a `PortalContent` renderer (`portal/`). The `satisfies Record<QuestionnaireItemType, ...>` makes TypeScript flag missing entries.
+
+Never branch on `documentRequest.type` inside cards or pages — resolve through the registry.

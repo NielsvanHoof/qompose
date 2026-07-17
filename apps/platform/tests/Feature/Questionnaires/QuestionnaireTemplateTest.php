@@ -11,8 +11,8 @@ use App\Enums\QuestionnaireItemType;
 use App\Enums\QuestionnaireTemplateCategory;
 use App\Enums\Role;
 use App\Enums\TenantMembershipStatus;
-use App\Models\Client;
 use App\Models\Activity;
+use App\Models\Client;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
@@ -22,6 +22,7 @@ use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemQuestionnaireTemplateSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -341,10 +342,28 @@ test('guest can submit text and boolean answers through the portal', function ()
         'title' => 'UBO confirmed',
         'status' => DocumentRequestStatus::Pending,
     ]);
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'type' => QuestionnaireItemType::File,
+        'title' => 'Identity document',
+        'status' => DocumentRequestStatus::Pending,
+    ]);
 
     $result = app(CreateClientAccessGrant::class)->handle($dossier, $owner, 7);
     $plainTextToken = $result['plain_text_token'];
     $grant = $result['grant'];
+
+    // The frontend registry relies on these enum values being serialized unchanged.
+    $this->get(route('portal.show', $plainTextToken))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('portal/show')
+            ->where('dossier.document_requests', fn (Collection $documentRequests): bool => $documentRequests
+                ->pluck('type')
+                ->sort()
+                ->values()
+                ->all() === ['boolean', 'file', 'text']));
 
     $this->post(route('portal.document-requests.answer', [
         'token' => $plainTextToken,

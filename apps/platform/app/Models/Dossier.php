@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
-use Illuminate\Validation\ValidationException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -72,53 +71,6 @@ final class Dossier extends Model
     public function clientAccessGrants(): HasMany
     {
         return $this->hasMany(ClientAccessGrant::class);
-    }
-
-    public function markAwaitingClient(): void
-    {
-        if ($this->status === DossierStatus::Completed) {
-            throw ValidationException::withMessages([
-                'dossier' => 'A completed dossier cannot receive a new portal invitation.',
-            ]);
-        }
-
-        if ($this->status !== DossierStatus::Draft) {
-            return;
-        }
-
-        $this->update(['status' => DossierStatus::AwaitingClient]);
-    }
-
-    public function markInReview(): void
-    {
-        if ($this->status === DossierStatus::Completed) {
-            throw ValidationException::withMessages([
-                'dossier' => 'A completed dossier cannot return to review.',
-            ]);
-        }
-
-        if ($this->status === DossierStatus::InReview) {
-            return;
-        }
-
-        $this->update(['status' => DossierStatus::InReview]);
-    }
-
-    public function complete(): void
-    {
-        if ($this->status === DossierStatus::Completed) {
-            throw ValidationException::withMessages([
-                'dossier' => 'This dossier is already completed.',
-            ]);
-        }
-
-        if ($this->status !== DossierStatus::InReview) {
-            throw ValidationException::withMessages([
-                'dossier' => 'Only a dossier in review can be completed.',
-            ]);
-        }
-
-        $this->update(['status' => DossierStatus::Completed]);
     }
 
     /**

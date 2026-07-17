@@ -1,8 +1,8 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import MediaDocumentsCard from '@/components/media/media-documents-card';
+import MediaDocumentsCard from '@/features/media/media-documents-card';
+import type { MediaDocument } from '@/features/media/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { index as mediaIndex } from '@/routes/workspaces/media';
-import type { MediaDocument } from '@/types';
 
 /**
  * Media library index — all document requests across dossiers.

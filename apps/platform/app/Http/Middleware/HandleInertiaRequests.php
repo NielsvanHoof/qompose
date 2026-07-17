@@ -13,10 +13,6 @@ use Inertia\Middleware;
 
 final class HandleInertiaRequests extends Middleware
 {
-    public function __construct(
-        private readonly GetWorkspaceNavigationForUser $getWorkspaceNavigationForUser,
-    ) {}
-
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -25,6 +21,10 @@ final class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    public function __construct(
+        private readonly GetWorkspaceNavigationForUser $getWorkspaceNavigationForUser,
+    ) {}
 
     /**
      * Determines the current asset version.

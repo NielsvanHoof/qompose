@@ -12,12 +12,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import type { TemplateCategoryOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     create as createTemplate,
     index as templateIndex,
 } from '@/routes/workspaces/templates';
-import type { TemplateCategoryOption } from '@/types';
 
 /**
  * Create a blank firm-owned questionnaire template.
@@ -103,7 +103,7 @@ export default function CreateTemplate({
                                     id="description"
                                     name="description"
                                     rows={3}
-                                    className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                    className="rounded-md border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                     placeholder="When to use this pack…"
                                 />
                                 <InputError message={errors.description} />

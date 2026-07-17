@@ -1,10 +1,7 @@
+/**
+ * Only cross-cutting types live here. Domain types are co-located
+ * with their feature under resources/js/features/<domain>/types.ts.
+ */
 export type * from './auth';
-export type * from './clients';
-export type * from './dashboard';
-export type * from './dossiers';
-export type * from './media';
 export type * from './navigation';
-export type * from './portal';
-export type * from './questionnaires';
 export type * from './ui';
-export type * from './workspace';

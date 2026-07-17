@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace App\Actions\Dossiers;
 
 use App\Models\DocumentRequest;
+use App\Transitions\DocumentRequestTransitions;
 
 final class SubmitQuestionnaireAnswer
 {
+    public function __construct(
+        private readonly DocumentRequestTransitions $documentRequestTransitions,
+    ) {}
+
     /**
      * Store a text or boolean answer and mark the request as submitted.
      */
@@ -16,7 +21,11 @@ final class SubmitQuestionnaireAnswer
         ?string $answerText = null,
         ?bool $answerBoolean = null,
     ): DocumentRequest {
-        $documentRequest->submitAnswer($answerText, $answerBoolean);
+        $this->documentRequestTransitions->submitAnswer(
+            $documentRequest,
+            $answerText,
+            $answerBoolean,
+        );
 
         return $documentRequest->fresh() ?? $documentRequest;
     }

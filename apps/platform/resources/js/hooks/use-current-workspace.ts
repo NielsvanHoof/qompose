@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import type { Firm } from '@/types';
+import type { Firm } from '@/features/workspaces/types';
 
 export function useCurrentWorkspace(): Firm {
     const { current_firm: currentWorkspace } = usePage().props;

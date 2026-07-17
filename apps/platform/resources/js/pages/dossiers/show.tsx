@@ -1,18 +1,19 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import AddDocumentRequestCard from '@/components/dossiers/add-document-request-card';
-import ApplyTemplateCard from '@/components/dossiers/apply-template-card';
-import DocumentRequestsCard from '@/components/dossiers/document-requests-card';
-import DossierWorkflowCard from '@/components/dossiers/dossier-workflow-card';
 import Heading from '@/components/heading';
-import ClientAccessCard from '@/components/portal/client-access-card';
-import PortalLinkBanner from '@/components/portal/portal-link-banner';
 import { Badge } from '@/components/ui/badge';
+import AddDocumentRequestCard from '@/features/document-requests/staff/add-document-request-card';
+import DocumentRequestsCard from '@/features/document-requests/staff/document-requests-card';
+import ApplyTemplateCard from '@/features/dossiers/apply-template-card';
+import DossierWorkflowCard from '@/features/dossiers/dossier-workflow-card';
+import type { Dossier } from '@/features/dossiers/types';
+import ClientAccessCard from '@/features/portal/client-access-card';
+import PortalLinkBanner from '@/features/portal/portal-link-banner';
+import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     index as dossierIndex,
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
-import type { ApplyTemplateOption, Dossier } from '@/types';
 
 /**
  * Staff dossier detail page — composes domain section components.

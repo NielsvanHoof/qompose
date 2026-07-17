@@ -7,11 +7,16 @@ namespace App\Actions\Portal;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use App\Models\User;
+use App\Transitions\DossierTransitions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class CreateClientAccessGrant
 {
+    public function __construct(
+        private readonly DossierTransitions $dossierTransitions,
+    ) {}
+
     /**
      * Create a hashed client portal grant and return the one-time plain token.
      *
@@ -24,7 +29,7 @@ final class CreateClientAccessGrant
             $dossierQuery->getQuery()->lockForUpdate();
             $lockedDossier = $dossierQuery->firstOrFail();
 
-            $lockedDossier->markAwaitingClient();
+            $this->dossierTransitions->markAwaitingClient($lockedDossier);
 
             $plainTextToken = Str::random(64);
 

@@ -14,9 +14,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Validation\ValidationException;
-use InvalidArgumentException;
-use function in_array;
 
 /**
  * Questionnaire item on a dossier (file upload, text, or yes/no).
@@ -89,85 +86,6 @@ final class DocumentRequest extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
-    public function submitAnswer(
-        ?string $answerText = null,
-        ?bool $answerBoolean = null,
-    ): void {
-        if ($this->type === QuestionnaireItemType::File) {
-            throw new InvalidArgumentException('File items must be answered via upload.');
-        }
-
-        $this->ensureCanBeSubmitted();
-
-        if ($this->type === QuestionnaireItemType::Text) {
-            if ($answerText === null || mb_trim($answerText) === '') {
-                throw new InvalidArgumentException('A text answer is required.');
-            }
-
-            $this->update([
-                'answer_text' => mb_trim($answerText),
-                'answer_boolean' => null,
-                ...$this->submittedState(),
-            ]);
-
-            return;
-        }
-
-        if ($answerBoolean === null) {
-            throw new InvalidArgumentException('A yes/no answer is required.');
-        }
-
-        $this->update([
-            'answer_boolean' => $answerBoolean,
-            'answer_text' => null,
-            ...$this->submittedState(),
-        ]);
-    }
-
-    public function submitUpload(): void
-    {
-        if ($this->type !== QuestionnaireItemType::File) {
-            throw new InvalidArgumentException('Only file items accept uploads.');
-        }
-
-        $this->ensureCanBeSubmitted();
-        $this->update($this->submittedState());
-    }
-
-    public function accept(User $reviewer): void
-    {
-        $this->ensureCanBeReviewed();
-
-        $this->update([
-            'status' => DocumentRequestStatus::Accepted,
-            'reviewed_by' => $reviewer->id,
-            'reviewed_at' => now(),
-            'rejection_reason' => null,
-        ]);
-    }
-
-    public function reject(User $reviewer, ?string $rejectionReason): void
-    {
-        $this->ensureCanBeReviewed();
-
-        $normalizedRejectionReason = $rejectionReason === null
-            ? null
-            : mb_trim($rejectionReason);
-
-        if ($normalizedRejectionReason === null || $normalizedRejectionReason === '') {
-            throw ValidationException::withMessages([
-                'rejection_reason' => 'Explain what the client needs to correct.',
-            ]);
-        }
-
-        $this->update([
-            'status' => DocumentRequestStatus::Rejected,
-            'reviewed_by' => $reviewer->id,
-            'reviewed_at' => now(),
-            'rejection_reason' => $normalizedRejectionReason,
-        ]);
-    }
-
     /**
      * @return array<string, string>
      */
@@ -180,52 +98,6 @@ final class DocumentRequest extends Model
             'answered_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'sort_order' => 'integer',
-        ];
-    }
-
-    private function ensureCanBeSubmitted(): void
-    {
-        if (in_array($this->status, [
-            DocumentRequestStatus::Pending,
-            DocumentRequestStatus::Rejected,
-            DocumentRequestStatus::Submitted,
-        ], true)) {
-            return;
-        }
-
-        throw ValidationException::withMessages([
-            'document_request' => 'An approved item cannot be submitted again.',
-        ]);
-    }
-
-    private function ensureCanBeReviewed(): void
-    {
-        if ($this->status === DocumentRequestStatus::Submitted) {
-            return;
-        }
-
-        throw ValidationException::withMessages([
-            'decision' => 'Only submitted items can be reviewed.',
-        ]);
-    }
-
-    /**
-     * @return array{
-     *     status: DocumentRequestStatus,
-     *     answered_at: CarbonInterface,
-     *     reviewed_by: null,
-     *     reviewed_at: null,
-     *     rejection_reason: null
-     * }
-     */
-    private function submittedState(): array
-    {
-        return [
-            'status' => DocumentRequestStatus::Submitted,
-            'answered_at' => now(),
-            'reviewed_by' => null,
-            'reviewed_at' => null,
-            'rejection_reason' => null,
         ];
     }
 }

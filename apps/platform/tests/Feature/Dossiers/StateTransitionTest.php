@@ -10,6 +10,8 @@ use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Transitions\DocumentRequestTransitions;
+use App\Transitions\DossierTransitions;
 use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -24,42 +26,44 @@ beforeEach(function () {
         'tenant_id' => $this->tenant->id,
         'client_id' => $this->client->id,
     ]);
+    $this->dossierTransitions = app(DossierTransitions::class);
+    $this->documentRequestTransitions = app(DocumentRequestTransitions::class);
 });
 
 test('a dossier advances without regressing from later open stages', function () {
-    $this->dossier->markAwaitingClient();
+    $this->dossierTransitions->markAwaitingClient($this->dossier);
 
     expect($this->dossier->status)->toBe(DossierStatus::AwaitingClient);
 
-    $this->dossier->markInReview();
-    $this->dossier->markAwaitingClient();
+    $this->dossierTransitions->markInReview($this->dossier);
+    $this->dossierTransitions->markAwaitingClient($this->dossier);
 
     expect($this->dossier->status)->toBe(DossierStatus::InReview);
 
-    $this->dossier->complete();
+    $this->dossierTransitions->complete($this->dossier);
 
     expect($this->dossier->status)->toBe(DossierStatus::Completed);
 
-    expect(fn () => $this->dossier->markAwaitingClient())
+    expect(fn () => $this->dossierTransitions->markAwaitingClient($this->dossier))
         ->toThrow(
             ValidationException::class,
             'A completed dossier cannot receive a new portal invitation.',
         );
 
-    expect(fn () => $this->dossier->markInReview())
+    expect(fn () => $this->dossierTransitions->markInReview($this->dossier))
         ->toThrow(ValidationException::class, 'A completed dossier cannot return to review.');
 
-    expect(fn () => $this->dossier->complete())
+    expect(fn () => $this->dossierTransitions->complete($this->dossier))
         ->toThrow(ValidationException::class, 'This dossier is already completed.');
 });
 
 test('a dossier must be in review before it can be completed', function () {
-    expect(fn () => $this->dossier->complete())
+    expect(fn () => $this->dossierTransitions->complete($this->dossier))
         ->toThrow(ValidationException::class, 'Only a dossier in review can be completed.');
 
-    $this->dossier->markAwaitingClient();
+    $this->dossierTransitions->markAwaitingClient($this->dossier);
 
-    expect(fn () => $this->dossier->complete())
+    expect(fn () => $this->dossierTransitions->complete($this->dossier))
         ->toThrow(ValidationException::class, 'Only a dossier in review can be completed.');
 });
 
@@ -71,14 +75,14 @@ test('an answer can be reviewed and a rejected answer can be corrected', functio
         'type' => QuestionnaireItemType::Text,
     ]);
 
-    $documentRequest->submitAnswer(' First answer ');
-    $documentRequest->reject($reviewer, ' Add the registered address. ');
+    $this->documentRequestTransitions->submitAnswer($documentRequest, ' First answer ');
+    $this->documentRequestTransitions->reject($documentRequest, $reviewer, ' Add the registered address. ');
 
     expect($documentRequest->status)->toBe(DocumentRequestStatus::Rejected)
         ->and($documentRequest->answer_text)->toBe('First answer')
         ->and($documentRequest->rejection_reason)->toBe('Add the registered address.');
 
-    $documentRequest->submitAnswer('Corrected answer');
+    $this->documentRequestTransitions->submitAnswer($documentRequest, 'Corrected answer');
 
     expect($documentRequest->status)->toBe(DocumentRequestStatus::Submitted)
         ->and($documentRequest->answer_text)->toBe('Corrected answer')
@@ -86,11 +90,11 @@ test('an answer can be reviewed and a rejected answer can be corrected', functio
         ->and($documentRequest->reviewed_at)->toBeNull()
         ->and($documentRequest->rejection_reason)->toBeNull();
 
-    $documentRequest->accept($reviewer);
+    $this->documentRequestTransitions->accept($documentRequest, $reviewer);
 
     expect($documentRequest->status)->toBe(DocumentRequestStatus::Accepted)
         ->and($documentRequest->reviewed_by)->toBe($reviewer->id)
-        ->and(fn () => $documentRequest->submitAnswer('Another answer'))
+        ->and(fn () => $this->documentRequestTransitions->submitAnswer($documentRequest, 'Another answer'))
         ->toThrow(ValidationException::class, 'An approved item cannot be submitted again.');
 });
 
@@ -102,12 +106,12 @@ test('only submitted items can be accepted or rejected', function () {
         'type' => QuestionnaireItemType::Text,
     ]);
 
-    expect(fn () => $documentRequest->accept($reviewer))
+    expect(fn () => $this->documentRequestTransitions->accept($documentRequest, $reviewer))
         ->toThrow(ValidationException::class, 'Only submitted items can be reviewed.');
 
-    $documentRequest->submitAnswer('Answer');
+    $this->documentRequestTransitions->submitAnswer($documentRequest, 'Answer');
 
-    expect(fn () => $documentRequest->reject($reviewer, '  '))
+    expect(fn () => $this->documentRequestTransitions->reject($documentRequest, $reviewer, '  '))
         ->toThrow(ValidationException::class, 'Explain what the client needs to correct.');
 });
 
@@ -119,14 +123,14 @@ test('a submitted upload can be replaced but an accepted upload cannot', functio
         'type' => QuestionnaireItemType::File,
     ]);
 
-    $documentRequest->submitUpload();
-    $documentRequest->submitUpload();
+    $this->documentRequestTransitions->submitUpload($documentRequest);
+    $this->documentRequestTransitions->submitUpload($documentRequest);
 
     expect($documentRequest->status)->toBe(DocumentRequestStatus::Submitted)
         ->and($documentRequest->answered_at)->toBeInstanceOf(CarbonInterface::class);
 
-    $documentRequest->accept($reviewer);
+    $this->documentRequestTransitions->accept($documentRequest, $reviewer);
 
-    expect(fn () => $documentRequest->submitUpload())
+    expect(fn () => $this->documentRequestTransitions->submitUpload($documentRequest))
         ->toThrow(ValidationException::class, 'An approved item cannot be submitted again.');
 });

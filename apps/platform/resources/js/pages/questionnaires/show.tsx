@@ -2,7 +2,6 @@ import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import QuestionnaireTemplateController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import TemplateItemEditor from '@/components/questionnaires/template-item-editor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,12 +20,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import TemplateItemEditor from '@/features/questionnaires/template-item-editor';
+import type {
+    TemplateCategoryOption,
+    TemplateDetail,
+} from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     show as showTemplate,
     index as templateIndex,
 } from '@/routes/workspaces/templates';
-import type { TemplateCategoryOption, TemplateDetail } from '@/types';
 
 /**
  * View or edit a questionnaire template and its items.

@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import FirmOnboardingCard from '@/components/onboarding/firm-onboarding-card';
+import FirmOnboardingCard from '@/features/workspaces/firm-onboarding-card';
 
 /**
  * First-run firm setup page.

@@ -1,6 +1,6 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import CreateClientForm from '@/components/clients/create-client-form';
 import Heading from '@/components/heading';
+import CreateClientForm from '@/features/clients/create-client-form';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {
     index as clientIndex,

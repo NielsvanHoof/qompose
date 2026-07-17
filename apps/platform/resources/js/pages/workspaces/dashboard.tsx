@@ -1,13 +1,14 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import DashboardMetricsGrid from '@/components/dossiers/dashboard-metrics-grid';
-import RecentDossiersCard from '@/components/dossiers/recent-dossiers-card';
-import ReviewQueueCard from '@/components/dossiers/review-queue-card';
 import { Button } from '@/components/ui/button';
+import DashboardMetricsGrid from '@/features/dashboard/dashboard-metrics-grid';
+import RecentDossiersCard from '@/features/dashboard/recent-dossiers-card';
+import ReviewQueueCard from '@/features/dashboard/review-queue-card';
+import type { WorkspaceDashboardMetrics } from '@/features/dashboard/types';
+import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import { create as createClient } from '@/routes/workspaces/clients';
 import { create as createDossier } from '@/routes/workspaces/dossiers';
-import type { DossierSummary, WorkspaceDashboardMetrics } from '@/types';
 
 /**
  * Workspace dashboard — metrics, recent dossiers, and review queue.

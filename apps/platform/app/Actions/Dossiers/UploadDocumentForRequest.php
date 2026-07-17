@@ -7,6 +7,7 @@ namespace App\Actions\Dossiers;
 use App\Enums\QuestionnaireItemType;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
+use App\Transitions\DocumentRequestTransitions;
 use Closure;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Http\UploadedFile;
@@ -24,6 +25,7 @@ final class UploadDocumentForRequest
 {
     public function __construct(
         private readonly FilesystemManager $filesystems,
+        private readonly DocumentRequestTransitions $documentRequestTransitions,
     ) {}
 
     /**
@@ -108,7 +110,7 @@ final class UploadDocumentForRequest
                         ->create($attributes);
                 }
 
-                $lockedDocumentRequest->submitUpload();
+                $this->documentRequestTransitions->submitUpload($lockedDocumentRequest);
 
                 if ($afterPersist instanceof Closure) {
                     $afterPersist($uploadedDocument, $lockedDocumentRequest);

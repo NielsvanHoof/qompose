@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
-import FirmPickerGrid from '@/components/firms/firm-picker-grid';
 import Heading from '@/components/heading';
+import FirmPickerGrid from '@/features/workspaces/firm-picker-grid';
+import type { Firm } from '@/features/workspaces/types';
 import { dashboard } from '@/routes';
-import type { Firm } from '@/types';
 
 type PageProps = {
     firms: Firm[];

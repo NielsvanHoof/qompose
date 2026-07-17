@@ -1,0 +1,156 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Transitions;
+
+use App\Enums\DocumentRequestStatus;
+use App\Enums\QuestionnaireItemType;
+use App\Models\DocumentRequest;
+use App\Models\User;
+use Carbon\CarbonInterface;
+use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+
+use function in_array;
+
+/**
+ * Guarded status transitions for questionnaire items on a dossier.
+ *
+ * Allowed flow: pending/rejected/submitted → submitted → accepted|rejected.
+ * Accepted items cannot be submitted again.
+ */
+final class DocumentRequestTransitions
+{
+    public function submitAnswer(
+        DocumentRequest $documentRequest,
+        ?string $answerText = null,
+        ?bool $answerBoolean = null,
+    ): void {
+        if ($documentRequest->type === QuestionnaireItemType::File) {
+            throw new InvalidArgumentException('File items must be answered via upload.');
+        }
+
+        $this->ensureCanBeSubmitted($documentRequest);
+
+        if ($documentRequest->type === QuestionnaireItemType::Text) {
+            if ($answerText === null || mb_trim($answerText) === '') {
+                throw new InvalidArgumentException('A text answer is required.');
+            }
+
+            $documentRequest->update([
+                'answer_text' => mb_trim($answerText),
+                'answer_boolean' => null,
+                ...$this->submittedState(),
+            ]);
+
+            return;
+        }
+
+        if ($answerBoolean === null) {
+            throw new InvalidArgumentException('A yes/no answer is required.');
+        }
+
+        $documentRequest->update([
+            'answer_boolean' => $answerBoolean,
+            'answer_text' => null,
+            ...$this->submittedState(),
+        ]);
+    }
+
+    public function submitUpload(DocumentRequest $documentRequest): void
+    {
+        if ($documentRequest->type !== QuestionnaireItemType::File) {
+            throw new InvalidArgumentException('Only file items accept uploads.');
+        }
+
+        $this->ensureCanBeSubmitted($documentRequest);
+        $documentRequest->update($this->submittedState());
+    }
+
+    public function accept(DocumentRequest $documentRequest, User $reviewer): void
+    {
+        $this->ensureCanBeReviewed($documentRequest);
+
+        $documentRequest->update([
+            'status' => DocumentRequestStatus::Accepted,
+            'reviewed_by' => $reviewer->id,
+            'reviewed_at' => now(),
+            'rejection_reason' => null,
+        ]);
+    }
+
+    public function reject(
+        DocumentRequest $documentRequest,
+        User $reviewer,
+        ?string $rejectionReason,
+    ): void {
+        $this->ensureCanBeReviewed($documentRequest);
+
+        $normalizedRejectionReason = $rejectionReason === null
+            ? null
+            : mb_trim($rejectionReason);
+
+        if ($normalizedRejectionReason === null || $normalizedRejectionReason === '') {
+            throw ValidationException::withMessages([
+                'rejection_reason' => 'Explain what the client needs to correct.',
+            ]);
+        }
+
+        $documentRequest->update([
+            'status' => DocumentRequestStatus::Rejected,
+            'reviewed_by' => $reviewer->id,
+            'reviewed_at' => now(),
+            'rejection_reason' => $normalizedRejectionReason,
+        ]);
+    }
+
+    private function ensureCanBeSubmitted(DocumentRequest $documentRequest): void
+    {
+        if (in_array($documentRequest->status, [
+            DocumentRequestStatus::Pending,
+            DocumentRequestStatus::Rejected,
+            DocumentRequestStatus::Submitted,
+        ], true)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'document_request' => 'An approved item cannot be submitted again.',
+        ]);
+    }
+
+    private function ensureCanBeReviewed(DocumentRequest $documentRequest): void
+    {
+        if ($documentRequest->status === DocumentRequestStatus::Submitted) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'decision' => 'Only submitted items can be reviewed.',
+        ]);
+    }
+
+    /**
+     * Payload shared by answer and upload submissions.
+     * Clears prior review metadata so a corrected item can be reviewed again.
+     *
+     * @return array{
+     *     status: DocumentRequestStatus,
+     *     answered_at: CarbonInterface,
+     *     reviewed_by: null,
+     *     reviewed_at: null,
+     *     rejection_reason: null
+     * }
+     */
+    private function submittedState(): array
+    {
+        return [
+            'status' => DocumentRequestStatus::Submitted,
+            'answered_at' => now(),
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+            'rejection_reason' => null,
+        ];
+    }
+}

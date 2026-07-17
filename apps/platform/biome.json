@@ -24,7 +24,18 @@
             "preset": "recommended",
             "style": {
                 "useImportType": "error",
-                "useBlockStatements": "error"
+                "useBlockStatements": "error",
+                "noRestrictedImports": {
+                    "level": "error",
+                    "options": {
+                        "patterns": [
+                            {
+                                "group": ["@/pages/**"],
+                                "message": "Pages are Inertia entry points, not libraries. Move shared code into @/features/<domain> or @/components."
+                            }
+                        ]
+                    }
+                }
             },
             "suspicious": {
                 "noExplicitAny": "error"
@@ -36,6 +47,113 @@
             "types": "recommended"
         }
     },
+    "overrides": [
+        {
+            "includes": ["resources/js/components/**"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "noRestrictedImports": {
+                            "level": "error",
+                            "options": {
+                                "patterns": [
+                                    {
+                                        "group": ["@/pages/**"],
+                                        "message": "Pages are Inertia entry points, not libraries."
+                                    },
+                                    {
+                                        "group": ["@/features/**"],
+                                        "message": "Shared components must stay domain-agnostic. Move domain-aware code into the feature itself."
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["resources/js/features/document-requests/staff/**"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "noRestrictedImports": {
+                            "level": "error",
+                            "options": {
+                                "patterns": [
+                                    {
+                                        "group": ["@/pages/**"],
+                                        "message": "Pages are Inertia entry points, not libraries."
+                                    },
+                                    {
+                                        "group": [
+                                            "@/features/document-requests/portal/**"
+                                        ],
+                                        "message": "Staff renderers must not depend on portal renderers. Only the item-type registry wires both sides together."
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["resources/js/features/document-requests/portal/**"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "noRestrictedImports": {
+                            "level": "error",
+                            "options": {
+                                "patterns": [
+                                    {
+                                        "group": ["@/pages/**"],
+                                        "message": "Pages are Inertia entry points, not libraries."
+                                    },
+                                    {
+                                        "group": [
+                                            "@/features/document-requests/staff/**"
+                                        ],
+                                        "message": "Portal renderers must not depend on staff renderers. Only the item-type registry wires both sides together."
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["resources/js/pages/portal/**"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "noRestrictedImports": {
+                            "level": "error",
+                            "options": {
+                                "patterns": [
+                                    {
+                                        "group": ["@/pages/**"],
+                                        "message": "Pages are Inertia entry points, not libraries."
+                                    },
+                                    {
+                                        "group": [
+                                            "@/features/document-requests/staff/**",
+                                            "@/features/dossiers/**",
+                                            "!@/features/dossiers/types",
+                                            "@/components/app-shell/**"
+                                        ],
+                                        "message": "The guest portal must not pull in staff-side UI. Use @/features/portal or @/features/document-requests/portal instead."
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ],
     "javascript": {
         "jsxRuntime": "transparent"
     },

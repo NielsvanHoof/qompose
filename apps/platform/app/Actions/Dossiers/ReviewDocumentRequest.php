@@ -11,8 +11,10 @@ use App\Enums\DocumentRequestStatus;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
 use App\Models\User;
+use App\Transitions\DocumentRequestTransitions;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+
 use function in_array;
 
 final class ReviewDocumentRequest
@@ -20,6 +22,7 @@ final class ReviewDocumentRequest
     public function __construct(
         private readonly LogAuditActivity $logAuditActivity,
         private readonly SendClientChangesRequestedNotification $sendClientChangesRequestedNotification,
+        private readonly DocumentRequestTransitions $documentRequestTransitions,
     ) {}
 
     public function handle(
@@ -43,9 +46,13 @@ final class ReviewDocumentRequest
             $lockedDocumentRequest = $documentRequestQuery->firstOrFail();
 
             if ($decision === DocumentRequestStatus::Accepted) {
-                $lockedDocumentRequest->accept($reviewer);
+                $this->documentRequestTransitions->accept($lockedDocumentRequest, $reviewer);
             } else {
-                $lockedDocumentRequest->reject($reviewer, $rejectionReason);
+                $this->documentRequestTransitions->reject(
+                    $lockedDocumentRequest,
+                    $reviewer,
+                    $rejectionReason,
+                );
             }
 
             $uploadedDocument = $lockedDocumentRequest->uploadedDocument;
