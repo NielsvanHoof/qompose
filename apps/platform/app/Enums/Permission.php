@@ -14,6 +14,7 @@ enum Permission: string
     case ManageTemplates = 'templates.manage';
     case ManageMembers = 'members.manage';
     case ManageTenantSettings = 'tenant.settings.manage';
+    case ViewAuditLog = 'audit.view';
 
     /**
      * @return list<string>

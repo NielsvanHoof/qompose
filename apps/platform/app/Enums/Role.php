@@ -27,6 +27,7 @@ enum Role: string
                 Permission::ManageMembers,
                 Permission::ReviewDocuments,
                 Permission::DownloadDocuments,
+                Permission::ViewAuditLog,
             ],
             self::Adviser => [
                 Permission::ViewDossiers,

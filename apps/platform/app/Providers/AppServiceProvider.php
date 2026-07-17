@@ -6,12 +6,14 @@ namespace App\Providers;
 
 use App\Contracts\Ocr\StartsDocumentOcr;
 use App\Enums\OcrDriver;
+use App\Models\Activity;
 use App\Models\Client;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
 use App\Models\UploadedDocument;
+use App\Policies\Audit\ActivityPolicy;
 use App\Policies\Clients\ClientPolicy;
 use App\Policies\Dossiers\DocumentRequestPolicy;
 use App\Policies\Dossiers\DossierPolicy;
@@ -126,6 +128,7 @@ final class AppServiceProvider extends ServiceProvider
 
     private function configurePolicies(): void
     {
+        Gate::policy(Activity::class, ActivityPolicy::class);
         Gate::policy(Client::class, ClientPolicy::class);
         Gate::policy(ClientAccessGrant::class, ClientAccessGrantPolicy::class);
         Gate::policy(DocumentRequest::class, DocumentRequestPolicy::class);

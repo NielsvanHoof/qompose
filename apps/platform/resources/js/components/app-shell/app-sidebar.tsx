@@ -4,6 +4,7 @@ import {
     FolderGit2,
     Images,
     LayoutGrid,
+    ScrollText,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-shell/app-logo';
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
+import { index as activityIndex } from '@/routes/workspaces/activity';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import { index as mediaIndex } from '@/routes/workspaces/media';
@@ -60,6 +62,11 @@ export function AppSidebar() {
                       title: 'Media Library',
                       href: mediaIndex(currentFirm),
                       icon: Images,
+                  },
+                  {
+                      title: 'Activity',
+                      href: activityIndex(currentFirm),
+                      icon: ScrollText,
                   },
               ]
             : []),

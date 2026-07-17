@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Reporting\ActivityLogController;
 use App\Http\Controllers\Reporting\DashboardController;
 use App\Http\Controllers\Reporting\MediaLibraryController;
 use Illuminate\Support\Facades\Route;
@@ -9,3 +10,5 @@ use Illuminate\Support\Facades\Route;
 Route::get('dashboard', [DashboardController::class, 'show'])->name('dashboard');
 
 Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');
+
+Route::get('activity', [ActivityLogController::class, 'index'])->name('activity.index');
