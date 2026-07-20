@@ -1,5 +1,5 @@
 import type { Auth } from '@/types/auth';
-import type { Firm } from '@/types/workspace';
+import type { Firm } from '@/features/workspaces/types';
 
 declare module 'react' {
     interface InputHTMLAttributes<T> {

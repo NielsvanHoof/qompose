@@ -20,6 +20,12 @@ import {
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 
+function formatTemplateLabel(template: ApplyTemplateOption): string {
+    const suffix = template.is_system ? ' · System' : '';
+
+    return `${template.name} · ${template.category_label} (${template.items_count})${suffix}`;
+}
+
 /**
  * Append a system or firm template onto the current dossier checklist.
  */
@@ -37,7 +43,7 @@ export default function ApplyTemplateCard({
     }
 
     return (
-        <Card>
+        <Card className="min-w-0">
             <CardHeader>
                 <CardTitle>Apply template</CardTitle>
                 <CardDescription>
@@ -54,7 +60,7 @@ export default function ApplyTemplateCard({
                 >
                     {({ errors, processing }) => (
                         <>
-                            <div className="grid gap-2">
+                            <div className="grid min-w-0 gap-2">
                                 <Label htmlFor="questionnaire_template_id">
                                     Template
                                 </Label>
@@ -63,7 +69,7 @@ export default function ApplyTemplateCard({
                                     name="questionnaire_template_id"
                                     defaultValue=""
                                 >
-                                    <SelectTrigger className="w-full">
+                                    <SelectTrigger className="w-full min-w-0">
                                         <SelectValue placeholder="Select a template" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background">
@@ -71,13 +77,12 @@ export default function ApplyTemplateCard({
                                             <SelectItem
                                                 key={template.id}
                                                 value={template.id.toString()}
+                                                className="truncate"
+                                                title={formatTemplateLabel(
+                                                    template,
+                                                )}
                                             >
-                                                {template.name} ·{' '}
-                                                {template.category_label} (
-                                                {template.items_count})
-                                                {template.is_system
-                                                    ? ' · System'
-                                                    : ''}
+                                                {formatTemplateLabel(template)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

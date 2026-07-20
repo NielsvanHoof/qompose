@@ -1,4 +1,5 @@
-import { router } from '@inertiajs/react';
+import { useHttp } from '@inertiajs/react';
+import { useCallback } from 'react';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
 import SortableList from '@/components/sortable/sortable-list';
 import {
@@ -33,17 +34,22 @@ export default function DocumentRequestsCard({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const canEdit = canManage && dossierStatus !== 'completed';
+    const { post, setData } = useHttp({
+        document_request_ids: [] as number[],
+    });
 
-    const persistOrder = (orderedIds: number[]) => {
-        router.post(
-            DocumentRequestController.reorder.url({
-                tenant: currentWorkspace,
-                dossier: dossierId,
-            }),
-            { document_request_ids: orderedIds },
-            { preserveScroll: true },
-        );
-    };
+    const persistOrder = useCallback(
+        (orderedIds: number[]) => {
+            setData('document_request_ids', orderedIds);
+            void post(
+                DocumentRequestController.reorder.url({
+                    tenant: currentWorkspace,
+                    dossier: dossierId,
+                }),
+            );
+        },
+        [currentWorkspace, dossierId, post, setData],
+    );
 
     return (
         <Card>

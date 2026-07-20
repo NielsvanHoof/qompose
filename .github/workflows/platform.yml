@@ -73,7 +73,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: intl
 
       - name: Setup Node
@@ -125,7 +125,10 @@ jobs:
       - name: Build Assets
         run: npm run build
 
-      - name: Run Type Analysis
+      - name: Run TypeScript Check
+        run: npm run types:check
+
+      - name: Run PHPStan
         run: composer types:check
 
       - name: Test Backend with Coverage

@@ -8,7 +8,10 @@ use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-
+use function count;
+use function array_unique;
+use function array_diff;
+    
 final class ReorderDocumentRequests
 {
     /**

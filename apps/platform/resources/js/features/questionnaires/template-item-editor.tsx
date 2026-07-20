@@ -1,5 +1,6 @@
-import { Form, router } from '@inertiajs/react';
+import { Form, useHttp } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
+import { useCallback } from 'react';
 import QuestionnaireTemplateItemController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateItemController';
 import InputError from '@/components/input-error';
 import SortableList from '@/components/sortable/sortable-list';
@@ -26,17 +27,22 @@ export default function TemplateItemEditor({
     canManage: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { post, setData } = useHttp({
+        item_ids: [] as number[],
+    });
 
-    const persistOrder = (orderedIds: number[]) => {
-        router.post(
-            QuestionnaireTemplateItemController.reorder.url({
-                tenant: currentWorkspace,
-                template: templateId,
-            }),
-            { item_ids: orderedIds },
-            { preserveScroll: true },
-        );
-    };
+    const persistOrder = useCallback(
+        (orderedIds: number[]) => {
+            setData('item_ids', orderedIds);
+            void post(
+                QuestionnaireTemplateItemController.reorder.url({
+                    tenant: currentWorkspace,
+                    template: templateId,
+                }),
+            );
+        },
+        [currentWorkspace, post, setData, templateId],
+    );
 
     return (
         <div className="space-y-6">

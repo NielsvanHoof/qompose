@@ -20,6 +20,7 @@ use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 final class DocumentRequestController extends Controller
 {
@@ -64,11 +65,15 @@ final class DocumentRequestController extends Controller
         ReorderDocumentRequestsRequest $request,
         Dossier $dossier,
         ReorderDocumentRequests $reorderDocumentRequests,
-    ): RedirectResponse {
+    ): RedirectResponse|Response {
         $reorderDocumentRequests->handle(
             $dossier,
             $request->array('document_request_ids'),
         );
+
+        if ($request->expectsJson()) {
+            return response()->noContent();
+        }
 
         return $this->redirectToDossier($dossier);
     }

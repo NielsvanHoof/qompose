@@ -14,6 +14,7 @@ use App\Models\QuestionnaireTemplate;
 use App\Models\QuestionnaireTemplateItem;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 final class QuestionnaireTemplateItemController extends Controller
 {
@@ -65,11 +66,15 @@ final class QuestionnaireTemplateItemController extends Controller
         ReorderQuestionnaireTemplateItemsRequest $request,
         QuestionnaireTemplate $template,
         ReorderQuestionnaireTemplateItems $reorderQuestionnaireTemplateItems,
-    ): RedirectResponse {
+    ): RedirectResponse|Response {
         $reorderQuestionnaireTemplateItems->handle(
             $template,
             $request->array('item_ids'),
         );
+
+        if ($request->expectsJson()) {
+            return response()->noContent();
+        }
 
         return to_route(
             'workspaces.templates.show',
