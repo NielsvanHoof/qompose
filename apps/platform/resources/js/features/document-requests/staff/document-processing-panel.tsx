@@ -26,9 +26,9 @@ export default function DocumentProcessingPanel({
     return (
         <div className="space-y-3 rounded-md bg-muted/50 px-3 py-2 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="space-y-1">
+                <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium">
+                        <p className="truncate font-medium">
                             {uploadedDocument.original_filename}
                         </p>
                         <Badge

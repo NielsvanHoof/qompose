@@ -10,9 +10,20 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import type { AccessGrant } from '@/features/portal/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { formatDateTime } from '@/lib/format-date-time';
 import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 /**
@@ -58,9 +69,7 @@ export default function ClientAccessCard({
                                 <div className="text-sm">
                                     <p>
                                         Expires{' '}
-                                        {new Date(
-                                            grant.expires_at,
-                                        ).toLocaleString()}
+                                        {formatDateTime(grant.expires_at)}
                                     </p>
                                     <p className="text-muted-foreground">
                                         {grant.is_valid
@@ -69,28 +78,13 @@ export default function ClientAccessCard({
                                               ? 'Revoked'
                                               : 'Expired'}
                                         {grant.last_used_at &&
-                                            ` · Last used ${new Date(grant.last_used_at).toLocaleString()}`}
+                                            ` · Last used ${formatDateTime(grant.last_used_at)}`}
                                     </p>
                                 </div>
                                 {grant.is_valid && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                            router.delete(
-                                                ClientAccessGrantController.destroy.url(
-                                                    {
-                                                        tenant: currentWorkspace,
-                                                        grant: grant.id,
-                                                    },
-                                                ),
-                                                inlineDossierActionOptions,
-                                            )
-                                        }
-                                    >
-                                        Revoke
-                                    </Button>
+                                    <RevokeAccessGrantButton
+                                        grantId={grant.id}
+                                    />
                                 )}
                             </div>
                         ))}
@@ -131,6 +125,7 @@ export default function ClientAccessCard({
                                     </Label>
                                 </div>
                                 <Button
+                                    type="submit"
                                     disabled={processing}
                                     variant="secondary"
                                 >
@@ -144,5 +139,50 @@ export default function ClientAccessCard({
                 )}
             </CardContent>
         </Card>
+    );
+}
+
+function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
+    const currentWorkspace = useCurrentWorkspace();
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button type="button" variant="outline" size="sm">
+                    Revoke
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Revoke portal access?</DialogTitle>
+                    <DialogDescription>
+                        The client will no longer be able to use this link. You
+                        can create a new one anytime.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="gap-2">
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">
+                            Cancel
+                        </Button>
+                    </DialogClose>
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() =>
+                            router.delete(
+                                ClientAccessGrantController.destroy.url({
+                                    tenant: currentWorkspace,
+                                    grant: grantId,
+                                }),
+                                inlineDossierActionOptions,
+                            )
+                        }
+                    >
+                        Revoke access
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

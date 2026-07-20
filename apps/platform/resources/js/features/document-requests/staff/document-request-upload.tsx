@@ -75,6 +75,7 @@ export default function DocumentRequestUpload({
                 <progress
                     value={form.progress.percentage}
                     max={100}
+                    aria-label="Upload progress"
                     className="h-1.5 w-full"
                 />
             )}

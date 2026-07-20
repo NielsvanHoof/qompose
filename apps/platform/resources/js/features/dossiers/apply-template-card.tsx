@@ -72,7 +72,7 @@ export default function ApplyTemplateCard({
                                     defaultValue=""
                                 >
                                     <SelectTrigger className="w-full min-w-0">
-                                        <SelectValue placeholder="Select a template" />
+                                        <SelectValue placeholder="Select a template…" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background">
                                         {templates.map((template) => (

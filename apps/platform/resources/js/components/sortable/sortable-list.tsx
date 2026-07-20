@@ -160,9 +160,13 @@ function SortableRow({
         isDragging,
     } = useSortable({ id });
 
+    const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition,
+        transition: prefersReducedMotion ? undefined : transition,
     };
 
     const DragHandle = () => (

@@ -48,6 +48,7 @@ export default function PortalLinkBanner({
                     type="button"
                     variant="outline"
                     onClick={copyPortalLink}
+                    aria-live="polite"
                 >
                     {copied ? 'Copied' : 'Copy portal link'}
                 </Button>

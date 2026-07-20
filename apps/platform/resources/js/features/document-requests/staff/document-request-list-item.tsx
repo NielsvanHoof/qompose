@@ -71,8 +71,9 @@ export default function DocumentRequestListItem({
                                 size="icon"
                                 variant="ghost"
                                 disabled={processing}
+                                aria-label={`Delete ${documentRequest.title}`}
                             >
-                                <Trash2 />
+                                <Trash2 aria-hidden="true" />
                             </Button>
                         )}
                     </Form>
@@ -92,12 +93,16 @@ export default function DocumentRequestListItem({
                     {({ errors, processing }) => (
                         <>
                             <QuestionnaireItemTypeSelect
+                                id={`type-${documentRequest.id}`}
                                 defaultValue={documentRequest.type}
                                 error={errors.type}
                             />
                             <div className="grid gap-2">
-                                <Label>Title</Label>
+                                <Label htmlFor={`title-${documentRequest.id}`}>
+                                    Title
+                                </Label>
                                 <Input
+                                    id={`title-${documentRequest.id}`}
                                     name="title"
                                     required
                                     defaultValue={documentRequest.title}
@@ -105,8 +110,13 @@ export default function DocumentRequestListItem({
                                 <InputError message={errors.title} />
                             </div>
                             <div className="grid gap-2">
-                                <Label>Instructions</Label>
+                                <Label
+                                    htmlFor={`instructions-${documentRequest.id}`}
+                                >
+                                    Instructions
+                                </Label>
                                 <textarea
+                                    id={`instructions-${documentRequest.id}`}
                                     name="instructions"
                                     rows={2}
                                     defaultValue={

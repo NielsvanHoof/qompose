@@ -40,7 +40,7 @@ export default function WaitingItemsSummary({
                                 key={request.id}
                                 className="flex items-start justify-between gap-2 rounded-md border px-3 py-2"
                             >
-                                <span className="font-medium">
+                                <span className="min-w-0 truncate font-medium">
                                     {request.title}
                                 </span>
                                 <span className="shrink-0 text-xs text-muted-foreground capitalize">

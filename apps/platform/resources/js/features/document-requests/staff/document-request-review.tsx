@@ -33,7 +33,7 @@ export default function DocumentRequestReview({
     if (documentRequest.status === 'rejected') {
         return (
             <Alert variant="destructive">
-                <RotateCcw />
+                <RotateCcw aria-hidden="true" />
                 <AlertTitle>Changes requested</AlertTitle>
                 <AlertDescription>
                     <p>{documentRequest.rejection_reason}</p>
@@ -54,7 +54,10 @@ export default function DocumentRequestReview({
     if (documentRequest.status === 'accepted') {
         return (
             <div className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm">
-                <Check className="mt-0.5 size-4 text-emerald-600" />
+                <Check
+                    className="mt-0.5 size-4 text-emerald-600"
+                    aria-hidden="true"
+                />
                 <div>
                     <p className="font-medium text-emerald-700">Approved</p>
                     {documentRequest.reviewed_at && (
@@ -94,7 +97,7 @@ export default function DocumentRequestReview({
                     <>
                         <input type="hidden" name="decision" value="accepted" />
                         <Button type="submit" size="sm" disabled={processing}>
-                            <Check />
+                            <Check aria-hidden="true" />
                             Approve
                         </Button>
                     </>
@@ -104,7 +107,7 @@ export default function DocumentRequestReview({
             <Dialog>
                 <DialogTrigger asChild>
                     <Button type="button" size="sm" variant="outline">
-                        <RotateCcw />
+                        <RotateCcw aria-hidden="true" />
                         Request changes
                     </Button>
                 </DialogTrigger>

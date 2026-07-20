@@ -10,6 +10,16 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
@@ -21,7 +31,6 @@ export default function DossierWorkflowCard({
     dossier: Dossier;
     canReview: boolean;
 }) {
-    const currentWorkspace = useCurrentWorkspace();
     const summary = dossier.review_summary;
 
     return (
@@ -49,38 +58,21 @@ export default function DossierWorkflowCard({
 
                 {dossier.status === 'completed' ? (
                     <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                        <CheckCircle2 className="size-4" />
+                        <CheckCircle2 className="size-4" aria-hidden="true" />
                         Dossier completed
                     </div>
                 ) : canReview ? (
-                    <Form
-                        {...DossierCompletionController.store.form({
-                            tenant: currentWorkspace,
-                            dossier: dossier.id,
-                        })}
-                        options={inlineDossierActionOptions}
-                    >
-                        {({ errors, processing }) => (
-                            <div className="space-y-2">
-                                <Button
-                                    type="submit"
-                                    className="w-full"
-                                    disabled={
-                                        processing || !dossier.ready_to_complete
-                                    }
-                                >
-                                    <CheckCircle2 />
-                                    Complete dossier
-                                </Button>
-                                <InputError message={errors.dossier} />
-                                {!dossier.ready_to_complete && (
-                                    <p className="text-xs text-muted-foreground">
-                                        Every item must be approved first.
-                                    </p>
-                                )}
-                            </div>
+                    <div className="space-y-2">
+                        <CompleteDossierDialog
+                            dossierId={dossier.id}
+                            ready={dossier.ready_to_complete}
+                        />
+                        {!dossier.ready_to_complete && (
+                            <p className="text-xs text-muted-foreground">
+                                Every item must be approved first.
+                            </p>
                         )}
-                    </Form>
+                    </div>
                 ) : (
                     <p className="text-xs text-muted-foreground">
                         A reviewer will complete the dossier after all items
@@ -92,10 +84,63 @@ export default function DossierWorkflowCard({
     );
 }
 
+function CompleteDossierDialog({
+    dossierId,
+    ready,
+}: {
+    dossierId: number;
+    ready: boolean;
+}) {
+    const currentWorkspace = useCurrentWorkspace();
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button type="button" className="w-full" disabled={!ready}>
+                    <CheckCircle2 aria-hidden="true" />
+                    Complete dossier
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Complete this dossier?</DialogTitle>
+                    <DialogDescription>
+                        This marks the dossier as finished. The client will no
+                        longer be able to submit changes.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form
+                    {...DossierCompletionController.store.form({
+                        tenant: currentWorkspace,
+                        dossier: dossierId,
+                    })}
+                    options={inlineDossierActionOptions}
+                >
+                    {({ errors, processing }) => (
+                        <>
+                            <InputError message={errors.dossier} />
+                            <DialogFooter className="gap-2">
+                                <DialogClose asChild>
+                                    <Button type="button" variant="secondary">
+                                        Cancel
+                                    </Button>
+                                </DialogClose>
+                                <Button type="submit" disabled={processing}>
+                                    Complete dossier
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function ReviewCount({ label, value }: { label: string; value: number }) {
     return (
         <div className="rounded-md border px-3 py-2">
-            <p className="text-xl font-semibold">{value}</p>
+            <p className="text-xl font-semibold tabular-nums">{value}</p>
             <p className="text-xs text-muted-foreground">{label}</p>
         </div>
     );

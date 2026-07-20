@@ -1,49 +1,30 @@
 import { Head, setLayoutProps, usePoll } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AddDocumentRequestCard from '@/features/document-requests/staff/add-document-request-card';
 import DocumentRequestsCard from '@/features/document-requests/staff/document-requests-card';
 import ApplyTemplateCard from '@/features/dossiers/apply-template-card';
+import {
+    STAGE_HINTS,
+    STAGE_LABELS,
+    STAGE_ORDER,
+} from '@/features/dossiers/dossier-stage';
+import DossierStageProgress from '@/features/dossiers/dossier-stage-progress';
+import DossierStatusBadge from '@/features/dossiers/dossier-status-badge';
 import DossierWorkflowCard from '@/features/dossiers/dossier-workflow-card';
-import type { Dossier, DossierStatus } from '@/features/dossiers/types';
+import type { Dossier } from '@/features/dossiers/types';
 import WaitingItemsSummary from '@/features/dossiers/waiting-items-summary';
 import ClientAccessCard from '@/features/portal/client-access-card';
 import PortalLinkBanner from '@/features/portal/portal-link-banner';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useDossierStageTab } from '@/hooks/use-dossier-stage-tab';
 import {
     index as dossierIndex,
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
-
-const STAGE_ORDER = ['prepare', 'invite', 'review'] as const;
-
-type DossierStageTab = (typeof STAGE_ORDER)[number];
-
-const STAGE_LABELS: Record<DossierStageTab, string> = {
-    prepare: 'Prepare',
-    invite: 'Invite',
-    review: 'Review',
-};
-
-/**
- * Pick the tab that matches where the dossier is in the workflow.
- */
-function defaultTabForStatus(status: DossierStatus): DossierStageTab {
-    switch (status) {
-        case 'awaiting_client':
-            return 'invite';
-        case 'in_review':
-        case 'completed':
-            return 'review';
-        default:
-            return 'prepare';
-    }
-}
 
 /**
  * Staff dossier detail — stage tabs for Prepare → Invite → Review.
@@ -66,9 +47,7 @@ export default function ShowDossier({
     can_download: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const [tab, setTab] = useState<DossierStageTab>(() =>
-        defaultTabForStatus(dossier.status),
-    );
+    const [tab, setTab] = useDossierStageTab(dossier.status);
 
     // Poll while OCR is still running so extracted JSON appears without a refresh.
     const hasInFlightProcessing = dossier.document_requests.some((request) => {
@@ -131,12 +110,11 @@ export default function ShowDossier({
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
+                        level={1}
                         title={dossier.title}
                         description={`${dossier.client.name} · ${dossier.client.email}`}
                     />
-                    <Badge variant="secondary">
-                        {dossier.status.replaceAll('_', ' ')}
-                    </Badge>
+                    <DossierStatusBadge status={dossier.status} />
                 </div>
 
                 {accessGrantPortalUrl && (
@@ -146,26 +124,21 @@ export default function ShowDossier({
                     />
                 )}
 
-                <Tabs
-                    value={tab}
-                    onValueChange={(value) => setTab(value as DossierStageTab)}
-                >
-                    <TabsList>
-                        <TabsTrigger value="prepare">Prepare</TabsTrigger>
-                        <TabsTrigger value="invite">Invite</TabsTrigger>
-                        <TabsTrigger value="review">Review</TabsTrigger>
-                    </TabsList>
+                <div className="flex flex-col gap-4">
+                    <DossierStageProgress
+                        dossier={dossier}
+                        activeTab={tab}
+                        onStageSelect={setTab}
+                    />
 
-                    <p className="text-sm text-muted-foreground">
-                        {tab === 'prepare' &&
-                            'Build the questionnaire, then continue to Invite.'}
-                        {tab === 'invite' &&
-                            'Send a portal link so the client can upload. Then continue to Review.'}
-                        {tab === 'review' &&
-                            'Check OCR results, approve or request changes, then complete the dossier.'}
+                    <p
+                        aria-live="polite"
+                        className="text-sm text-muted-foreground"
+                    >
+                        {STAGE_HINTS[tab]}
                     </p>
 
-                    <TabsContent value="prepare">
+                    {tab === 'prepare' && (
                         <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
                             <DocumentRequestsCard
                                 dossierId={dossier.id}
@@ -189,9 +162,9 @@ export default function ShowDossier({
                                 )}
                             </div>
                         </div>
-                    </TabsContent>
+                    )}
 
-                    <TabsContent value="invite">
+                    {tab === 'invite' && (
                         <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
                             <ClientAccessCard
                                 dossierId={dossier.id}
@@ -204,9 +177,9 @@ export default function ShowDossier({
                                 documentRequests={dossier.document_requests}
                             />
                         </div>
-                    </TabsContent>
+                    )}
 
-                    <TabsContent value="review">
+                    {tab === 'review' && (
                         <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
                             <DocumentRequestsCard
                                 dossierId={dossier.id}
@@ -221,9 +194,9 @@ export default function ShowDossier({
                                 canReview={canReview}
                             />
                         </div>
-                    </TabsContent>
+                    )}
 
-                    {/* Linear stage controls — tabs stay available for jumping back. */}
+                    {/* Linear stage controls — progress nav allows jumping back. */}
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
                         <div>
                             {previousStage ? (
@@ -232,7 +205,7 @@ export default function ShowDossier({
                                     variant="outline"
                                     onClick={() => setTab(previousStage)}
                                 >
-                                    <ArrowLeft />
+                                    <ArrowLeft aria-hidden="true" />
                                     Back to {STAGE_LABELS[previousStage]}
                                 </Button>
                             ) : (
@@ -248,7 +221,7 @@ export default function ShowDossier({
                                     onClick={() => setTab(nextStage)}
                                 >
                                     Next: {STAGE_LABELS[nextStage]}
-                                    <ArrowRight />
+                                    <ArrowRight aria-hidden="true" />
                                 </Button>
                             ) : null}
                             {nextDisabled && (
@@ -258,7 +231,7 @@ export default function ShowDossier({
                             )}
                         </div>
                     </div>
-                </Tabs>
+                </div>
             </div>
         </>
     );
