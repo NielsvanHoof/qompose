@@ -16,8 +16,8 @@ import {
 import { Label } from '@/components/ui/label';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
-import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 import { formatDateTime } from '@/lib/format-date-time';
+import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 export default function DocumentRequestReview({
     dossierId,
