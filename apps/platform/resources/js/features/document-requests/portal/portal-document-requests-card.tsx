@@ -12,18 +12,15 @@ import type {
     DocumentRequestStatus,
     PortalDocumentRequest,
 } from '@/features/document-requests/types';
-import type { DossierStatus } from '@/features/dossiers/types';
 
 /**
  * Client-portal questionnaire with uploads and typed answers.
  */
 export default function PortalDocumentRequestsCard({
     firmName,
-    dossierStatus,
     documentRequests,
 }: {
     firmName: string;
-    dossierStatus: DossierStatus;
     documentRequests: PortalDocumentRequest[];
 }) {
     const submittedCount = documentRequests.filter(
@@ -105,16 +102,11 @@ export default function PortalDocumentRequestsCard({
 
                                 <PortalRequestTypeContent
                                     documentRequest={documentRequest}
-                                    canRespond={canRespondToDocumentRequest(
-                                        dossierStatus,
-                                        documentRequest,
-                                    )}
+                                    canRespond={documentRequest.can_respond}
                                 />
 
-                                {!canRespondToDocumentRequest(
-                                    dossierStatus,
-                                    documentRequest,
-                                ) && documentRequest.status === 'submitted' ? (
+                                {!documentRequest.can_respond &&
+                                documentRequest.status === 'submitted' ? (
                                     <p className="text-sm text-muted-foreground">
                                         Submitted and waiting for review.
                                     </p>
@@ -134,17 +126,6 @@ export default function PortalDocumentRequestsCard({
 
 function statusLabel(status: DocumentRequestStatus): string {
     return status === 'accepted' ? 'approved' : status.replaceAll('_', ' ');
-}
-
-function canRespondToDocumentRequest(
-    dossierStatus: DossierStatus,
-    documentRequest: PortalDocumentRequest,
-): boolean {
-    return (
-        dossierStatus !== 'completed' &&
-        (documentRequest.status === 'pending' ||
-            documentRequest.status === 'rejected')
-    );
 }
 
 /**

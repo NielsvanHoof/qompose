@@ -9,6 +9,7 @@ use App\Enums\AuditEvent;
 use App\Models\ClientAccessGrant;
 use App\Models\Tenant;
 use App\Notifications\Portal\ClientPortalInviteNotification;
+use App\Tenancy\TenantContext;
 use Illuminate\Notifications\Events\NotificationFailed;
 use RuntimeException;
 use Throwable;
@@ -17,6 +18,7 @@ final class LogClientPortalInviteFailed
 {
     public function __construct(
         private readonly LogAuditActivity $logAuditActivity,
+        private readonly TenantContext $tenantContext,
     ) {}
 
     public function handle(NotificationFailed $event): void
@@ -44,7 +46,7 @@ final class LogClientPortalInviteFailed
                 return;
             }
 
-            $tenant->execute(function () use ($grant, $event): void {
+            $this->tenantContext->runForTenant($tenant, function () use ($grant, $event): void {
                 $this->logAuditActivity->handle(
                     AuditEvent::ClientPortalInviteFailed,
                     $grant,

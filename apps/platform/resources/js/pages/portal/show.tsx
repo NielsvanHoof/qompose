@@ -64,7 +64,6 @@ export default function PortalShow({
 
                     <PortalDocumentRequestsCard
                         firmName={firm.name}
-                        dossierStatus={dossier.status}
                         documentRequests={dossier.document_requests}
                     />
 

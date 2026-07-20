@@ -61,5 +61,6 @@ export type PortalDocumentRequest = {
     answer_text: string | null;
     answer_boolean: boolean | null;
     rejection_reason: string | null;
+    can_respond: boolean;
     uploaded_document: PortalUploadedDocument | null;
 };

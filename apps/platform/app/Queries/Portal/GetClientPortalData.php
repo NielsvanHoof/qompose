@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace App\Queries\Portal;
 
+use App\Enums\SubmissionContext;
 use App\Models\Client;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\Tenant;
+use App\Transitions\DocumentRequestTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 final class GetClientPortalData
 {
+    public function __construct(
+        private readonly DocumentRequestTransitions $documentRequestTransitions,
+    ) {}
+
     /**
      * @return array{
      *     firm: array{name: string},
@@ -31,6 +37,7 @@ final class GetClientPortalData
      *             answer_text: string|null,
      *             answer_boolean: bool|null,
      *             rejection_reason: string|null,
+     *             can_respond: bool,
      *             uploaded_document: array{
      *                 original_filename: string,
      *                 size_bytes: int,
@@ -69,7 +76,7 @@ final class GetClientPortalData
                 ],
                 'expires_at' => $grant->expires_at->toIso8601String(),
                 'document_requests' => $dossier->documentRequests
-                    ->map(function (DocumentRequest $documentRequest): array {
+                    ->map(function (DocumentRequest $documentRequest) use ($dossier): array {
                         $uploadedDocument = $documentRequest->uploadedDocument;
 
                         return [
@@ -81,6 +88,11 @@ final class GetClientPortalData
                             'answer_text' => $documentRequest->answer_text,
                             'answer_boolean' => $documentRequest->answer_boolean,
                             'rejection_reason' => $documentRequest->rejection_reason,
+                            'can_respond' => $this->documentRequestTransitions->canSubmit(
+                                $documentRequest,
+                                SubmissionContext::Portal,
+                                $dossier,
+                            ),
                             'uploaded_document' => $uploadedDocument === null
                                 ? null
                                 : [

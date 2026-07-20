@@ -7,6 +7,7 @@ namespace App\Actions\Portal;
 use App\Actions\Audit\LogAuditActivity;
 use App\Actions\Dossiers\UploadDocumentForRequest;
 use App\Enums\AuditEvent;
+use App\Enums\SubmissionContext;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
@@ -63,6 +64,7 @@ final class SubmitPortalUpload
                     ],
                 );
             },
+            SubmissionContext::Portal,
         );
     }
 }

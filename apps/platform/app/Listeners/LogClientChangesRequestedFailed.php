@@ -9,6 +9,7 @@ use App\Enums\AuditEvent;
 use App\Models\DocumentRequest;
 use App\Models\Tenant;
 use App\Notifications\Portal\ClientChangesRequestedNotification;
+use App\Tenancy\TenantContext;
 use Illuminate\Notifications\Events\NotificationFailed;
 use RuntimeException;
 use Throwable;
@@ -17,6 +18,7 @@ final class LogClientChangesRequestedFailed
 {
     public function __construct(
         private readonly LogAuditActivity $logAuditActivity,
+        private readonly TenantContext $tenantContext,
     ) {}
 
     public function handle(NotificationFailed $event): void
@@ -44,7 +46,7 @@ final class LogClientChangesRequestedFailed
                 return;
             }
 
-            $tenant->execute(function () use ($documentRequest, $event): void {
+            $this->tenantContext->runForTenant($tenant, function () use ($documentRequest, $event): void {
                 $this->logAuditActivity->handle(
                     AuditEvent::ClientChangesRequestedFailed,
                     $documentRequest,

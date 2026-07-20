@@ -10,6 +10,7 @@ use App\Enums\DocumentProcessingStatus;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
 use App\Services\Ocr\Normalization\TextractAnalyzeDocumentNormalizer;
+use App\Tenancy\TenantContext;
 use Aws\Textract\TextractClient;
 use JsonException;
 use RuntimeException;
@@ -28,6 +29,7 @@ final class CompleteTextractExtraction
         private readonly TextractClient $textract,
         private readonly TextractAnalyzeDocumentNormalizer $normalizer,
         private readonly LogAuditActivity $logAuditActivity,
+        private readonly TenantContext $tenantContext,
     ) {}
 
     /**
@@ -63,67 +65,69 @@ final class CompleteTextractExtraction
 
         // SQS consumer has no HTTP tenant context — switch for audits and scoped queries.
         $tenant = Tenant::query()->find($document->tenant_id);
-        if ($tenant instanceof Tenant) {
-            $tenant->makeCurrent();
+        if (! $tenant instanceof Tenant) {
+            return false;
         }
 
-        // Idempotent: never overwrite a finished extraction.
-        if ($document->processing_status === DocumentProcessingStatus::Completed) {
-            return true;
-        }
+        return $this->tenantContext->runForTenant($tenant, function () use ($document, $notification, $jobId, $status): bool {
+            // Idempotent: never overwrite a finished extraction.
+            if ($document->processing_status === DocumentProcessingStatus::Completed) {
+                return true;
+            }
 
-        if ($status === 'SUCCEEDED') {
-            $extractedJson = $this->fetchExtractedJson($jobId);
+            if ($status === 'SUCCEEDED') {
+                $extractedJson = $this->fetchExtractedJson($jobId);
 
-            $document->forceFill([
-                'processing_status' => DocumentProcessingStatus::Completed,
-                'extracted_text' => $extractedJson,
-                'processing_error' => null,
-                'processing_finished_at' => now(),
-            ])->save();
+                $document->forceFill([
+                    'processing_status' => DocumentProcessingStatus::Completed,
+                    'extracted_text' => $extractedJson,
+                    'processing_error' => null,
+                    'processing_finished_at' => now(),
+                ])->save();
 
-            $this->logAuditActivity->handle(
-                AuditEvent::DocumentProcessingCompleted,
-                $document,
-                [
-                    'original_filename' => $document->original_filename,
-                    'extracted_length' => mb_strlen($extractedJson),
-                    'textract_job_id' => $jobId,
-                ],
-                includeRequestContext: false,
-            );
+                $this->logAuditActivity->handle(
+                    AuditEvent::DocumentProcessingCompleted,
+                    $document,
+                    [
+                        'original_filename' => $document->original_filename,
+                        'extracted_length' => mb_strlen($extractedJson),
+                        'textract_job_id' => $jobId,
+                    ],
+                    includeRequestContext: false,
+                );
 
-            return true;
-        }
+                return true;
+            }
 
-        if ($status === 'FAILED') {
-            $message = $notification['StatusMessage'] ?? 'Textract job failed.';
-            $error = is_string($message) && $message !== ''
-                ? mb_substr($message, 0, 500)
-                : 'Textract job failed.';
+            if ($status === 'FAILED') {
+                $message = $notification['StatusMessage'] ?? 'Textract job failed.';
+                $error = is_string($message) && $message !== ''
+                    ? mb_substr($message, 0, 500)
+                    : 'Textract job failed.';
 
-            $document->forceFill([
-                'processing_status' => DocumentProcessingStatus::Failed,
-                'processing_error' => $error,
-                'processing_finished_at' => now(),
-            ])->save();
+                $document->forceFill([
+                    'processing_status' => DocumentProcessingStatus::Failed,
+                    'processing_error' => $error,
+                    'processing_finished_at' => now(),
+                ])->save();
 
-            $this->logAuditActivity->handle(
-                AuditEvent::DocumentProcessingFailed,
-                $document,
-                [
-                    'original_filename' => $document->original_filename,
-                    'error' => $error,
-                    'textract_job_id' => $jobId,
-                ],
-                includeRequestContext: false,
-            );
+                $this->logAuditActivity->handle(
+                    AuditEvent::DocumentProcessingFailed,
+                    $document,
+                    [
+                        'original_filename' => $document->original_filename,
+                        'error' => $error,
+                        'textract_job_id' => $jobId,
+                    ],
+                    includeRequestContext: false,
+                );
 
-            return true;
-        }
+                return true;
+            }
 
-        // IN_PROGRESS / PARTIAL_SUCCESS — leave message for a later poll if needed.
-        return false;
+            // IN_PROGRESS / PARTIAL_SUCCESS — leave message for a later poll if needed.
+            return false;
+        });
     }
 
     private function fetchExtractedJson(string $jobId): string

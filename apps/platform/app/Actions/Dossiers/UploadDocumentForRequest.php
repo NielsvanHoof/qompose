@@ -6,6 +6,7 @@ namespace App\Actions\Dossiers;
 
 use App\Enums\DocumentProcessingStatus;
 use App\Enums\QuestionnaireItemType;
+use App\Enums\SubmissionContext;
 use App\Jobs\ProcessUploadedDocument;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
@@ -40,6 +41,7 @@ final class UploadDocumentForRequest
         DocumentRequest $documentRequest,
         UploadedFile $file,
         ?Closure $afterPersist = null,
+        SubmissionContext $context = SubmissionContext::Staff,
     ): UploadedDocument {
         if ($documentRequest->type !== QuestionnaireItemType::File) {
             throw new InvalidArgumentException('Only file items accept uploads.');
@@ -75,6 +77,7 @@ final class UploadDocumentForRequest
                 $file,
                 $sizeBytes,
                 $afterPersist,
+                $context,
                 &$replacedFile,
             ): UploadedDocument {
                 $documentRequestQuery = DocumentRequest::query()
@@ -117,7 +120,7 @@ final class UploadDocumentForRequest
                         ->create($attributes);
                 }
 
-                $this->documentRequestTransitions->submitUpload($lockedDocumentRequest);
+                $this->documentRequestTransitions->submitUpload($lockedDocumentRequest, $context);
 
                 if ($afterPersist instanceof Closure) {
                     $afterPersist($uploadedDocument, $lockedDocumentRequest);

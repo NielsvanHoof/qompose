@@ -7,6 +7,7 @@ namespace App\Actions\Portal;
 use App\Actions\Audit\LogAuditActivity;
 use App\Actions\Dossiers\SubmitQuestionnaireAnswer;
 use App\Enums\AuditEvent;
+use App\Enums\SubmissionContext;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
@@ -57,6 +58,7 @@ final class SubmitPortalAnswer
                 $lockedDocumentRequest,
                 $answerText,
                 $answerBoolean,
+                SubmissionContext::Portal,
             );
 
             $this->dossierTransitions->markInReview($dossier);

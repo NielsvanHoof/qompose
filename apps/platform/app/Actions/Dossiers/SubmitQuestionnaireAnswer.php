@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Dossiers;
 
+use App\Enums\SubmissionContext;
 use App\Models\DocumentRequest;
 use App\Transitions\DocumentRequestTransitions;
 
@@ -20,9 +21,11 @@ final class SubmitQuestionnaireAnswer
         DocumentRequest $documentRequest,
         ?string $answerText = null,
         ?bool $answerBoolean = null,
+        SubmissionContext $context = SubmissionContext::Staff,
     ): DocumentRequest {
         $this->documentRequestTransitions->submitAnswer(
             $documentRequest,
+            $context,
             $answerText,
             $answerBoolean,
         );

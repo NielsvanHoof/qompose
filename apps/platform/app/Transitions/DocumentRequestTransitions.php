@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Transitions;
 
 use App\Enums\DocumentRequestStatus;
+use App\Enums\DossierStatus;
 use App\Enums\QuestionnaireItemType;
+use App\Enums\SubmissionContext;
 use App\Models\DocumentRequest;
+use App\Models\Dossier;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
@@ -19,11 +22,41 @@ use function in_array;
  *
  * Allowed flow: pending/rejected/submitted → submitted → accepted|rejected.
  * Accepted items cannot be submitted again.
+ * Portal submissions are locked while an item awaits review; staff may replace submitted uploads.
  */
 final class DocumentRequestTransitions
 {
+    /**
+     * Whether the document request can receive a submission in the given context.
+     */
+    public function canSubmit(
+        DocumentRequest $documentRequest,
+        SubmissionContext $context,
+        ?Dossier $dossier = null,
+    ): bool {
+        if ($context === SubmissionContext::Portal) {
+            $dossier ??= $documentRequest->dossier;
+
+            if (! $dossier instanceof Dossier || $dossier->status === DossierStatus::Completed) {
+                return false;
+            }
+
+            return in_array($documentRequest->status, [
+                DocumentRequestStatus::Pending,
+                DocumentRequestStatus::Rejected,
+            ], true);
+        }
+
+        return in_array($documentRequest->status, [
+            DocumentRequestStatus::Pending,
+            DocumentRequestStatus::Rejected,
+            DocumentRequestStatus::Submitted,
+        ], true);
+    }
+
     public function submitAnswer(
         DocumentRequest $documentRequest,
+        SubmissionContext $context,
         ?string $answerText = null,
         ?bool $answerBoolean = null,
     ): void {
@@ -31,7 +64,7 @@ final class DocumentRequestTransitions
             throw new InvalidArgumentException('File items must be answered via upload.');
         }
 
-        $this->ensureCanBeSubmitted($documentRequest);
+        $this->ensureCanBeSubmitted($documentRequest, $context);
 
         if ($documentRequest->type === QuestionnaireItemType::Text) {
             if ($answerText === null || mb_trim($answerText) === '') {
@@ -58,13 +91,15 @@ final class DocumentRequestTransitions
         ]);
     }
 
-    public function submitUpload(DocumentRequest $documentRequest): void
-    {
+    public function submitUpload(
+        DocumentRequest $documentRequest,
+        SubmissionContext $context,
+    ): void {
         if ($documentRequest->type !== QuestionnaireItemType::File) {
             throw new InvalidArgumentException('Only file items accept uploads.');
         }
 
-        $this->ensureCanBeSubmitted($documentRequest);
+        $this->ensureCanBeSubmitted($documentRequest, $context);
         $documentRequest->update($this->submittedState());
     }
 
@@ -105,18 +140,18 @@ final class DocumentRequestTransitions
         ]);
     }
 
-    private function ensureCanBeSubmitted(DocumentRequest $documentRequest): void
-    {
-        if (in_array($documentRequest->status, [
-            DocumentRequestStatus::Pending,
-            DocumentRequestStatus::Rejected,
-            DocumentRequestStatus::Submitted,
-        ], true)) {
+    private function ensureCanBeSubmitted(
+        DocumentRequest $documentRequest,
+        SubmissionContext $context,
+    ): void {
+        if ($this->canSubmit($documentRequest, $context)) {
             return;
         }
 
         throw ValidationException::withMessages([
-            'document_request' => 'An approved item cannot be submitted again.',
+            'document_request' => $context === SubmissionContext::Portal
+                ? 'This item cannot be submitted from the client portal in its current state.'
+                : 'An approved item cannot be submitted again.',
         ]);
     }
 

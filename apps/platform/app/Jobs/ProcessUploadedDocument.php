@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Actions\Audit\LogAuditActivity;
-use App\Contracts\Ocr\StartsDocumentOcr;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\UploadedDocument;
+use App\Services\Ocr\OcrOrchestrator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -42,7 +42,7 @@ final class ProcessUploadedDocument implements ShouldQueue
     }
 
     public function handle(
-        StartsDocumentOcr $ocr,
+        OcrOrchestrator $ocrOrchestrator,
         LogAuditActivity $logAuditActivity,
     ): void {
         $document = UploadedDocument::query()->find($this->uploadedDocumentId);
@@ -62,29 +62,8 @@ final class ProcessUploadedDocument implements ShouldQueue
             return;
         }
 
-        $logAuditActivity->handle(
-            AuditEvent::DocumentProcessingStarted,
-            $claimed,
-            ['original_filename' => $claimed->original_filename],
-            includeRequestContext: false,
-        );
-
         try {
-            $ocr->start($claimed);
-            $claimed->refresh();
-
-            // Sync drivers (mock) finish inside start(); Textract waits for SQS.
-            if ($claimed->processing_status === DocumentProcessingStatus::Completed) {
-                $logAuditActivity->handle(
-                    AuditEvent::DocumentProcessingCompleted,
-                    $claimed,
-                    [
-                        'original_filename' => $claimed->original_filename,
-                        'extracted_length' => mb_strlen((string) $claimed->extracted_text),
-                    ],
-                    includeRequestContext: false,
-                );
-            }
+            $ocrOrchestrator->startProcessing($claimed);
         } catch (Throwable $exception) {
             // Let the queue retry until tries are exhausted.
             if ($this->attempts() < $this->tries) {

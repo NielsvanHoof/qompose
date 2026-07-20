@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Portal;
 
-use App\Enums\DocumentRequestStatus;
-use App\Enums\DossierStatus;
 use App\Enums\QuestionnaireItemType;
+use App\Enums\SubmissionContext;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
+use App\Transitions\DocumentRequestTransitions;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\File;
 
 final class StorePortalUploadedDocumentRequest extends FormRequest
 {
+    public function __construct(
+        private readonly DocumentRequestTransitions $documentRequestTransitions,
+    ) {
+        parent::__construct();
+    }
+
     public function authorize(): bool
     {
         $grant = $this->attributes->get(ResolveClientPortalGrant::REQUEST_ATTRIBUTE);
@@ -38,11 +44,11 @@ final class StorePortalUploadedDocumentRequest extends FormRequest
 
         return $dossier instanceof Dossier
             && $documentRequest->type === QuestionnaireItemType::File
-            && $dossier->status !== DossierStatus::Completed
-            && in_array($documentRequest->status, [
-                DocumentRequestStatus::Pending,
-                DocumentRequestStatus::Rejected,
-            ], true);
+            && $this->documentRequestTransitions->canSubmit(
+                $documentRequest,
+                SubmissionContext::Portal,
+                $dossier,
+            );
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */

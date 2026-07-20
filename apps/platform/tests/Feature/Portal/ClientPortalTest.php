@@ -194,6 +194,56 @@ test('guest can upload a document through the portal', function () {
         ->and($context['dossier']->fresh()->status)->toBe(DossierStatus::InReview);
 });
 
+test('portal cannot upload while a file item awaits review', function () {
+    Storage::fake('local');
+
+    $context = createPortalDossierWithGrant();
+
+    $context['tenant']->makeCurrent();
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'dossier_id' => $context['dossier']->id,
+        'title' => 'Payslip January 2025',
+        'status' => DocumentRequestStatus::Submitted,
+    ]);
+
+    $this->get(route('portal.exchange', $context['plainTextToken']));
+
+    $this->post(
+        route('portal.document-requests.upload', [
+            'documentRequest' => $documentRequest->id,
+        ]),
+        ['document' => UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf')],
+    )->assertForbidden();
+
+    $context['tenant']->makeCurrent();
+
+    expect(UploadedDocument::query()->where('document_request_id', $documentRequest->id)->exists())->toBeFalse();
+});
+
+test('portal cannot answer while a text item awaits review', function () {
+    $context = createPortalDossierWithGrant();
+
+    $context['tenant']->makeCurrent();
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'dossier_id' => $context['dossier']->id,
+        'type' => QuestionnaireItemType::Text,
+        'title' => 'Registered address',
+        'status' => DocumentRequestStatus::Submitted,
+    ]);
+
+    $this->get(route('portal.exchange', $context['plainTextToken']));
+
+    $this->post(route('portal.document-requests.answer', [
+        'documentRequest' => $documentRequest,
+    ]), [
+        'answer_text' => '221B Baker Street',
+    ])->assertForbidden();
+
+    expect($documentRequest->fresh()->answer_text)->toBeNull();
+});
+
 test('portal upload cannot target a document request from another dossier', function () {
     Storage::fake('local');
 
