@@ -16,6 +16,7 @@ import type {
 } from '@/features/document-requests/types';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 type DocumentRequestListItemProps = {
     dossierId: number;
@@ -62,6 +63,7 @@ export default function DocumentRequestListItem({
                             dossier: dossierId,
                             documentRequest: documentRequest.id,
                         })}
+                        options={inlineDossierActionOptions}
                     >
                         {({ processing }) => (
                             <Button
@@ -84,6 +86,7 @@ export default function DocumentRequestListItem({
                         dossier: dossierId,
                         documentRequest: documentRequest.id,
                     })}
+                    options={inlineDossierActionOptions}
                     className="grid gap-3"
                 >
                     {({ errors, processing }) => (

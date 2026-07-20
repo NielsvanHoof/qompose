@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 /**
  * Staff fallback file upload (email / walk-in).
@@ -34,8 +35,8 @@ export default function DocumentRequestUpload({
                 documentRequest: documentRequest.id,
             }),
             {
+                ...inlineDossierActionOptions,
                 forceFormData: true,
-                preserveScroll: true,
                 onSuccess: () => form.reset('document'),
             },
         );

@@ -4,6 +4,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import { inlinePortalActionOptions } from '@/lib/inline-portal-action-options';
 
 /**
  * Portal form for a text questionnaire answer.
@@ -18,6 +19,7 @@ export function PortalTextDocumentAnswer({
             {...ClientPortalAnswerController.store.form({
                 documentRequest: documentRequest.id,
             })}
+            options={inlinePortalActionOptions}
             className="space-y-3"
         >
             {({ errors, processing }) => (
@@ -89,6 +91,7 @@ function BooleanAnswerButton({
             {...ClientPortalAnswerController.store.form({
                 documentRequest: documentRequestId,
             })}
+            options={inlinePortalActionOptions}
         >
             {({ processing }) => (
                 <>

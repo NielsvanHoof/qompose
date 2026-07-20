@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import { inlinePortalActionOptions } from '@/lib/inline-portal-action-options';
 
 /**
  * Client-portal file upload for a single document request.
@@ -28,8 +29,8 @@ export default function PortalDocumentUpload({
                 documentRequest: documentRequest.id,
             }),
             {
+                ...inlinePortalActionOptions,
                 forceFormData: true,
-                preserveScroll: true,
                 onSuccess: () => form.reset('document'),
             },
         );

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 function formatTemplateLabel(template: ApplyTemplateOption): string {
     const suffix = template.is_system ? ' · System' : '';
@@ -56,6 +57,7 @@ export default function ApplyTemplateCard({
                         tenant: currentWorkspace,
                         dossier: dossierId,
                     })}
+                    options={inlineDossierActionOptions}
                     className="space-y-4"
                 >
                     {({ errors, processing }) => (

@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import QuestionnaireItemTypeSelect from '@/features/document-requests/questionnaire-item-type-select';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 /**
  * Sidebar form to add one questionnaire item to a dossier.
@@ -38,6 +39,7 @@ export default function AddDocumentRequestCard({
                         tenant: currentWorkspace,
                         dossier: dossierId,
                     })}
+                    options={inlineDossierActionOptions}
                     resetOnSuccess
                     className="space-y-4"
                 >

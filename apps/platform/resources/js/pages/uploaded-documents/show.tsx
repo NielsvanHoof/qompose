@@ -1,4 +1,5 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps, usePoll } from '@inertiajs/react';
+import { useEffect } from 'react';
 import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +43,29 @@ export default function ShowUploadedDocument({
     can_download: canDownload,
 }: ExtractionPageProps) {
     const currentWorkspace = useCurrentWorkspace();
+
+    const isProcessing =
+        uploadedDocument.processing_status === 'pending' ||
+        uploadedDocument.processing_status === 'processing';
+
+    const { start, stop } = usePoll(
+        2000,
+        {
+            only: ['uploaded_document'],
+        },
+        {
+            autoStart: false,
+            mode: 'rest',
+        },
+    );
+
+    useEffect(() => {
+        if (isProcessing) {
+            start();
+        } else {
+            stop();
+        }
+    }, [isProcessing, start, stop]);
 
     setLayoutProps({
         breadcrumbs: [
@@ -140,7 +164,8 @@ export default function ShowUploadedDocument({
                 {(uploadedDocument.processing_status === 'pending' ||
                     uploadedDocument.processing_status === 'processing') && (
                     <p className="text-sm text-muted-foreground">
-                        Analysis is still running. Refresh this page shortly.
+                        Analysis is still running. Results will appear
+                        automatically.
                     </p>
                 )}
 

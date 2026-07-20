@@ -31,12 +31,13 @@ export default function ManagePasskeys(props: Props) {
     const handleDelete = (id: number, onError: () => void) => {
         router.delete(destroy.url(id), {
             preserveScroll: true,
+            only: ['passkeys', 'flash'],
             onError,
         });
     };
 
     const handleRegisterSuccess = () => {
-        router.reload();
+        router.reload({ only: ['passkeys', 'flash'] });
     };
 
     if (!(props.canManagePasskeys ?? false)) {

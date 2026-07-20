@@ -1,11 +1,6 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import PortalDocumentRequestsCard from '@/features/document-requests/portal/portal-document-requests-card';
 import type { PortalDossier } from '@/features/portal/types';
-
-type FlashToast = {
-    type: 'success' | 'error' | 'info' | 'warning';
-    message: string;
-};
 
 /**
  * Client portal dossier page — magic-link access, no staff layout.
@@ -17,9 +12,6 @@ export default function PortalShow({
     firm: { name: string };
     dossier: PortalDossier;
 }) {
-    const page = usePage<{ flash?: { toast?: FlashToast } }>();
-    const toast = page.props.flash?.toast;
-
     return (
         <>
             <Head title={`${dossier.title} · ${firm.name}`} />
@@ -49,12 +41,6 @@ export default function PortalShow({
                 </header>
 
                 <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 md:px-8">
-                    {toast && (
-                        <div className="rounded-md border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-                            {toast.message}
-                        </div>
-                    )}
-
                     {dossier.status === 'completed' && (
                         <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
                             This dossier has been completed. Your submitted
