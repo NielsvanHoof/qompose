@@ -10,7 +10,7 @@ use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
-use App\Services\Ocr\Drivers\TextractDocumentOcr;
+use App\Services\Ocr\OcrOrchestrator;
 use Aws\Result;
 use Aws\Textract\TextractClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -46,7 +46,7 @@ test('textract start persists job id and leaves document processing', function (
     $this->app->instance(TextractClient::class, $textract);
 
     (new ProcessUploadedDocument($uploaded->id))->handle(
-        app(TextractDocumentOcr::class),
+        app(OcrOrchestrator::class),
         app(LogAuditActivity::class),
     );
 
