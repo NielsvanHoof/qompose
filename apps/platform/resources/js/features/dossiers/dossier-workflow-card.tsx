@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 export default function DossierWorkflowCard({
     dossier,
@@ -57,6 +58,7 @@ export default function DossierWorkflowCard({
                             tenant: currentWorkspace,
                             dossier: dossier.id,
                         })}
+                        options={inlineDossierActionOptions}
                     >
                         {({ errors, processing }) => (
                             <div className="space-y-2">

@@ -16,6 +16,7 @@ import {
 import { Label } from '@/components/ui/label';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 import { formatDateTime } from '@/lib/format-date-time';
 
 export default function DocumentRequestReview({
@@ -87,6 +88,7 @@ export default function DocumentRequestReview({
 
             <Form
                 {...DocumentRequestReviewController.store.form(routeParameters)}
+                options={inlineDossierActionOptions}
             >
                 {({ processing }) => (
                     <>
@@ -119,6 +121,7 @@ export default function DocumentRequestReview({
                         {...DocumentRequestReviewController.store.form(
                             routeParameters,
                         )}
+                        options={inlineDossierActionOptions}
                         className="space-y-4"
                     >
                         {({ errors, processing }) => (

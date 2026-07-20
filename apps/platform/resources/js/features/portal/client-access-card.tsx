@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import type { AccessGrant } from '@/features/portal/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 /**
  * Lists access grants and creates a new 7-day portal link (optionally emailed).
@@ -84,9 +85,7 @@ export default function ClientAccessCard({
                                                         grant: grant.id,
                                                     },
                                                 ),
-                                                {
-                                                    preserveScroll: true,
-                                                },
+                                                inlineDossierActionOptions,
                                             )
                                         }
                                     >
