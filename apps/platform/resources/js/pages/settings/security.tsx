@@ -6,10 +6,10 @@ import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import type { Props as ManagePasskeysProps } from '@/features/security/manage-passkeys';
-import ManagePasskeys from '@/features/security/manage-passkeys';
-import type { Props as ManageTwoFactorProps } from '@/features/security/manage-two-factor';
-import ManageTwoFactor from '@/features/security/manage-two-factor';
+import type { Props as ManagePasskeysProps } from '@/features/security/passkeys/manage-passkeys';
+import ManagePasskeys from '@/features/security/passkeys/manage-passkeys';
+import type { Props as ManageTwoFactorProps } from '@/features/security/two-factor/manage-two-factor';
+import ManageTwoFactor from '@/features/security/two-factor/manage-two-factor';
 import { useTranslation } from '@/hooks/use-translation';
 import { edit } from '@/routes/security';
 

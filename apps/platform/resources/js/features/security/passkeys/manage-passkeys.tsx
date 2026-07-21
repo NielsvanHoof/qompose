@@ -3,8 +3,8 @@ import { KeyRound } from 'lucide-react';
 import { destroy } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyRegistrationController';
 import EmptyState from '@/components/empty-state';
 import Heading from '@/components/heading';
-import PasskeyItem from '@/features/security/passkey-item';
-import PasskeyRegistration from '@/features/security/passkey-register';
+import PasskeyItem from '@/features/security/passkeys/passkey-item';
+import PasskeyRegistration from '@/features/security/passkeys/passkey-register';
 import { useTranslation } from '@/hooks/use-translation';
 import type { Passkey } from '@/types/auth';
 

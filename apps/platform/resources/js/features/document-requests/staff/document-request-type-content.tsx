@@ -8,7 +8,7 @@ import {
 import DocumentProcessingPanel from '@/features/document-requests/staff/document-processing-panel';
 import DocumentRequestUpload from '@/features/document-requests/staff/document-request-upload';
 import type { DocumentRequest } from '@/features/document-requests/types';
-import { useDossierPermissions } from '@/features/dossiers/dossier-permissions-context';
+import { useDossierPermissions } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useTranslation } from '@/hooks/use-translation';
 

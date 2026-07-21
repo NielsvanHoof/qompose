@@ -4,7 +4,7 @@ import {
     dossierStageLabel,
     dossierStageProgress,
     STAGE_ORDER,
-} from '@/features/dossiers/dossier-stage';
+} from '@/features/dossiers/stage/dossier-stage';
 import type { Dossier } from '@/features/dossiers/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';

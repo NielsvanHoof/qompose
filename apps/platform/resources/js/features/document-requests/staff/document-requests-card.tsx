@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import DocumentRequestListItem from '@/features/document-requests/staff/document-request-list-item';
 import type { DocumentRequest } from '@/features/document-requests/types';
-import { useDossierPermissions } from '@/features/dossiers/dossier-permissions-context';
+import { useDossierPermissions } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';

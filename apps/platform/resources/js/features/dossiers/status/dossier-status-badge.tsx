@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import {
     dossierStatusBadgeVariant,
     dossierStatusLabel,
-} from '@/features/dossiers/dossier-status';
+} from '@/features/dossiers/status/dossier-status';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useTranslation } from '@/hooks/use-translation';
 

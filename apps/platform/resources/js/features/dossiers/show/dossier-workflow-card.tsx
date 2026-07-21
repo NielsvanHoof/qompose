@@ -20,7 +20,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { useDossierPermissions } from '@/features/dossiers/dossier-permissions-context';
+import { useDossierPermissions } from '@/features/dossiers/permissions/dossier-permissions-context';
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';

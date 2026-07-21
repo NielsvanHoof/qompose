@@ -12,7 +12,7 @@ import {
 import {
     dossierStatusBadgeVariant,
     dossierStatusLabel,
-} from '@/features/dossiers/dossier-status';
+} from '@/features/dossiers/status/dossier-status';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';

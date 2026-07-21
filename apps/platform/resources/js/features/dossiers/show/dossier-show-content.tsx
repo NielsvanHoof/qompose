@@ -5,21 +5,21 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import AddDocumentRequestCard from '@/features/document-requests/staff/add-document-request-card';
 import DocumentRequestsCard from '@/features/document-requests/staff/document-requests-card';
-import ApplyTemplateCard from '@/features/dossiers/apply-template-card';
 import {
     DossierPermissionsProvider,
     useDossierPermissions,
-} from '@/features/dossiers/dossier-permissions-context';
+} from '@/features/dossiers/permissions/dossier-permissions-context';
+import ApplyTemplateCard from '@/features/dossiers/show/apply-template-card';
+import DossierWorkflowCard from '@/features/dossiers/show/dossier-workflow-card';
+import WaitingItemsSummary from '@/features/dossiers/show/waiting-items-summary';
 import {
     dossierStageHint,
     dossierStageLabel,
     STAGE_ORDER,
-} from '@/features/dossiers/dossier-stage';
-import DossierStageProgress from '@/features/dossiers/dossier-stage-progress';
-import DossierStatusBadge from '@/features/dossiers/dossier-status-badge';
-import DossierWorkflowCard from '@/features/dossiers/dossier-workflow-card';
+} from '@/features/dossiers/stage/dossier-stage';
+import DossierStageProgress from '@/features/dossiers/stage/dossier-stage-progress';
+import DossierStatusBadge from '@/features/dossiers/status/dossier-status-badge';
 import type { Dossier } from '@/features/dossiers/types';
-import WaitingItemsSummary from '@/features/dossiers/waiting-items-summary';
 import ClientAccessCard from '@/features/portal/client-access-card';
 import PortalLinkBanner from '@/features/portal/portal-link-banner';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';

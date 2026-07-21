@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import TemplateItemEditor from '@/features/questionnaires/template-item-editor';
+import TemplateItemEditor from '@/features/questionnaires/show/template-item-editor';
 import type {
     TemplateCategoryOption,
     TemplateDetail,

@@ -4,7 +4,7 @@ import {
     defaultTabForStatus,
     readStageFromUrl,
     writeStageToUrl,
-} from '@/features/dossiers/dossier-stage';
+} from '@/features/dossiers/stage/dossier-stage';
 import type { DossierStatus } from '@/features/dossiers/types';
 
 /**

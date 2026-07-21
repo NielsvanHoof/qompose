@@ -13,6 +13,23 @@ alwaysApply: false
 - `resources/js/pages/` — thin Inertia entry points only. Pages compose feature components; they hold no reusable logic.
 - `resources/js/types/` — only cross-cutting types (`auth`, `navigation`, `ui`). Domain types live in `features/<domain>/types.ts` and are imported directly, never re-exported through `@/types`.
 
+## When to nest inside a feature
+
+- **Feature root** holds `types.ts`, cross-cutting wiring (e.g. registries), and shared helpers used by multiple subfolders.
+- **Nest by audience** when code must not import across sides (`staff/` vs `portal/` — already enforced in Biome for document-requests).
+- **Nest by concern** when one audience mixes several topics (status vs stage vs show composition).
+- **Stay flat** when a feature has few files that already read as one cluster (~≤5 components, one concern). Examples: `audit`, `clients`, `dashboard`, `media`, `notifications`, `portal`, `settings`, `workspaces`.
+- **No barrel `index.ts` files** — import concrete paths (e.g. `@/features/dossiers/status/dossier-status-badge`).
+- **Keep descriptive filenames** inside subfolders (same style as `document-requests/staff/document-requests-card.tsx`).
+- **Do not move `types.ts`** off the feature root.
+
+Current nested layouts:
+
+- `dossiers/` — `permissions/`, `status/`, `stage/`, `show/`, `list/`, `create/`
+- `document-requests/` — `status/`, `staff/`, `portal/` (registry + shared upload form stay at root)
+- `security/` — `passkeys/`, `two-factor/` (`delete-user.tsx` stays at root)
+- `questionnaires/` — `list/`, `show/`
+
 ## Import boundaries (enforced by Biome noRestrictedImports)
 
 - Nothing imports from `@/pages/**`.

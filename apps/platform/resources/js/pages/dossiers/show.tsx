@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import DossierShowContent from '@/features/dossiers/dossier-show-content';
+import DossierShowContent from '@/features/dossiers/show/dossier-show-content';
 import type { Dossier } from '@/features/dossiers/types';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';

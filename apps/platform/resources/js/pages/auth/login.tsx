@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import PasskeyVerify from '@/features/security/passkey-verify';
+import PasskeyVerify from '@/features/security/passkeys/passkey-verify';
 import { useTranslation } from '@/hooks/use-translation';
 import { register } from '@/routes';
 import { store } from '@/routes/login';

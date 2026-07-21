@@ -1,5 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import TemplateShowContent from '@/features/questionnaires/template-show-content';
+import TemplateShowContent from '@/features/questionnaires/show/template-show-content';
 import type {
     TemplateCategoryOption,
     TemplateDetail,

@@ -1,6 +1,6 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/heading';
-import CreateDossierForm from '@/features/dossiers/create-dossier-form';
+import CreateDossierForm from '@/features/dossiers/create/create-dossier-form';
 import type { DossierClientOption } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import {

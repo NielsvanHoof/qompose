@@ -3,7 +3,7 @@ import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/
 import ErrorState from '@/components/error-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { documentProcessingStatusLabel } from '@/features/document-requests/document-processing-status';
+import { documentProcessingStatusLabel } from '@/features/document-requests/status/document-processing-status';
 import type {
     DocumentProcessingStatus,
     UploadedDocument,

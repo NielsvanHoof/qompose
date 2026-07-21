@@ -4,7 +4,7 @@ import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Button } from '@/components/ui/button';
-import DossiersListCard from '@/features/dossiers/dossiers-list-card';
+import DossiersListCard from '@/features/dossiers/list/dossiers-list-card';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';

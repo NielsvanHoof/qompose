@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import Heading from '@/components/heading';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Button } from '@/components/ui/button';
-import QuestionnaireTemplatesSection from '@/features/questionnaires/questionnaire-templates-section';
+import QuestionnaireTemplatesSection from '@/features/questionnaires/list/questionnaire-templates-section';
 import type { TemplateSummary } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';

@@ -8,7 +8,7 @@ import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import PasskeyVerify from '@/features/security/passkey-verify';
+import PasskeyVerify from '@/features/security/passkeys/passkey-verify';
 import { useTranslation } from '@/hooks/use-translation';
 import { store } from '@/routes/password/confirm';
 
