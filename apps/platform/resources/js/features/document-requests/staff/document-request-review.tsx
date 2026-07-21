@@ -53,23 +53,18 @@ export default function DocumentRequestReview({
 
     if (documentRequest.status === 'accepted') {
         return (
-            <div className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm">
-                <Check
-                    className="mt-0.5 size-4 text-emerald-600"
-                    aria-hidden="true"
-                />
-                <div>
-                    <p className="font-medium text-emerald-700">Approved</p>
-                    {documentRequest.reviewed_at && (
-                        <p className="text-muted-foreground">
-                            {documentRequest.reviewed_by_name
-                                ? `${documentRequest.reviewed_by_name} · `
-                                : ''}
-                            {formatDateTime(documentRequest.reviewed_at)}
-                        </p>
-                    )}
-                </div>
-            </div>
+            <Alert variant="success">
+                <Check aria-hidden="true" />
+                <AlertTitle>Approved</AlertTitle>
+                {documentRequest.reviewed_at && (
+                    <AlertDescription>
+                        {documentRequest.reviewed_by_name
+                            ? `${documentRequest.reviewed_by_name} · `
+                            : ''}
+                        {formatDateTime(documentRequest.reviewed_at)}
+                    </AlertDescription>
+                )}
+            </Alert>
         );
     }
 

@@ -1,5 +1,6 @@
 import { Form, Link } from '@inertiajs/react';
 import DossierController from '@/actions/App/Http/Controllers/Dossiers/DossierController';
+import EmptyState from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,16 +29,19 @@ export default function CreateDossierForm({
 
     if (clients.length === 0) {
         return (
-            <div className="mt-6 rounded-lg border p-6">
-                <p className="text-sm text-muted-foreground">
-                    Create a client before creating a dossier.
-                </p>
-                <Button className="mt-4" asChild>
-                    <Link href={clientIndex(currentWorkspace)}>
-                        Go to clients
-                    </Link>
-                </Button>
-            </div>
+            <EmptyState
+                className="mt-6"
+                title="Create a client before creating a dossier."
+                variant="panel"
+                bordered
+                action={
+                    <Button asChild>
+                        <Link href={clientIndex(currentWorkspace)}>
+                            Go to clients
+                        </Link>
+                    </Button>
+                }
+            />
         );
     }
 

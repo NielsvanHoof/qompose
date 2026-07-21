@@ -12,6 +12,7 @@ enum AuditEvent: string
     case DocumentRequestRejected = 'document_request.rejected';
     case DocumentUploaded = 'document.uploaded';
     case QuestionnaireAnswerSubmitted = 'questionnaire.answer_submitted';
+    case ClientQuestionnaireCompleted = 'client_portal.questionnaire_completed';
     case DossierCompleted = 'dossier.completed';
     case DocumentViewed = 'document.viewed';
     case DocumentDownloaded = 'document.downloaded';
@@ -39,6 +40,7 @@ enum AuditEvent: string
             self::DocumentRequestRejected => 'Document request rejected',
             self::DocumentUploaded => 'Document uploaded',
             self::QuestionnaireAnswerSubmitted => 'Questionnaire answer submitted',
+            self::ClientQuestionnaireCompleted => 'Client questionnaire completed',
             self::DossierCompleted => 'Dossier completed',
             self::DocumentViewed => 'Document viewed',
             self::DocumentDownloaded => 'Document downloaded',

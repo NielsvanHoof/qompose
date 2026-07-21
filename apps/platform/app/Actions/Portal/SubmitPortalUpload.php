@@ -22,6 +22,7 @@ final class SubmitPortalUpload
         private readonly UploadDocumentForRequest $uploadDocumentForRequest,
         private readonly LogAuditActivity $logAuditActivity,
         private readonly DossierTransitions $dossierTransitions,
+        private readonly NotifyWorkspaceIfQuestionnaireComplete $notifyWorkspaceIfQuestionnaireComplete,
     ) {}
 
     public function handle(
@@ -63,6 +64,9 @@ final class SubmitPortalUpload
                         'access_grant_id' => $lockedGrant->id,
                     ],
                 );
+
+                // Toast workspace staff when this was the last outstanding item.
+                $this->notifyWorkspaceIfQuestionnaireComplete->handle($dossier);
             },
             SubmissionContext::Portal,
         );

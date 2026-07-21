@@ -1,6 +1,7 @@
 import { Form, router } from '@inertiajs/react';
 import { useState } from 'react';
 import ClientAccessGrantController from '@/actions/App/Http/Controllers/Portal/ClientAccessGrantController';
+import EmptyState from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -56,9 +57,7 @@ export default function ClientAccessCard({
             </CardHeader>
             <CardContent className="space-y-4">
                 {accessGrants.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        No access grants yet.
-                    </p>
+                    <EmptyState title="No access grants yet." />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {accessGrants.map((grant) => (

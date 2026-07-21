@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { FolderOpen } from 'lucide-react';
 import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
+import EmptyState from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,10 +40,7 @@ export default function MediaDocumentsCard({
             </CardHeader>
             <CardContent>
                 {documents.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        Document requests will appear here once you add them to
-                        a dossier.
-                    </p>
+                    <EmptyState title="Document requests will appear here once you add them to a dossier." />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {documents.map((document) => (

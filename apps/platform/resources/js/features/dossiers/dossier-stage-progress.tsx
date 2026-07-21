@@ -53,7 +53,7 @@ export default function DossierStageProgress({
                                     className={cn(
                                         'flex size-6 shrink-0 items-center justify-center rounded-full border text-xs',
                                         state === 'completed' &&
-                                            'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+                                            'border-success-border bg-success-muted text-success-foreground',
                                         state === 'current' &&
                                             'border-primary bg-primary text-primary-foreground',
                                         state === 'upcoming' &&

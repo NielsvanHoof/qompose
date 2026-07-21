@@ -57,7 +57,7 @@ export default function DossierWorkflowCard({
                 </div>
 
                 {dossier.status === 'completed' ? (
-                    <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                    <div className="flex items-center gap-2 rounded-md border border-success-border bg-success-muted px-3 py-2 text-sm font-medium text-success-foreground">
                         <CheckCircle2 className="size-4" aria-hidden="true" />
                         Dossier completed
                     </div>

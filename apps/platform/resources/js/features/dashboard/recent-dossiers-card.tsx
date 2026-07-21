@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import EmptyState from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,9 +41,7 @@ export default function RecentDossiersCard({
             </CardHeader>
             <CardContent>
                 {dossiers.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        Create a dossier to start collecting documents.
-                    </p>
+                    <EmptyState title="Create a dossier to start collecting documents." />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {dossiers.map((dossier) => (

@@ -1,6 +1,7 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import QuestionnaireTemplateController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateController';
+import EmptyState from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -111,7 +112,7 @@ function TemplateSection({
             </CardHeader>
             <CardContent>
                 {templates.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{empty}</p>
+                    <EmptyState title={empty} />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {templates.map((template) => (

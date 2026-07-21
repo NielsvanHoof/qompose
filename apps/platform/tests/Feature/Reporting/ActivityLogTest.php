@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Audit\LogAuditActivity;
+use App\Actions\Portal\CreateClientAccessGrant;
 use App\Actions\Tenancy\ProvisionTenant;
 use App\Enums\AuditEvent;
 use App\Enums\Role;
@@ -108,6 +109,44 @@ test('activity log does not include entries from another tenant', function () {
             ->has('activities', 1)
             ->where('activities.0.event', AuditEvent::DossierCompleted->value)
             ->where('activities.0.subject.name', 'Own dossier'));
+});
+
+test('activity log resolves client access grant subjects using the dossier title', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    setPermissionsTeamId($tenant->id);
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Annual accounts 2025',
+    ]);
+
+    $result = app(CreateClientAccessGrant::class)->handle($dossier, $owner, 7);
+
+    Activity::query()->delete();
+
+    app(LogAuditActivity::class)->handle(
+        AuditEvent::ClientPortalAccessGrantCreated,
+        $result['grant'],
+        causer: $owner,
+        includeRequestContext: false,
+    );
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.activity.index', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('workspaces/activity/index')
+            ->has('activities', 1)
+            ->where('activities.0.event', AuditEvent::ClientPortalAccessGrantCreated->value)
+            ->where('activities.0.subject.type', 'ClientAccessGrant')
+            ->where('activities.0.subject.id', $result['grant']->id)
+            ->where('activities.0.subject.name', 'Annual accounts 2025'));
 });
 
 test('reviewer cannot view the activity log', function () {

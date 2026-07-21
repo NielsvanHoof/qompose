@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import EmptyState from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -35,10 +36,9 @@ export default function ActivityLogCard({
             </CardHeader>
             <CardContent>
                 {activities.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        Audit events will appear here as your team works in this
-                        workspace.
-                    </p>
+                    <EmptyState
+                        title="Audit events will appear here as your team works in this workspace."
+                    />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {activities.map((activity) => (

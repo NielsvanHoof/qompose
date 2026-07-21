@@ -6,12 +6,15 @@ namespace App\Queries\Reporting;
 
 use App\Enums\AuditEvent;
 use App\Models\Activity;
+use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
 
+use function array_key_exists;
 use function is_array;
 use function is_string;
 
@@ -37,7 +40,14 @@ final class GetActivityLogIndexData
         // Use where + getQuery()->limit to avoid Larastan staticMethod.dynamicCall on scopes/limit.
         $query = Activity::query()
             ->where('tenant_id', $tenant->id)
-            ->with(['causer', 'subject'])
+            ->with([
+                'causer',
+                'subject' => function (MorphTo $morphTo): void {
+                    $morphTo->morphWith([
+                        ClientAccessGrant::class => ['dossier:id,title'],
+                    ]);
+                },
+            ])
             ->latest();
 
         $query->getQuery()->limit(self::Limit);
@@ -103,12 +113,12 @@ final class GetActivityLogIndexData
         $type = class_basename($activity->subject_type);
         $name = null;
 
-        if ($subject instanceof Dossier) {
+        if ($subject instanceof ClientAccessGrant) {
+            $name = $subject->dossier?->title;
+        } elseif ($subject instanceof Dossier) {
             $name = $subject->title;
-        } elseif ($subject instanceof Model && is_string($subject->getAttribute('title'))) {
-            $name = $subject->getAttribute('title');
-        } elseif ($subject instanceof Model && is_string($subject->getAttribute('name'))) {
-            $name = $subject->getAttribute('name');
+        } elseif ($subject instanceof Model) {
+            $name = $this->resolveSubjectName($subject);
         }
 
         return [
@@ -116,6 +126,25 @@ final class GetActivityLogIndexData
             'id' => $activity->subject_id,
             'name' => $name,
         ];
+    }
+
+    private function resolveSubjectName(Model $subject): ?string
+    {
+        $attributes = $subject->getAttributes();
+
+        if (array_key_exists('title', $attributes) && is_string($attributes['title'])) {
+            return $attributes['title'];
+        }
+
+        if (array_key_exists('name', $attributes) && is_string($attributes['name'])) {
+            return $attributes['name'];
+        }
+
+        if (array_key_exists('original_filename', $attributes) && is_string($attributes['original_filename'])) {
+            return $attributes['original_filename'];
+        }
+
+        return null;
     }
 
     /**

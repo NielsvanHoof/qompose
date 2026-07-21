@@ -21,6 +21,7 @@ final class SubmitPortalAnswer
         private readonly SubmitQuestionnaireAnswer $submitQuestionnaireAnswer,
         private readonly LogAuditActivity $logAuditActivity,
         private readonly DossierTransitions $dossierTransitions,
+        private readonly NotifyWorkspaceIfQuestionnaireComplete $notifyWorkspaceIfQuestionnaireComplete,
     ) {}
 
     public function handle(
@@ -74,6 +75,9 @@ final class SubmitPortalAnswer
                     'access_grant_id' => $lockedGrant->id,
                 ],
             );
+
+            // Toast workspace staff when this was the last outstanding item.
+            $this->notifyWorkspaceIfQuestionnaireComplete->handle($dossier);
 
             return $submittedDocumentRequest;
         });

@@ -26,6 +26,7 @@ use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -52,6 +53,19 @@ final class AppServiceProvider extends ServiceProvider
         $ocrConfigurationValidator->validate();
         $this->configurePolicies();
         $this->configureDefaults();
+        $this->configureDevCommands();
+    }
+
+    /**
+     * Include Reverb in `php artisan dev` when broadcasting is enabled.
+     */
+    private function configureDevCommands(): void
+    {
+        if (config('broadcasting.default') !== 'reverb') {
+            return;
+        }
+
+        DevCommands::artisan('reverb:start', 'reverb');
     }
 
     /**

@@ -69,7 +69,7 @@ export default function PortalDocumentUpload({
                 <progress
                     value={form.progress.percentage}
                     max={100}
-                    className="h-1.5 w-full"
+                    className="h-1.5 w-full accent-primary"
                 />
             )}
             <InputError message={form.errors.document} />

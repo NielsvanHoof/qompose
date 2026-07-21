@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Queries\Notifications\GetWorkspaceNotificationsForUser;
 use App\Queries\Tenancy\GetWorkspaceNavigationForUser;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -24,6 +25,7 @@ final class HandleInertiaRequests extends Middleware
 
     public function __construct(
         private readonly GetWorkspaceNavigationForUser $getWorkspaceNavigationForUser,
+        private readonly GetWorkspaceNotificationsForUser $getWorkspaceNotificationsForUser,
     ) {}
 
     /**
@@ -75,6 +77,16 @@ final class HandleInertiaRequests extends Middleware
                     'name' => $tenant->name,
                     'slug' => $tenant->slug,
                 ];
+            },
+            // Staff bell inbox — only when authenticated inside a workspace.
+            'notifications' => function () use ($user): ?array {
+                $tenant = Tenant::current();
+
+                if (! $user instanceof User || ! $tenant instanceof Tenant) {
+                    return null;
+                }
+
+                return $this->getWorkspaceNotificationsForUser->handle($user, $tenant);
             },
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

@@ -2,6 +2,7 @@ import { Form, useHttp } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useCallback } from 'react';
 import QuestionnaireTemplateItemController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateItemController';
+import EmptyState from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import SortableList from '@/components/sortable/sortable-list';
 import { Badge } from '@/components/ui/badge';
@@ -47,11 +48,10 @@ export default function TemplateItemEditor({
     return (
         <div className="space-y-6">
             {items.length === 0 ? (
-                <div className="rounded-md border px-4 py-3">
-                    <p className="text-sm text-muted-foreground">
-                        No items yet. Add your first question below.
-                    </p>
-                </div>
+                <EmptyState
+                    title="No items yet. Add your first question below."
+                    bordered
+                />
             ) : (
                 <SortableList
                     items={items}

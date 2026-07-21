@@ -1,6 +1,7 @@
 import { Head, Link, setLayoutProps, usePoll } from '@inertiajs/react';
 import { useEffect } from 'react';
 import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/UploadedDocumentController';
+import ErrorState from '@/components/error-state';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -155,10 +156,11 @@ export default function ShowUploadedDocument({
 
                 {uploadedDocument.processing_status === 'failed' &&
                     uploadedDocument.processing_error && (
-                        <p className="text-sm text-destructive">
-                            Processing failed:{' '}
-                            {uploadedDocument.processing_error}
-                        </p>
+                        <ErrorState
+                            variant="inline"
+                            title="Processing failed"
+                            description={uploadedDocument.processing_error}
+                        />
                     )}
 
                 {(uploadedDocument.processing_status === 'pending' ||

@@ -1,3 +1,4 @@
+import EmptyState from '@/components/empty-state';
 import {
     Card,
     CardContent,
@@ -27,9 +28,7 @@ export default function ClientsListCard({
             </CardHeader>
             <CardContent>
                 {clients.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        Add your first client to create a dossier.
-                    </p>
+                    <EmptyState title="Add your first client to create a dossier." />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {clients.map((client) => (

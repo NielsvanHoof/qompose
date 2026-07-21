@@ -1,6 +1,7 @@
 import { useHttp } from '@inertiajs/react';
 import { useCallback } from 'react';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
+import EmptyState from '@/components/empty-state';
 import SortableList from '@/components/sortable/sortable-list';
 import {
     Card,
@@ -63,9 +64,7 @@ export default function DocumentRequestsCard({
             </CardHeader>
             <CardContent>
                 {documentRequests.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        No items yet. Apply a template or add a request.
-                    </p>
+                    <EmptyState title="No items yet. Apply a template or add a request." />
                 ) : (
                     <SortableList
                         items={documentRequests}

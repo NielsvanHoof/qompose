@@ -1,3 +1,4 @@
+import EmptyState from '@/components/empty-state';
 import {
     Card,
     CardContent,
@@ -30,9 +31,7 @@ export default function WaitingItemsSummary({
             </CardHeader>
             <CardContent>
                 {waiting.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        Nothing waiting — switch to Review when uploads arrive.
-                    </p>
+                    <EmptyState title="Nothing waiting — switch to Review when uploads arrive." />
                 ) : (
                     <ul className="space-y-2 text-sm">
                         {waiting.map((request) => (

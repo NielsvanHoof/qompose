@@ -1,3 +1,4 @@
+import type { WorkspaceNotificationsSummary } from '@/features/notifications/types';
 import type { Firm } from '@/features/workspaces/types';
 import type { Auth } from '@/types/auth';
 
@@ -14,6 +15,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             workspaces: Firm[];
             current_firm: Firm | null;
+            notifications: WorkspaceNotificationsSummary | null;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

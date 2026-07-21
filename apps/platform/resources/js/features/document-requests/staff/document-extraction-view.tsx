@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import EmptyState from '@/components/empty-state';
 import {
     Collapsible,
     CollapsibleContent,
@@ -18,9 +19,7 @@ export default function DocumentExtractionView({
 }) {
     if (extraction === null && (rawJson === null || rawJson === '')) {
         return (
-            <p className="text-sm text-muted-foreground">
-                No extraction data is available for this file yet.
-            </p>
+            <EmptyState title="No extraction data is available for this file yet." />
         );
     }
 
@@ -33,9 +32,7 @@ export default function DocumentExtractionView({
             <section className="space-y-3">
                 <h2 className="text-lg font-semibold tracking-tight">Fields</h2>
                 {keyEntries.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        No form fields detected.
-                    </p>
+                    <EmptyState title="No form fields detected." />
                 ) : (
                     <dl className="divide-y rounded-md border">
                         {keyEntries.map(([key, value]) => (
@@ -58,9 +55,7 @@ export default function DocumentExtractionView({
             <section className="space-y-3">
                 <h2 className="text-lg font-semibold tracking-tight">Tables</h2>
                 {tables.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        No tables detected.
-                    </p>
+                    <EmptyState title="No tables detected." />
                 ) : (
                     <div className="space-y-4">
                         {tables.map((table) => {

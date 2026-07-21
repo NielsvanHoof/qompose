@@ -1,4 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import EmptyState from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -31,7 +32,7 @@ export default function PortalDocumentRequestsCard({
     ).length;
 
     return (
-        <Card>
+        <Card className="border-primary/10 shadow-sm">
             <CardHeader>
                 <CardTitle>Questionnaire</CardTitle>
                 <CardDescription>
@@ -50,10 +51,9 @@ export default function PortalDocumentRequestsCard({
             </CardHeader>
             <CardContent>
                 {documentRequests.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        Nothing has been requested yet. Check back later or
-                        contact {firmName}.
-                    </p>
+                    <EmptyState
+                        title={`Nothing has been requested yet. Check back later or contact ${firmName}.`}
+                    />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {documentRequests.map((documentRequest) => (
@@ -111,7 +111,7 @@ export default function PortalDocumentRequestsCard({
                                         Submitted and waiting for review.
                                     </p>
                                 ) : documentRequest.status === 'accepted' ? (
-                                    <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                                    <p className="text-sm text-success-foreground">
                                         Approved by {firmName}.
                                     </p>
                                 ) : null}
