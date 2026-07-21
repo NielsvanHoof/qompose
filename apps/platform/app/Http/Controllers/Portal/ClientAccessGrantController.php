@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
-use App\Actions\Portal\IssueClientPortalAccess;
-use App\Actions\Portal\RevokeClientPortalAccess;
+use App\Actions\Portal\IssueClientPortalAccessAction;
+use App\Actions\Portal\RevokeClientPortalAccessAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\StoreClientAccessGrantRequest;
 use App\Models\ClientAccessGrant;
@@ -23,7 +23,7 @@ final class ClientAccessGrantController extends Controller
         Tenant $tenant,
         StoreClientAccessGrantRequest $request,
         Dossier $dossier,
-        IssueClientPortalAccess $issueClientPortalAccess,
+        IssueClientPortalAccessAction $issueClientPortalAccess,
     ): RedirectResponse {
         $this->authorize('view', $dossier);
 
@@ -70,7 +70,7 @@ final class ClientAccessGrantController extends Controller
     public function destroy(
         Tenant $tenant,
         ClientAccessGrant $grant,
-        RevokeClientPortalAccess $revokeClientPortalAccess,
+        RevokeClientPortalAccessAction $revokeClientPortalAccess,
     ): RedirectResponse {
         $this->authorize('revoke', $grant);
 

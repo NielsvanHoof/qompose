@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Ocr;
 
-use App\Actions\Ocr\CompleteTextractExtraction;
+use App\Actions\Ocr\CompleteTextractExtractionAction;
 use Aws\Sqs\SqsClient;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -27,7 +27,7 @@ final class ConsumeTextractResultsCommand extends Command
 {
     public function handle(
         SqsClient $sqs,
-        CompleteTextractExtraction $completeTextractExtraction,
+        CompleteTextractExtractionAction $completeTextractExtraction,
         Repository $config,
     ): int {
         $queueUrl = $config->get('ocr.textract.results_queue_url');

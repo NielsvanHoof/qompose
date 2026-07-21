@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
-use App\Actions\Audit\LogAuditActivity;
+use App\Actions\Audit\LogAuditActivityAction;
 use App\Enums\AuditEvent;
 use App\Models\ClientAccessGrant;
 use App\Models\Tenant;
@@ -17,7 +17,7 @@ use Throwable;
 final class LogClientPortalInviteFailed
 {
     public function __construct(
-        private readonly LogAuditActivity $logAuditActivity,
+        private readonly LogAuditActivityAction $logAuditActivity,
         private readonly TenantContext $tenantContext,
     ) {}
 

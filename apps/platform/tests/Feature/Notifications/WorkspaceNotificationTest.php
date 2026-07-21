@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\TenantMembershipStatus;
 use App\Models\Client;
 use App\Models\Dossier;
@@ -26,7 +26,7 @@ function createWorkspaceNotificationContext(): array
 {
     $owner = User::factory()->create();
     $outsider = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -73,11 +73,13 @@ test('shared notifications prop returns tenant-scoped inbox items', function () 
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/dashboard')
-            ->where('notifications.unread_count', 1)
-            ->has('notifications.items', 1)
-            ->where('notifications.items.0.message', 'Jane Client finished the questionnaire for “2025 Payroll dossier”.')
-            ->where('notifications.items.0.dossier_id', $context['dossier']->id)
-            ->where('notifications.items.0.read_at', null));
+            ->missing('notifications')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('notifications.unread_count', 1)
+                ->has('notifications.items', 1)
+                ->where('notifications.items.0.message', 'Jane Client finished the questionnaire for “2025 Payroll dossier”.')
+                ->where('notifications.items.0.dossier_id', $context['dossier']->id)
+                ->where('notifications.items.0.read_at', null)));
 });
 
 test('staff can mark one workspace notification as read', function () {

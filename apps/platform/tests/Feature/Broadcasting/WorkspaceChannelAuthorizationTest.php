@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\TenantMembershipStatus;
 use App\Models\TenantMembership;
 use App\Models\User;
@@ -34,7 +34,7 @@ beforeEach(function () {
 
 test('tenant member can authorize the workspace private channel', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($owner)
         ->postJson('/broadcasting/auth', [
@@ -48,7 +48,7 @@ test('tenant member can authorize the workspace private channel', function () {
 test('non-member cannot authorize the workspace private channel', function () {
     $owner = User::factory()->create();
     $outsider = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($outsider)
         ->postJson('/broadcasting/auth', [
@@ -61,7 +61,7 @@ test('non-member cannot authorize the workspace private channel', function () {
 test('suspended member cannot authorize the workspace private channel', function () {
     $owner = User::factory()->create();
     $member = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,

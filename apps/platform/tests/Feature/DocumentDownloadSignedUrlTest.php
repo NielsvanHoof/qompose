@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\Dossiers\ResolveDocumentTemporaryUrl;
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Dossiers\ResolveDocumentTemporaryUrlAction;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Models\Activity;
 use App\Models\Client;
@@ -27,7 +27,7 @@ test('local disk downloads stream through the application', function () {
     Storage::fake('local');
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -95,7 +95,7 @@ test('resolve document temporary url rewrites the internal minio host for browse
         'original_filename' => 'file.pdf',
     ]);
 
-    $url = (new ResolveDocumentTemporaryUrl($filesystems))->handle(
+    $url = (new ResolveDocumentTemporaryUrlAction($filesystems))->handle(
         $uploaded,
         now()->addMinutes(5),
     );
@@ -107,7 +107,7 @@ test('s3 disk reports temporary url support while local does not', function () {
     config()->set('filesystems.disks.s3.driver', 's3');
     config()->set('filesystems.disks.local.driver', 'local');
 
-    $resolver = app(ResolveDocumentTemporaryUrl::class);
+    $resolver = app(ResolveDocumentTemporaryUrlAction::class);
 
     expect($resolver->supportsTemporaryUrl(new UploadedDocument(['disk' => 's3'])))->toBeTrue()
         ->and($resolver->supportsTemporaryUrl(new UploadedDocument(['disk' => 'local'])))->toBeFalse();

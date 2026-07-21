@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Notifications;
 
-use App\Actions\Notifications\MarkAllWorkspaceNotificationsRead;
-use App\Actions\Notifications\MarkWorkspaceNotificationRead;
+use App\Actions\Notifications\MarkAllWorkspaceNotificationsReadAction;
+use App\Actions\Notifications\MarkWorkspaceNotificationReadAction;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
@@ -22,7 +22,7 @@ final class WorkspaceNotificationController extends Controller
         Request $request,
         Tenant $tenant,
         string $notification,
-        MarkWorkspaceNotificationRead $markWorkspaceNotificationRead,
+        MarkWorkspaceNotificationReadAction $markWorkspaceNotificationRead,
     ): RedirectResponse {
         $user = $request->user();
 
@@ -41,7 +41,7 @@ final class WorkspaceNotificationController extends Controller
     public function store(
         Request $request,
         Tenant $tenant,
-        MarkAllWorkspaceNotificationsRead $markAllWorkspaceNotificationsRead,
+        MarkAllWorkspaceNotificationsReadAction $markAllWorkspaceNotificationsRead,
     ): RedirectResponse {
         $user = $request->user();
 

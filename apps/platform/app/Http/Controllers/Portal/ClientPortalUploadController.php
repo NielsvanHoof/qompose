@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
-use App\Actions\Portal\SubmitPortalUpload;
+use App\Actions\Portal\SubmitPortalUploadAction;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Http\Requests\Portal\StorePortalUploadedDocumentRequest;
@@ -21,7 +21,7 @@ final class ClientPortalUploadController extends Controller
     public function store(
         StorePortalUploadedDocumentRequest $request,
         int $documentRequest,
-        SubmitPortalUpload $submitPortalUpload,
+        SubmitPortalUploadAction $submitPortalUpload,
     ): RedirectResponse {
         $grant = $this->grantFromRequest($request);
 

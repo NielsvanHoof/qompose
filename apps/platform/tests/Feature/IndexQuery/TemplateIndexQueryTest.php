@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\QuestionnaireTemplateCategory;
 use App\Models\QuestionnaireTemplate;
 use App\Models\User;
@@ -19,7 +19,7 @@ beforeEach(function () {
 
 test('templates index paginates system and firm buckets independently', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -56,7 +56,7 @@ test('templates index paginates system and firm buckets independently', function
 
 test('templates index shared category filter applies to both buckets', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 

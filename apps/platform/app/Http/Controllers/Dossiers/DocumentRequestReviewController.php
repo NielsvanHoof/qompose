@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dossiers;
 
-use App\Actions\Dossiers\ReviewDocumentRequest;
+use App\Actions\Dossiers\ReviewDocumentRequestAction;
 use App\Enums\DocumentRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\ReviewDocumentRequestRequest;
@@ -25,7 +25,7 @@ final class DocumentRequestReviewController extends Controller
         ReviewDocumentRequestRequest $request,
         Dossier $dossier,
         DocumentRequest $documentRequest,
-        ReviewDocumentRequest $reviewDocumentRequest,
+        ReviewDocumentRequestAction $reviewDocumentRequest,
     ): RedirectResponse {
         $user = $request->user();
 

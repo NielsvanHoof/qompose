@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\QuestionnaireItemType;
 use App\Models\Client;
 use App\Models\DocumentRequest;
@@ -26,7 +26,7 @@ test('document request routes 404 when the request belongs to another dossier', 
     Storage::fake('local');
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -74,7 +74,7 @@ test('document request routes 404 when the request belongs to another dossier', 
 
 test('template item routes 404 when the item belongs to another template', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
@@ -113,7 +113,7 @@ test('template item routes 404 when the item belongs to another template', funct
 
 test('scoped template item routes still resolve system templates as the parent', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 

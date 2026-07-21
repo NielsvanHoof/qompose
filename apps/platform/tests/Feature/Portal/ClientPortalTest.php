@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\Portal\CreateClientAccessGrant;
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Portal\CreateClientAccessGrantAction;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
@@ -45,7 +45,7 @@ beforeEach(function () {
 function createPortalDossierWithGrant(): array
 {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -60,7 +60,7 @@ function createPortalDossierWithGrant(): array
         'status' => DossierStatus::Draft,
     ]);
 
-    $result = app(CreateClientAccessGrant::class)->handle($dossier, $owner, 7);
+    $result = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
     return [
         'owner' => $owner,
@@ -353,7 +353,7 @@ test('staff can email a portal invite when creating an access grant', function (
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create([
@@ -430,7 +430,7 @@ test('staff can create a portal link without emailing', function () {
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -557,7 +557,7 @@ test('grant issuance rolls back when its audit transaction fails', function () {
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create([

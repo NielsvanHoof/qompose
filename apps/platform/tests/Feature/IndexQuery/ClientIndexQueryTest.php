@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Models\Client;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -17,7 +17,7 @@ beforeEach(function () {
 
 test('clients index paginates results and exposes indexQuery config', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -51,7 +51,7 @@ test('clients index paginates results and exposes indexQuery config', function (
 
 test('clients index filters by search query across name and email', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -86,7 +86,7 @@ test('clients index filters by search query across name and email', function () 
 
 test('clients index inertia page url keeps readable filter brackets', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -118,7 +118,7 @@ test('clients index inertia page url keeps readable filter brackets', function (
 
 test('clients index sorts by name descending', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -145,7 +145,7 @@ test('clients index sorts by name descending', function () {
 
 test('clients index rejects invalid filters', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -156,8 +156,8 @@ test('clients index rejects invalid filters', function () {
 test('clients index does not leak another tenants clients', function () {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $ownerB);
+    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
+    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
 
     $tenantB->makeCurrent();
     Client::factory()->create([

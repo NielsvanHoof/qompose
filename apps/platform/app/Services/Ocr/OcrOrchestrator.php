@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Ocr;
 
-use App\Actions\Audit\LogAuditActivity;
+use App\Actions\Audit\LogAuditActivityAction;
 use App\Contracts\Ocr\StartsDocumentOcr;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
@@ -19,7 +19,7 @@ final class OcrOrchestrator
 {
     public function __construct(
         private readonly StartsDocumentOcr $ocr,
-        private readonly LogAuditActivity $logAuditActivity,
+        private readonly LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function startProcessing(UploadedDocument $document): OcrProcessingOutcome

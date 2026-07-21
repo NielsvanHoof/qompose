@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dossiers;
 
-use App\Actions\Audit\LogAuditActivity;
-use App\Actions\Dossiers\ResolveDocumentTemporaryUrl;
-use App\Actions\Dossiers\UploadDocumentForRequest;
+use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Dossiers\ResolveDocumentTemporaryUrlAction;
+use App\Actions\Dossiers\UploadStaffDocumentAction;
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreUploadedDocumentRequest;
@@ -14,7 +14,6 @@ use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
-use App\Transitions\DossierTransitions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -33,9 +32,7 @@ final class UploadedDocumentController extends Controller
         StoreUploadedDocumentRequest $request,
         Dossier $dossier,
         DocumentRequest $documentRequest,
-        UploadDocumentForRequest $uploadDocumentForRequest,
-        LogAuditActivity $logAuditActivity,
-        DossierTransitions $dossierTransitions,
+        UploadStaffDocumentAction $uploadStaffDocument,
     ): RedirectResponse {
         // Parent ownership is enforced by scoped route bindings
         // (dossier → documentRequest). Tenant scope is already applied.
@@ -47,29 +44,7 @@ final class UploadedDocumentController extends Controller
             return back()->withErrors(['document' => 'A document file is required.']);
         }
 
-        $uploadDocumentForRequest->handle(
-            $documentRequest,
-            $file,
-            function (UploadedDocument $uploadedDocument, DocumentRequest $lockedDocumentRequest) use (
-                $logAuditActivity,
-                $dossierTransitions,
-            ): void {
-                $dossierQuery = Dossier::query()->whereKey($lockedDocumentRequest->dossier_id);
-                $dossierQuery->getQuery()->lockForUpdate();
-                $lockedDossier = $dossierQuery->firstOrFail();
-
-                $dossierTransitions->markInReview($lockedDossier);
-
-                $logAuditActivity->handle(
-                    AuditEvent::DocumentUploaded,
-                    $uploadedDocument,
-                    [
-                        'source' => 'staff',
-                        'original_filename' => $uploadedDocument->original_filename,
-                    ],
-                );
-            },
-        );
+        $uploadStaffDocument->handle($documentRequest, $file);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -126,8 +101,8 @@ final class UploadedDocumentController extends Controller
     public function download(
         Tenant $tenant,
         UploadedDocument $uploadedDocument,
-        LogAuditActivity $logAuditActivity,
-        ResolveDocumentTemporaryUrl $resolveDocumentTemporaryUrl,
+        LogAuditActivityAction $logAuditActivity,
+        ResolveDocumentTemporaryUrlAction $resolveDocumentTemporaryUrl,
     ): RedirectResponse|StreamedResponse {
         $this->authorize('download', $uploadedDocument);
 

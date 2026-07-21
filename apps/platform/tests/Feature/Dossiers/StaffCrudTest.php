@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
@@ -32,7 +32,7 @@ beforeEach(function () {
 
 test('staff can create a client, dossier, and document request', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -84,7 +84,7 @@ test('staff can create a client, dossier, and document request', function () {
 
 test('document request creation rolls back when auditing fails', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -122,7 +122,7 @@ test('document request creation rolls back when auditing fails', function () {
 
 test('staff can reorder every document request in a dossier', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -183,8 +183,8 @@ test('staff can reorder every document request in a dossier', function () {
 test('staff cannot attach a dossier to a client in another tenant', function () {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $ownerB);
+    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
+    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
 
     $tenantB->makeCurrent();
     $foreignClient = Client::factory()->create(['tenant_id' => $tenantB->id]);
@@ -201,7 +201,7 @@ test('staff cannot attach a dossier to a client in another tenant', function () 
 test('read only staff cannot create clients or dossiers', function () {
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     // Membership is required so the 403 comes from policy, not tenant middleware.
     TenantMembership::query()->create([
@@ -234,7 +234,7 @@ test('staff can issue and revoke a client access grant', function () {
     Notification::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -269,7 +269,7 @@ test('staff can issue and revoke a client access grant', function () {
 test('read only staff cannot issue client access grants', function () {
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -302,7 +302,7 @@ test('staff can upload a document for a document request', function () {
     Storage::fake('local');
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -353,7 +353,7 @@ test('read only staff cannot upload documents', function () {
 
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,

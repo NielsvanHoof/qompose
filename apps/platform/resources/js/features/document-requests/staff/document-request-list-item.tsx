@@ -12,6 +12,7 @@ import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests
 import QuestionnaireItemTypeSelect from '@/features/document-requests/questionnaire-item-type-select';
 import DocumentRequestReview from '@/features/document-requests/staff/document-request-review';
 import type { DocumentRequest } from '@/features/document-requests/types';
+import { useDossierPermissions } from '@/features/dossiers/dossier-permissions-context';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -22,29 +23,28 @@ type DocumentRequestListItemProps = {
     dossierStatus: DossierStatus;
     documentRequest: DocumentRequest;
     canEdit: boolean;
-    canReview: boolean;
-    canDownload: boolean;
     DragHandle: () => ReactNode;
 };
 
 /**
  * One staff questionnaire row. The surrounding card only manages the list.
+ * Review/download flags come from DossierPermissionsProvider.
  */
 export default function DocumentRequestListItem({
     dossierId,
     dossierStatus,
     documentRequest,
     canEdit,
-    canReview,
-    canDownload,
     DragHandle,
 }: DocumentRequestListItemProps) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const { canReview } = useDossierPermissions();
     const typeDefinition = getQuestionnaireItemTypeDefinition(
         documentRequest.type,
     );
     const { StaffContent } = typeDefinition;
+    const reviewAllowed = canReview && dossierStatus !== 'completed';
 
     return (
         <div className="space-y-3 px-4 py-3">
@@ -146,13 +146,12 @@ export default function DocumentRequestListItem({
                 dossierStatus={dossierStatus}
                 documentRequest={documentRequest}
                 canEdit={canEdit}
-                canDownload={canDownload}
             />
 
             <DocumentRequestReview
                 dossierId={dossierId}
                 documentRequest={documentRequest}
-                canReview={canReview}
+                canReview={reviewAllowed}
             />
         </div>
     );

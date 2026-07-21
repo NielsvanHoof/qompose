@@ -6,6 +6,7 @@ test('backend business code is organized by domain', function () {
     $root = dirname(__DIR__, 2);
 
     foreach ([
+        'app/Actions/Clients',
         'app/Actions/Dossiers',
         'app/Actions/Portal',
         'app/Actions/Questionnaires',

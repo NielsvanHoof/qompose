@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Actions\Audit\LogAuditActivity;
+use App\Actions\Audit\LogAuditActivityAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\UploadedDocument;
@@ -43,7 +43,7 @@ final class ProcessUploadedDocument implements ShouldQueue
 
     public function handle(
         OcrOrchestrator $ocrOrchestrator,
-        LogAuditActivity $logAuditActivity,
+        LogAuditActivityAction $logAuditActivity,
     ): void {
         $document = UploadedDocument::query()->find($this->uploadedDocumentId);
 

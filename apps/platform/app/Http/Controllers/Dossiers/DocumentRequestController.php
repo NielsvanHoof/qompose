@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dossiers;
 
-use App\Actions\Dossiers\ApplyQuestionnaireTemplateToDossier;
-use App\Actions\Dossiers\CreateDocumentRequest;
-use App\Actions\Dossiers\DeleteDocumentRequest;
-use App\Actions\Dossiers\ReorderDocumentRequests;
-use App\Actions\Dossiers\SubmitQuestionnaireAnswer;
+use App\Actions\Dossiers\ApplyQuestionnaireTemplateToDossierAction;
+use App\Actions\Dossiers\CreateDocumentRequestAction;
+use App\Actions\Dossiers\DeleteDocumentRequestAction;
+use App\Actions\Dossiers\ReorderDocumentRequestsAction;
+use App\Actions\Dossiers\SubmitQuestionnaireAnswerAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\ApplyQuestionnaireTemplateRequest;
 use App\Http\Requests\Dossiers\ReorderDocumentRequestsRequest;
@@ -28,7 +28,7 @@ final class DocumentRequestController extends Controller
         Tenant $tenant,
         StoreDocumentRequestRequest $request,
         Dossier $dossier,
-        CreateDocumentRequest $createDocumentRequest,
+        CreateDocumentRequestAction $createDocumentRequest,
     ): RedirectResponse {
         $createDocumentRequest->handle($dossier, $request->validated());
 
@@ -50,7 +50,7 @@ final class DocumentRequestController extends Controller
         Tenant $tenant,
         Dossier $dossier,
         DocumentRequest $documentRequest,
-        DeleteDocumentRequest $deleteDocumentRequest,
+        DeleteDocumentRequestAction $deleteDocumentRequest,
     ): RedirectResponse {
         $this->authorize('view', $dossier);
         $this->authorize('delete', $documentRequest);
@@ -64,7 +64,7 @@ final class DocumentRequestController extends Controller
         Tenant $tenant,
         ReorderDocumentRequestsRequest $request,
         Dossier $dossier,
-        ReorderDocumentRequests $reorderDocumentRequests,
+        ReorderDocumentRequestsAction $reorderDocumentRequests,
     ): RedirectResponse|Response {
         $reorderDocumentRequests->handle(
             $dossier,
@@ -82,7 +82,7 @@ final class DocumentRequestController extends Controller
         Tenant $tenant,
         ApplyQuestionnaireTemplateRequest $request,
         Dossier $dossier,
-        ApplyQuestionnaireTemplateToDossier $applyQuestionnaireTemplateToDossier,
+        ApplyQuestionnaireTemplateToDossierAction $applyQuestionnaireTemplateToDossier,
     ): RedirectResponse {
         $templateId = (int) $request->validated('questionnaire_template_id');
 
@@ -100,7 +100,7 @@ final class DocumentRequestController extends Controller
         StoreQuestionnaireAnswerRequest $request,
         Dossier $dossier,
         DocumentRequest $documentRequest,
-        SubmitQuestionnaireAnswer $submitQuestionnaireAnswer,
+        SubmitQuestionnaireAnswerAction $submitQuestionnaireAnswer,
     ): RedirectResponse {
         $validated = $request->validated();
 

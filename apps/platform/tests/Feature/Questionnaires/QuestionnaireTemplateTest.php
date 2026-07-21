@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\Portal\CreateClientAccessGrant;
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Portal\CreateClientAccessGrantAction;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
@@ -33,7 +33,7 @@ beforeEach(function () {
 
 test('staff can view system and firm templates', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -60,7 +60,7 @@ test('staff can view system and firm templates', function () {
 
 test('system templates cannot be updated or deleted', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -83,7 +83,7 @@ test('system templates cannot be updated or deleted', function () {
 
 test('owner can copy a system template into the firm', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->seed(SystemQuestionnaireTemplateSeeder::class);
 
@@ -122,7 +122,7 @@ test('owner can copy a system template into the firm', function () {
 test('read only staff cannot copy templates', function () {
     $owner = User::factory()->create();
     $reader = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -146,7 +146,7 @@ test('read only staff cannot copy templates', function () {
 test('adviser can apply a template and edit dossier items', function () {
     $owner = User::factory()->create();
     $adviser = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -225,8 +225,8 @@ test('adviser can apply a template and edit dossier items', function () {
 test('firm templates are isolated between tenants', function () {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $ownerB);
+    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
+    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
 
     $tenantA->makeCurrent();
     $templateA = QuestionnaireTemplate::factory()->create([
@@ -242,7 +242,7 @@ test('firm templates are isolated between tenants', function () {
 
 test('owner can manage firm template items', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
@@ -267,7 +267,7 @@ test('owner can manage firm template items', function () {
 
 test('owner can reorder every firm template item', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $template = QuestionnaireTemplate::factory()->create([
@@ -321,7 +321,7 @@ test('owner can reorder every firm template item', function () {
 
 test('guest can submit text and boolean answers through the portal', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -353,7 +353,7 @@ test('guest can submit text and boolean answers through the portal', function ()
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $result = app(CreateClientAccessGrant::class)->handle($dossier, $owner, 7);
+    $result = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
     $plainTextToken = $result['plain_text_token'];
     $grant = $result['grant'];
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
-use App\Actions\Portal\ResolveClientAccessGrantFromToken;
+use App\Actions\Portal\ResolveClientAccessGrantFromTokenAction;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Models\ClientAccessGrant;
@@ -20,7 +20,7 @@ final class ClientPortalSessionController extends Controller
     public function __invoke(
         Request $request,
         string $token,
-        ResolveClientAccessGrantFromToken $resolveClientAccessGrantFromToken,
+        ResolveClientAccessGrantFromTokenAction $resolveClientAccessGrantFromToken,
     ): RedirectResponse {
         $grant = $resolveClientAccessGrantFromToken->handle($token);
 

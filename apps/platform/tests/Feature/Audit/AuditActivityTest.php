@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\Audit\LogAuditActivity;
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Models\Activity;
 use App\Models\Client;
@@ -21,7 +21,7 @@ beforeEach(function () {
 
 test('viewing a dossier writes a tenant scoped audit entry', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -51,7 +51,7 @@ test('viewing a dossier writes a tenant scoped audit entry', function () {
 
 test('creating a dossier logs attribute changes for the tenant', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -83,7 +83,7 @@ test('creating a dossier logs attribute changes for the tenant', function () {
 
 test('audit log records cannot be updated', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -94,7 +94,7 @@ test('audit log records cannot be updated', function () {
         'client_id' => $client->id,
     ]);
 
-    $activity = app(LogAuditActivity::class)->handle(
+    $activity = app(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierViewed,
         $dossier,
         causer: $owner,
@@ -106,7 +106,7 @@ test('audit log records cannot be updated', function () {
 
 test('audit properties discard secrets and truncate untrusted request metadata', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -119,7 +119,7 @@ test('audit properties discard secrets and truncate untrusted request metadata',
 
     request()->headers->set('User-Agent', str_repeat('x', 700));
 
-    $activity = app(LogAuditActivity::class)->handle(
+    $activity = app(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierViewed,
         $dossier,
         [

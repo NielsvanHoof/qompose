@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tenancy;
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenancy\StoreWorkspaceRequest;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +24,7 @@ final class FirmController extends Controller
 
     public function store(
         StoreWorkspaceRequest $request,
-        ProvisionTenant $provisionTenant,
+        ProvisionTenantAction $provisionTenant,
     ): RedirectResponse {
         $name = $request->validated('name');
         $tenant = $provisionTenant->handle(

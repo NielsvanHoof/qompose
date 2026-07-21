@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
-use App\Actions\Audit\LogAuditActivity;
+use App\Actions\Audit\LogAuditActivityAction;
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Models\ClientAccessGrant;
-use App\Queries\Portal\GetClientPortalData;
+use App\Queries\Portal\FetchClientPortalQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -22,8 +22,8 @@ final class ClientPortalController extends Controller
      */
     public function show(
         Request $request,
-        GetClientPortalData $getClientPortalData,
-        LogAuditActivity $logAuditActivity,
+        FetchClientPortalQuery $getClientPortalData,
+        LogAuditActivityAction $logAuditActivity,
     ): Response {
         $grant = $this->grantFromRequest($request);
 

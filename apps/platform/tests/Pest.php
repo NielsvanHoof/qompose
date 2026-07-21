@@ -2,7 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenancy\ProvisionTenantAction;
+use App\Enums\Role;
+use App\Enums\TenantMembershipStatus;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
+use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,6 +27,11 @@ pest()->extend(TestCase::class)
  // ->use(RefreshDatabase::class)
     ->in('Feature');
 
+// Policy and Query unit tests need the Laravel app + database.
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->in('Unit/Policies', 'Unit/Queries');
+
 pest()->presets()->custom('qompose', function () {
     return [
         expect('App')
@@ -30,6 +41,14 @@ pest()->presets()->custom('qompose', function () {
             ->classes()
             ->toBeFinal(),
 
+        // Domain actions end in Action; Fortify Accounts contracts keep framework names.
+        expect('App\Actions')
+            ->classes()
+            ->toHaveSuffix('Action')
+            ->ignoring([
+                'App\Actions\Accounts',
+            ]),
+
         expect('App\Actions')
             ->classes()
             ->toHaveMethod('handle')
@@ -44,6 +63,33 @@ pest()->presets()->custom('qompose', function () {
             ->ignoring([
                 'App\Actions\Accounts',
                 'App\Actions\Audit\LogTenantActivityAction',
+            ]),
+
+        // Read models end in Query; Spatie filters and row mappers are not Queries.
+        expect('App\Queries')
+            ->classes()
+            ->toHaveSuffix('Query')
+            ->ignoring([
+                'App\Queries\Filters',
+                'App\Queries\Reporting\ActivityLogRowMapper',
+            ]),
+
+        expect('App\Queries')
+            ->classes()
+            ->toHaveMethod('handle')
+            ->ignoring([
+                'App\Queries\PaginatedIndexQuery',
+                'App\Queries\Filters',
+                'App\Queries\Reporting\ActivityLogRowMapper',
+            ]),
+
+        expect('App\Queries')
+            ->classes()
+            ->not->toHaveMethod('__invoke')
+            ->ignoring([
+                'App\Queries\PaginatedIndexQuery',
+                'App\Queries\Filters',
+                'App\Queries\Reporting\ActivityLogRowMapper',
             ]),
 
         expect('App\Queries')
@@ -51,22 +97,6 @@ pest()->presets()->custom('qompose', function () {
             ->toBeFinal()
             ->ignoring([
                 'App\Queries\PaginatedIndexQuery',
-            ]),
-
-        expect('App\Queries')
-            ->classes()
-            ->toHaveMethod('handle')
-            ->ignoring([
-                'App\Queries\PaginatedIndexQuery',
-                'App\Queries\Filters',
-            ]),
-
-        expect('App\Queries')
-            ->classes()
-            ->not->toHaveMethod('__invoke')
-            ->ignoring([
-                'App\Queries\PaginatedIndexQuery',
-                'App\Queries\Filters',
             ]),
 
         expect('App\Http\Controllers\Controller')
@@ -120,9 +150,8 @@ expect()->extend('toBeOne', function () {
 | Functions
 |--------------------------------------------------------------------------
 |
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
+| Shared helpers for Feature and Unit tests. Prefer these over repeating
+| ProvisionTenantAction + membership + role setup in every file.
 |
 */
 
@@ -135,4 +164,53 @@ function workspaceRoute(
     array $parameters = [],
 ): string {
     return route($name, ['tenant' => $tenant, ...$parameters]);
+}
+
+/**
+ * Seed roles/permissions, provision a firm, and activate its tenant context.
+ *
+ * @return array{owner: User, tenant: Tenant}
+ */
+function provisionWorkspace(string $name = 'Acme Accountants', ?User $owner = null): array
+{
+    test()->seed(RolesAndPermissionsSeeder::class);
+
+    $owner ??= User::factory()->create();
+    $tenant = app(ProvisionTenantAction::class)->handle($name, $owner);
+
+    actingInWorkspace($tenant);
+
+    return [
+        'owner' => $owner->fresh(),
+        'tenant' => $tenant,
+    ];
+}
+
+/**
+ * Set the current Spatie tenant + permission team for the request lifecycle.
+ */
+function actingInWorkspace(Tenant $tenant): void
+{
+    $tenant->makeCurrent();
+    setPermissionsTeamId($tenant->id);
+}
+
+/**
+ * Attach an active membership and assign a tenant-scoped role.
+ */
+function workspaceMember(Tenant $tenant, Role $role, ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+
+    TenantMembership::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $user->id,
+        'status' => TenantMembershipStatus::Active,
+        'joined_at' => now(),
+    ]);
+
+    actingInWorkspace($tenant);
+    $user->assignRole($role->value);
+
+    return $user->fresh();
 }

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\Portal\CreateClientAccessGrant;
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Portal\CreateClientAccessGrantAction;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
@@ -45,7 +45,7 @@ function createReviewWorkflowContext(): array
 {
     $owner = User::factory()->create();
     $reviewer = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,
@@ -137,7 +137,7 @@ test('rejected items show feedback and a client correction returns them to revie
         'status' => DocumentRequestStatus::Submitted,
     ]);
 
-    $grantResult = app(CreateClientAccessGrant::class)->handle(
+    $grantResult = app(CreateClientAccessGrantAction::class)->handle(
         $context['dossier'],
         $context['owner'],
         7,
@@ -302,7 +302,7 @@ test('a dossier can only be completed after every item is approved', function ()
         'reviewed_at' => now(),
     ]);
 
-    $grantResult = app(CreateClientAccessGrant::class)->handle(
+    $grantResult = app(CreateClientAccessGrantAction::class)->handle(
         $context['dossier'],
         $context['owner'],
         7,

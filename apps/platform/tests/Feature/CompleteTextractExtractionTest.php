@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Ocr\CompleteTextractExtraction;
+use App\Actions\Ocr\CompleteTextractExtractionAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\Activity;
@@ -31,7 +31,7 @@ test('complete textract extraction stores forms and tables json on success', fun
 
     $this->app->instance(TextractClient::class, $textract);
 
-    $applied = app(CompleteTextractExtraction::class)->handle([
+    $applied = app(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-success-1',
         'Status' => 'SUCCEEDED',
         'API' => 'StartDocumentAnalysis',
@@ -64,7 +64,7 @@ test('complete textract extraction marks failed status', function () {
     $textract->shouldNotReceive('getDocumentAnalysis');
     $this->app->instance(TextractClient::class, $textract);
 
-    $applied = app(CompleteTextractExtraction::class)->handle([
+    $applied = app(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-fail-1',
         'Status' => 'FAILED',
         'StatusMessage' => 'Unsupported document format',
@@ -96,7 +96,7 @@ test('complete textract extraction is idempotent when already completed', functi
     $textract->shouldNotReceive('getDocumentAnalysis');
     $this->app->instance(TextractClient::class, $textract);
 
-    $applied = app(CompleteTextractExtraction::class)->handle([
+    $applied = app(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-done-1',
         'Status' => 'SUCCEEDED',
         'API' => 'StartDocumentAnalysis',

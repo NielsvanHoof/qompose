@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Questionnaires;
 
-use App\Actions\Questionnaires\CreateQuestionnaireTemplateItem;
-use App\Actions\Questionnaires\ReorderQuestionnaireTemplateItems;
+use App\Actions\Questionnaires\CreateQuestionnaireTemplateItemAction;
+use App\Actions\Questionnaires\ReorderQuestionnaireTemplateItemsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Questionnaires\ReorderQuestionnaireTemplateItemsRequest;
 use App\Http\Requests\Questionnaires\StoreQuestionnaireTemplateItemRequest;
@@ -22,7 +22,7 @@ final class QuestionnaireTemplateItemController extends Controller
         Tenant $tenant,
         StoreQuestionnaireTemplateItemRequest $request,
         QuestionnaireTemplate $template,
-        CreateQuestionnaireTemplateItem $createQuestionnaireTemplateItem,
+        CreateQuestionnaireTemplateItemAction $createQuestionnaireTemplateItem,
     ): RedirectResponse {
         $createQuestionnaireTemplateItem->handle($template, $request->validated());
 
@@ -65,7 +65,7 @@ final class QuestionnaireTemplateItemController extends Controller
         Tenant $tenant,
         ReorderQuestionnaireTemplateItemsRequest $request,
         QuestionnaireTemplate $template,
-        ReorderQuestionnaireTemplateItems $reorderQuestionnaireTemplateItems,
+        ReorderQuestionnaireTemplateItemsAction $reorderQuestionnaireTemplateItems,
     ): RedirectResponse|Response {
         $reorderQuestionnaireTemplateItems->handle(
             $template,

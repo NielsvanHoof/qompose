@@ -9,8 +9,8 @@ use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\User;
-use App\Queries\Reporting\GetWorkspaceDashboardData;
-use App\Queries\Tenancy\GetActiveTenantMembershipsForUser;
+use App\Queries\Reporting\FetchWorkspaceDashboardQuery;
+use App\Queries\Tenancy\FetchActiveTenantMembershipsForUserQuery;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,7 +19,7 @@ use RuntimeException;
 final class DashboardController extends Controller
 {
     public function index(
-        GetActiveTenantMembershipsForUser $getActiveTenantMembershipsForUser,
+        FetchActiveTenantMembershipsForUserQuery $getActiveTenantMembershipsForUser,
     ): RedirectResponse|Response {
         $user = request()->user();
 
@@ -53,7 +53,7 @@ final class DashboardController extends Controller
         ]);
     }
 
-    public function show(Tenant $tenant, GetWorkspaceDashboardData $getWorkspaceDashboardData): Response
+    public function show(Tenant $tenant, FetchWorkspaceDashboardQuery $getWorkspaceDashboardData): Response
     {
         $this->authorize('viewAny', Dossier::class);
 

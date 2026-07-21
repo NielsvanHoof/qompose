@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Actions\Audit\LogAuditActivity;
-use App\Actions\Portal\CreateClientAccessGrant;
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Portal\CreateClientAccessGrantAction;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Enums\Role;
 use App\Enums\TenantMembershipStatus;
@@ -25,7 +25,7 @@ beforeEach(function () {
 
 test('owner can view the activity log with structured audit entries', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -40,7 +40,7 @@ test('owner can view the activity log with structured audit entries', function (
     // Clear dossier-created noise so the manual view event is easy to assert.
     Activity::query()->delete();
 
-    app(LogAuditActivity::class)->handle(
+    app(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierViewed,
         $dossier,
         causer: $owner,
@@ -67,8 +67,8 @@ test('owner can view the activity log with structured audit entries', function (
 test('activity log does not include entries from another tenant', function () {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)->handle('Tenant A', $ownerA);
-    $tenantB = app(ProvisionTenant::class)->handle('Tenant B', $ownerB);
+    $tenantA = app(ProvisionTenantAction::class)->handle('Tenant A', $ownerA);
+    $tenantB = app(ProvisionTenantAction::class)->handle('Tenant B', $ownerB);
 
     $tenantB->makeCurrent();
     setPermissionsTeamId($tenantB->id);
@@ -79,7 +79,7 @@ test('activity log does not include entries from another tenant', function () {
         'title' => 'Foreign dossier',
     ]);
     Activity::query()->delete();
-    app(LogAuditActivity::class)->handle(
+    app(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierViewed,
         $dossierB,
         causer: $ownerB,
@@ -95,7 +95,7 @@ test('activity log does not include entries from another tenant', function () {
         'title' => 'Own dossier',
     ]);
     Activity::query()->delete();
-    app(LogAuditActivity::class)->handle(
+    app(LogAuditActivityAction::class)->handle(
         AuditEvent::DossierCompleted,
         $dossierA,
         causer: $ownerA,
@@ -115,7 +115,7 @@ test('activity log does not include entries from another tenant', function () {
 
 test('activity log resolves client access grant subjects using the dossier title', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     setPermissionsTeamId($tenant->id);
@@ -127,11 +127,11 @@ test('activity log resolves client access grant subjects using the dossier title
         'title' => 'Annual accounts 2025',
     ]);
 
-    $result = app(CreateClientAccessGrant::class)->handle($dossier, $owner, 7);
+    $result = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
     Activity::query()->delete();
 
-    app(LogAuditActivity::class)->handle(
+    app(LogAuditActivityAction::class)->handle(
         AuditEvent::ClientPortalAccessGrantCreated,
         $result['grant'],
         causer: $owner,
@@ -154,7 +154,7 @@ test('activity log resolves client access grant subjects using the dossier title
 test('reviewer cannot view the activity log', function () {
     $owner = User::factory()->create();
     $reviewer = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     TenantMembership::query()->create([
         'tenant_id' => $tenant->id,

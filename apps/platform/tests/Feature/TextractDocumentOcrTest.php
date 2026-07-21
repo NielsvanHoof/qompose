@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Audit\LogAuditActivity;
+use App\Actions\Audit\LogAuditActivityAction;
 use App\Enums\DocumentProcessingStatus;
 use App\Jobs\ProcessUploadedDocument;
 use App\Models\Client;
@@ -47,7 +47,7 @@ test('textract start persists job id and leaves document processing', function (
 
     (new ProcessUploadedDocument($uploaded->id))->handle(
         app(OcrOrchestrator::class),
-        app(LogAuditActivity::class),
+        app(LogAuditActivityAction::class),
     );
 
     $uploaded->refresh();

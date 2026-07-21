@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\Dossiers\UploadDocumentForRequest;
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Dossiers\UploadDocumentForRequestAction;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\DocumentProcessingStatus;
 use App\Enums\DocumentRequestStatus;
 use App\Jobs\ProcessUploadedDocument;
@@ -30,7 +30,7 @@ test('uploading a document dispatches the mock OCR processing job', function () 
     Queue::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -44,7 +44,7 @@ test('uploading a document dispatches the mock OCR processing job', function () 
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    $uploaded = app(UploadDocumentForRequest::class)->handle(
+    $uploaded = app(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
         UploadedFile::fake()->create('payslip.pdf', 100, 'application/pdf'),
     );
@@ -60,7 +60,7 @@ test('staff dossier show includes processing fields for uploaded documents', fun
     Queue::fake();
 
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -74,7 +74,7 @@ test('staff dossier show includes processing fields for uploaded documents', fun
         'status' => DocumentRequestStatus::Pending,
     ]);
 
-    app(UploadDocumentForRequest::class)->handle(
+    app(UploadDocumentForRequestAction::class)->handle(
         $documentRequest,
         UploadedFile::fake()->create('payslip.pdf', 100, 'application/pdf'),
     );

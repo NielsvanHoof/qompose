@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import DocumentRequestListItem from '@/features/document-requests/staff/document-request-list-item';
 import type { DocumentRequest } from '@/features/document-requests/types';
+import { useDossierPermissions } from '@/features/dossiers/dossier-permissions-context';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
@@ -23,19 +24,14 @@ export default function DocumentRequestsCard({
     dossierId,
     dossierStatus,
     documentRequests,
-    canManage,
-    canReview,
-    canDownload,
 }: {
     dossierId: number;
     dossierStatus: DossierStatus;
     documentRequests: DocumentRequest[];
-    canManage: boolean;
-    canReview: boolean;
-    canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const { canManage } = useDossierPermissions();
     const canEdit = canManage && dossierStatus !== 'completed';
     const { post, setData } = useHttp({
         document_request_ids: [] as number[],
@@ -83,10 +79,6 @@ export default function DocumentRequestsCard({
                                 dossierStatus={dossierStatus}
                                 documentRequest={documentRequest}
                                 canEdit={canEdit}
-                                canReview={
-                                    canReview && dossierStatus !== 'completed'
-                                }
-                                canDownload={canDownload}
                                 DragHandle={DragHandle}
                             />
                         )}

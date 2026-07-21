@@ -15,7 +15,7 @@ use function is_string;
 
 /**
  * Starts async Textract AnalyzeDocument (FORMS + TABLES) for a PDF in S3.
- * Completion arrives later via SNS → SQS → CompleteTextractExtraction.
+ * Completion arrives later via SNS → SQS → CompleteTextractExtractionAction.
  */
 final class TextractDocumentOcr implements StartsDocumentOcr
 {

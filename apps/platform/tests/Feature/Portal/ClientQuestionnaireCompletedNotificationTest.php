@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Actions\Portal\CreateClientAccessGrant;
-use App\Actions\Portal\NotifyWorkspaceIfQuestionnaireComplete;
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Portal\CreateClientAccessGrantAction;
+use App\Actions\Portal\NotifyWorkspaceIfQuestionnaireCompleteAction;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\QuestionnaireItemType;
@@ -39,7 +39,7 @@ beforeEach(function () {
 function createQuestionnaireNotificationContext(): array
 {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -54,7 +54,7 @@ function createQuestionnaireNotificationContext(): array
         'title' => '2025 Payroll dossier',
     ]);
 
-    $result = app(CreateClientAccessGrant::class)->handle($dossier, $owner, 7);
+    $result = app(CreateClientAccessGrantAction::class)->handle($dossier, $owner, 7);
 
     return [
         'owner' => $owner,
@@ -156,7 +156,7 @@ test('empty dossier does not broadcast questionnaire completed', function () {
 
     $context['tenant']->makeCurrent();
 
-    app(NotifyWorkspaceIfQuestionnaireComplete::class)->handle($context['dossier']);
+    app(NotifyWorkspaceIfQuestionnaireCompleteAction::class)->handle($context['dossier']);
 
     Event::assertNotDispatched(ClientQuestionnaireCompleted::class);
 });

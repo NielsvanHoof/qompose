@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -47,8 +47,8 @@ test('workspace navigation is remembered as a once prop', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
-    app(ProvisionTenant::class)->handle('Beta Tax', $user);
-    app(ProvisionTenant::class)->handle('Acme Accountants', $user);
+    app(ProvisionTenantAction::class)->handle('Beta Tax', $user);
+    app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     $this->actingAs($user)
         ->withHeaders(sharedDataInertiaHeaders())
@@ -66,8 +66,8 @@ test('remembered workspace navigation is not queried on every inertia response',
 
     $user = User::factory()->create();
     // Two firms so session middleware does not auto-select a tenant (and query further).
-    app(ProvisionTenant::class)->handle('Beta Tax', $user);
-    app(ProvisionTenant::class)->handle('Acme Accountants', $user);
+    app(ProvisionTenantAction::class)->handle('Beta Tax', $user);
+    app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     DB::flushQueryLog();
     DB::enableQueryLog();

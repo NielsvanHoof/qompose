@@ -23,7 +23,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             workspaces: Firm[];
             current_firm: Firm | null;
-            notifications: WorkspaceNotificationsSummary | null;
+            notifications: WorkspaceNotificationsSummary | null | undefined;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

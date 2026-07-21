@@ -20,19 +20,15 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { useDossierPermissions } from '@/features/dossiers/dossier-permissions-context';
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
-export default function DossierWorkflowCard({
-    dossier,
-    canReview,
-}: {
-    dossier: Dossier;
-    canReview: boolean;
-}) {
+export default function DossierWorkflowCard({ dossier }: { dossier: Dossier }) {
     const { t } = useTranslation();
+    const { canReview } = useDossierPermissions();
     const summary = dossier.review_summary;
 
     return (

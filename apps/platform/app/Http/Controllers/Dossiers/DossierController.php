@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dossiers;
 
-use App\Actions\Audit\LogAuditActivity;
+use App\Actions\Audit\LogAuditActivityAction;
+use App\Actions\Dossiers\CreateDossierAction;
 use App\Enums\AuditEvent;
 use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreDossierRequest;
 use App\Models\Dossier;
 use App\Models\Tenant;
-use App\Queries\Dossiers\GetDossierCreateData;
-use App\Queries\Dossiers\GetDossierIndexData;
-use App\Queries\Dossiers\GetDossierShowData;
+use App\Queries\Dossiers\FetchDossierCreateQuery;
+use App\Queries\Dossiers\FetchDossierIndexQuery;
+use App\Queries\Dossiers\FetchDossierShowQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,50 +24,17 @@ use function is_string;
 
 final class DossierController extends Controller
 {
-    public function index(Tenant $tenant, GetDossierIndexData $getDossierIndexData): Response
+    public function index(Tenant $tenant, FetchDossierIndexQuery $fetchDossierIndex): Response
     {
         $this->authorize('viewAny', Dossier::class);
 
         return Inertia::render('dossiers/index', [
-            'dossiers' => $getDossierIndexData->handle(),
-            // Current Spatie query-string values for the shared IndexQuery UI.
-            'filters' => request()->input('filter', []),
-            'sort' => request()->query('sort'),
-            // Toolbar metadata for shared IndexQuery UI (filters / sorts / defaults).
-            'indexQuery' => [
-                'filters' => [
-                    ['key' => 'q', 'type' => 'search', 'label' => __('Search')],
-                    [
-                        'key' => 'status',
-                        'type' => 'select',
-                        'label' => __('Status'),
-                        'options' => [
-                            ['value' => 'draft', 'label' => __('Draft')],
-                            ['value' => 'awaiting_client', 'label' => __('Awaiting client')],
-                            ['value' => 'in_review', 'label' => __('In review')],
-                            ['value' => 'completed', 'label' => __('Completed')],
-                        ],
-                    ],
-                    ['key' => 'client', 'type' => 'search', 'label' => __('Client')],
-                ],
-                'sorts' => [
-                    ['key' => '-updated_at', 'label' => __('Recently updated')],
-                    ['key' => 'updated_at', 'label' => __('Oldest updated')],
-                    ['key' => 'title', 'label' => __('Title (A–Z)')],
-                    ['key' => '-title', 'label' => __('Title (Z–A)')],
-                    ['key' => 'status', 'label' => __('Status (A–Z)')],
-                    ['key' => '-created_at', 'label' => __('Newest first')],
-                    ['key' => 'created_at', 'label' => __('Oldest first')],
-                ],
-                'defaults' => [
-                    'sort' => '-updated_at',
-                    'per_page' => 15,
-                ],
-            ],
+            'dossiers' => $fetchDossierIndex->handle(),
+            ...$fetchDossierIndex->indexQueryProps(),
         ]);
     }
 
-    public function create(Tenant $tenant, GetDossierCreateData $getDossierCreateData): Response
+    public function create(Tenant $tenant, FetchDossierCreateQuery $getDossierCreateData): Response
     {
         $this->authorize('create', Dossier::class);
 
@@ -75,9 +43,12 @@ final class DossierController extends Controller
         ]);
     }
 
-    public function store(Tenant $tenant, StoreDossierRequest $request): RedirectResponse
-    {
-        $dossier = Dossier::query()->create($request->validated());
+    public function store(
+        Tenant $tenant,
+        StoreDossierRequest $request,
+        CreateDossierAction $createDossier,
+    ): RedirectResponse {
+        $dossier = $createDossier->handle($request->validated());
 
         return to_route(
             'workspaces.dossiers.show',
@@ -89,8 +60,8 @@ final class DossierController extends Controller
         Tenant $tenant,
         Request $request,
         Dossier $dossier,
-        GetDossierShowData $getDossierShowData,
-        LogAuditActivity $logAuditActivity,
+        FetchDossierShowQuery $getDossierShowData,
+        LogAuditActivityAction $logAuditActivity,
     ): Response {
         $this->authorize('view', $dossier);
 

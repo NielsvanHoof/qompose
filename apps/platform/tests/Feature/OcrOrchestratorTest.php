@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Audit\LogAuditActivity;
+use App\Actions\Audit\LogAuditActivityAction;
 use App\Contracts\Ocr\StartsDocumentOcr;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
@@ -52,7 +52,7 @@ test('ocr orchestrator returns deferred outcome when the driver leaves processin
         ->once()
         ->with(Mockery::on(fn (UploadedDocument $document): bool => $document->is($uploaded)));
 
-    $orchestrator = new OcrOrchestrator($mockOcr, app(LogAuditActivity::class));
+    $orchestrator = new OcrOrchestrator($mockOcr, app(LogAuditActivityAction::class));
 
     $outcome = $orchestrator->startProcessing($uploaded);
 

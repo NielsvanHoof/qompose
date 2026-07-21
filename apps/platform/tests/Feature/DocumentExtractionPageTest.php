@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\DocumentProcessingStatus;
 use App\Enums\DocumentRequestStatus;
 use App\Models\Client;
@@ -22,7 +22,7 @@ beforeEach(function () {
 
 test('staff can open the OCR extraction page for an uploaded document', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -70,8 +70,8 @@ test('staff can open the OCR extraction page for an uploaded document', function
 test('staff from another tenant cannot open an extraction page', function () {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();
-    $tenantA = app(ProvisionTenant::class)->handle('Firm A', $ownerA);
-    $tenantB = app(ProvisionTenant::class)->handle('Firm B', $ownerB);
+    $tenantA = app(ProvisionTenantAction::class)->handle('Firm A', $ownerA);
+    $tenantB = app(ProvisionTenantAction::class)->handle('Firm B', $ownerB);
 
     $tenantA->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenantA->id]);
@@ -101,7 +101,7 @@ test('staff from another tenant cannot open an extraction page', function () {
 
 test('staff must recently confirm their password before opening an extraction page', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -128,7 +128,7 @@ test('staff must recently confirm their password before opening an extraction pa
 
 test('guest cannot open the OCR extraction page', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
     $tenant->makeCurrent();
 
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);

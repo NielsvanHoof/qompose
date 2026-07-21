@@ -13,9 +13,8 @@ use Spatie\QueryBuilder\QueryBuilder;
 /**
  * Shared Spatie Query Builder + pagination for workspace index lists.
  *
- * Concrete queries declare subject, filters, sorts, and row mapping.
+ * Concrete queries declare subject, filters, sorts, row mapping, and toolbar metadata.
  * Call paginate() from handle() so signatures can vary (e.g. Activity needs Tenant).
- * Toolbar metadata (filters/sorts) lives in the controllers, not here.
  *
  * @template TModel of Model
  */
@@ -47,6 +46,39 @@ abstract class PaginatedIndexQuery
      * @return array<string, mixed>
      */
     abstract protected function mapModel(Model $model): array;
+
+    /**
+     * Toolbar config for the shared IndexQuery UI (filters / sorts / defaults).
+     *
+     * @return array{
+     *     filters: list<array<string, mixed>>,
+     *     sorts: list<array{key: string, label: string}>,
+     *     defaults: array{sort: string, per_page: int}
+     * }
+     */
+    abstract public function toolbarMetadata(): array;
+
+    /**
+     * Current request filter/sort values plus toolbar metadata for Inertia.
+     *
+     * @return array{
+     *     filters: mixed,
+     *     sort: mixed,
+     *     indexQuery: array{
+     *         filters: list<array<string, mixed>>,
+     *         sorts: list<array{key: string, label: string}>,
+     *         defaults: array{sort: string, per_page: int}
+     *     }
+     * }
+     */
+    final public function indexQueryProps(): array
+    {
+        return [
+            'filters' => request()->input('filter', []),
+            'sort' => request()->query('sort'),
+            'indexQuery' => $this->toolbarMetadata(),
+        ];
+    }
 
     protected function perPage(): int
     {

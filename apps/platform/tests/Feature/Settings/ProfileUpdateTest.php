@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,7 +24,7 @@ test('profile page keeps the active firm in shared props for sidebar navigation'
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $user = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $user);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
 
     $this->actingAs($user)
         ->withSession(['active_tenant_id' => $tenant->id])

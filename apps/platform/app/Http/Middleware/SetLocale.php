@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Actions\Localization\ResolveApplicationLocale;
+use App\Actions\Localization\ResolveApplicationLocaleAction;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class SetLocale
 {
     public function __construct(
-        private readonly ResolveApplicationLocale $resolveApplicationLocale,
+        private readonly ResolveApplicationLocaleAction $resolveApplicationLocale,
     ) {}
 
     /**

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
-use App\Actions\Portal\SubmitPortalAnswer;
+use App\Actions\Portal\SubmitPortalAnswerAction;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Http\Requests\Portal\StorePortalQuestionnaireAnswerRequest;
@@ -23,7 +23,7 @@ final class ClientPortalAnswerController extends Controller
     public function store(
         StorePortalQuestionnaireAnswerRequest $request,
         DocumentRequest $documentRequest,
-        SubmitPortalAnswer $submitPortalAnswer,
+        SubmitPortalAnswerAction $submitPortalAnswer,
     ): RedirectResponse {
         $grant = $this->grantFromRequest($request);
 

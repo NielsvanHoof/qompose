@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dossiers;
 
-use App\Actions\Dossiers\CompleteDossier;
+use App\Actions\Dossiers\CompleteDossierAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\CompleteDossierRequest;
 use App\Models\Dossier;
@@ -20,7 +20,7 @@ final class DossierCompletionController extends Controller
         Tenant $tenant,
         CompleteDossierRequest $request,
         Dossier $dossier,
-        CompleteDossier $completeDossier,
+        CompleteDossierAction $completeDossier,
     ): RedirectResponse {
         $user = $request->user();
 

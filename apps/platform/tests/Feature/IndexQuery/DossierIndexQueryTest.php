@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Tenancy\ProvisionTenant;
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\DossierStatus;
 use App\Models\Client;
 use App\Models\Dossier;
@@ -19,7 +19,7 @@ beforeEach(function () {
 
 test('dossiers index filters by status and search', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
 
@@ -65,7 +65,7 @@ test('dossiers index filters by status and search', function () {
 
 test('dossiers index sorts by title ascending', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $tenant->makeCurrent();
     $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -92,7 +92,7 @@ test('dossiers index sorts by title ascending', function () {
 
 test('dossiers index rejects invalid sort', function () {
     $owner = User::factory()->create();
-    $tenant = app(ProvisionTenant::class)->handle('Acme Accountants', $owner);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
 
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])

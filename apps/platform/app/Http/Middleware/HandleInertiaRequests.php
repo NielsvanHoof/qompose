@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Actions\Localization\LoadFrontendTranslations;
+use App\Actions\Localization\LoadFrontendTranslationsAction;
 use App\Enums\Locale;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Queries\Notifications\GetWorkspaceNotificationsForUser;
-use App\Queries\Tenancy\GetWorkspaceNavigationForUser;
+use App\Queries\Notifications\FetchWorkspaceNotificationsForUserQuery;
+use App\Queries\Tenancy\FetchWorkspaceNavigationForUserQuery;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -28,9 +28,9 @@ final class HandleInertiaRequests extends Middleware
     protected $rootView = 'app';
 
     public function __construct(
-        private readonly GetWorkspaceNavigationForUser $getWorkspaceNavigationForUser,
-        private readonly GetWorkspaceNotificationsForUser $getWorkspaceNotificationsForUser,
-        private readonly LoadFrontendTranslations $loadFrontendTranslations,
+        private readonly FetchWorkspaceNavigationForUserQuery $getWorkspaceNavigationForUser,
+        private readonly FetchWorkspaceNotificationsForUserQuery $getWorkspaceNotificationsForUser,
+        private readonly LoadFrontendTranslationsAction $loadFrontendTranslations,
     ) {}
 
     /**
@@ -116,16 +116,18 @@ final class HandleInertiaRequests extends Middleware
                     'slug' => $tenant->slug,
                 ];
             },
-            // Staff bell inbox — only when authenticated inside a workspace.
-            'notifications' => function () use ($user): ?array {
+            // Staff bell inbox — deferred so non-bell pages stay cheap.
+            'notifications' => (function () use ($user) {
                 $tenant = Tenant::current();
 
                 if (! $user instanceof User || ! $tenant instanceof Tenant) {
                     return null;
                 }
 
-                return $this->getWorkspaceNotificationsForUser->handle($user, $tenant);
-            },
+                return Inertia::defer(
+                    fn (): array => $this->getWorkspaceNotificationsForUser->handle($user, $tenant),
+                );
+            })(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
