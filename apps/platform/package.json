@@ -10,7 +10,8 @@
         "format:check": "prettier --check resources/",
         "lint": "biome check --write .",
         "lint:check": "biome check .",
-        "types:check": "tsc --noEmit"
+        "types:check": "npm run wayfinder:generate && tsc --noEmit",
+        "wayfinder:generate": "php artisan wayfinder:generate --with-form --no-interaction"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.4",

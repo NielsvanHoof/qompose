@@ -14,6 +14,20 @@ test('the complete quality gate includes the production frontend build', functio
         ->toContain('npm run build');
 });
 
+test('the TypeScript check generates ignored Wayfinder modules on a fresh checkout', function () {
+    /** @var array{scripts: array<string, string>} $package */
+    $package = json_decode(
+        (string) file_get_contents(dirname(__DIR__, 2).'/package.json'),
+        true,
+        flags: JSON_THROW_ON_ERROR,
+    );
+
+    expect($package['scripts']['wayfinder:generate'])
+        ->toBe('php artisan wayfinder:generate --with-form --no-interaction')
+        ->and($package['scripts']['types:check'])
+        ->toStartWith('npm run wayfinder:generate && ');
+});
+
 test('the repository-level platform workflow runs quality migrations and an immutable image build', function () {
     $workflow = (string) file_get_contents(
         dirname(__DIR__, 4).'/.github/workflows/platform.yml',
