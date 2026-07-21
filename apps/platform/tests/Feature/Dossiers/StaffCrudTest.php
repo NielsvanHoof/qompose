@@ -40,7 +40,9 @@ test('staff can create a client, dossier, and document request', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('clients/index')
-            ->has('clients', 0));
+            ->has('clients.data', 0)
+            ->where('clients.total', 0)
+            ->has('indexQuery'));
 
     $this->post(workspaceRoute('workspaces.clients.store', $tenant), [
         'name' => 'Jane Client',

@@ -16,6 +16,7 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
+import type { Paginated } from '@/types/pagination';
 
 /**
  * Media library list of document requests across all dossiers.
@@ -24,26 +25,28 @@ export default function MediaDocumentsCard({
     documents,
     canDownload,
 }: {
-    documents: MediaDocument[];
+    documents: Paginated<MediaDocument>;
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const rows = documents.data;
+    const total = documents.total;
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>{t('All documents')}</CardTitle>
                 <CardDescription>
-                    {documents.length === 1
+                    {total === 1
                         ? t('1 document request')
                         : t(':count document requests', {
-                              count: documents.length,
+                              count: total,
                           })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {documents.length === 0 ? (
+                {rows.length === 0 ? (
                     <EmptyState
                         title={t(
                             'Document requests will appear here once you add them to a dossier.',
@@ -51,7 +54,7 @@ export default function MediaDocumentsCard({
                     />
                 ) : (
                     <div className="divide-y rounded-md border">
-                        {documents.map((document) => (
+                        {rows.map((document) => (
                             <div
                                 key={document.id}
                                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"

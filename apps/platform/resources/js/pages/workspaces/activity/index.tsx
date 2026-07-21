@@ -1,16 +1,24 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
+import IndexPagination from '@/components/index-query/index-pagination';
+import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import ActivityLogCard from '@/features/audit/activity-log-card';
 import type { ActivityLogEntry } from '@/features/audit/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { index as activityIndex } from '@/routes/workspaces/activity';
+import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
 /**
  * Tenant activity / audit log index.
  */
 export default function ActivityLogIndex({
     activities,
+    indexQuery,
 }: {
-    activities: ActivityLogEntry[];
+    activities: Paginated<ActivityLogEntry>;
+    indexQuery: IndexQueryConfig;
+    /** Current Spatie filter bag — consumed by useIndexQuery via usePage(). */
+    filters?: Record<string, string>;
+    sort?: string | null;
 }) {
     const currentWorkspace = useCurrentWorkspace();
 
@@ -37,7 +45,9 @@ export default function ActivityLogIndex({
                     </p>
                 </div>
 
+                <IndexQueryToolbar config={indexQuery} />
                 <ActivityLogCard activities={activities} />
+                <IndexPagination paginator={activities} />
             </div>
         </>
     );

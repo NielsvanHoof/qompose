@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Laravel\Scout\Searchable;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -31,7 +32,7 @@ use Spatie\Activitylog\Support\LogOptions;
 final class Dossier extends Model
 {
     /** @use HasFactory<DossierFactory> */
-    use BelongsToTenant, HasFactory, LogsActivity, LogsTenantAuditableActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, LogsTenantAuditableActivity, Searchable;
 
     /**
      * @var array<string, mixed>
@@ -39,6 +40,20 @@ final class Dossier extends Model
     protected $attributes = [
         'status' => 'draft',
     ];
+
+    /**
+     * Columns Scout's database engine searches with LIKE.
+     *
+     * @return array{id: int, title: string, reference: string}
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'reference' => $this->reference ?? '',
+        ];
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

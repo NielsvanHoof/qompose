@@ -6,12 +6,22 @@ namespace App\Queries\Dossiers;
 
 use App\Models\Client;
 use App\Models\Dossier;
+use App\Queries\Filters\ScoutSearchFilter;
+use App\Queries\PaginatedIndexQuery;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
 use RuntimeException;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 
-final class GetDossierIndexData
+/**
+ * @extends PaginatedIndexQuery<Dossier>
+ */
+final class GetDossierIndexData extends PaginatedIndexQuery
 {
     /**
-     * @return array<int, array{
+     * @return LengthAwarePaginator<int, array{
      *     id: int,
      *     client_name: string,
      *     title: string,
@@ -19,27 +29,64 @@ final class GetDossierIndexData
      *     status: string
      * }>
      */
-    public function handle(): array
+    public function handle(): LengthAwarePaginator
     {
-        return Dossier::query()
-            ->with('client:id,name')
-            ->latest()
-            ->get(['id', 'client_id', 'title', 'reference', 'status'])
-            ->map(function (Dossier $dossier): array {
-                $client = $dossier->client;
+        /** @var LengthAwarePaginator<int, array{id: int, client_name: string, title: string, reference: string|null, status: string}> */
+        return $this->paginate();
+    }
 
-                if (! $client instanceof Client) {
-                    throw new RuntimeException('Dossier client is missing.');
-                }
+    /**
+     * @return Builder<Dossier>
+     */
+    protected function subject(): Builder
+    {
+        // Prefer Model::select() so phpstan-strict-rules does not flag instance->select().
+        return Dossier::select(['id', 'client_id', 'title', 'reference', 'status', 'created_at', 'updated_at'])
+            ->with('client:id,name');
+    }
 
-                return [
-                    'id' => $dossier->id,
-                    'client_name' => $client->name,
-                    'title' => $dossier->title,
-                    'reference' => $dossier->reference,
-                    'status' => $dossier->status->value,
-                ];
-            })
-            ->all();
+    protected function allowedFilters(): array
+    {
+        return [
+            ScoutSearchFilter::make(Dossier::class),
+            AllowedFilter::exact('status'),
+            AllowedFilter::partial('client', 'client.name'),
+        ];
+    }
+
+    protected function allowedSorts(): array
+    {
+        return [
+            AllowedSort::field('title'),
+            AllowedSort::field('status'),
+            AllowedSort::field('created_at'),
+            AllowedSort::field('updated_at'),
+        ];
+    }
+
+    protected function defaultSort(): string
+    {
+        return '-updated_at';
+    }
+
+    /**
+     * @return array{id: int, client_name: string, title: string, reference: string|null, status: string}
+     */
+    protected function mapModel(Model $model): array
+    {
+        /** @var Dossier $model */
+        $client = $model->client;
+
+        if (! $client instanceof Client) {
+            throw new RuntimeException('Dossier client is missing.');
+        }
+
+        return [
+            'id' => $model->id,
+            'client_name' => $client->name,
+            'title' => $model->title,
+            'reference' => $model->reference,
+            'status' => $model->status->value,
+        ];
     }
 }

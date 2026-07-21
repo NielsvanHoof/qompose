@@ -10,20 +10,29 @@ use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Queries\Filters\ScoutSearchFilter;
+use App\Queries\PaginatedIndexQuery;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 
 use function array_key_exists;
 use function is_array;
 use function is_string;
 
-final class GetActivityLogIndexData
+/**
+ * @extends PaginatedIndexQuery<Activity>
+ */
+final class GetActivityLogIndexData extends PaginatedIndexQuery
 {
-    private const int Limit = 100;
+    private Tenant $tenant;
 
     /**
-     * @return array<int, array{
+     * @return LengthAwarePaginator<int, array{
      *     id: int,
      *     event: string|null,
      *     label: string,
@@ -35,11 +44,21 @@ final class GetActivityLogIndexData
      *     attribute_changes: array{attributes: array<string, mixed>, old: array<string, mixed>}|null
      * }>
      */
-    public function handle(Tenant $tenant): array
+    public function handle(Tenant $tenant): LengthAwarePaginator
     {
-        // Use where + getQuery()->limit to avoid Larastan staticMethod.dynamicCall on scopes/limit.
-        $query = Activity::query()
-            ->where('tenant_id', $tenant->id)
+        $this->tenant = $tenant;
+
+        /** @var LengthAwarePaginator<int, array{id: int, event: string|null, label: string, description: string, causer_name: string|null, subject: array{type: string, id: int, name: string|null}|null, created_at: string|null, properties: array{ip: string|null, route: string|null}, attribute_changes: array{attributes: array<string, mixed>, old: array<string, mixed>}|null}> */
+        return $this->paginate();
+    }
+
+    /**
+     * @return Builder<Activity>
+     */
+    protected function subject(): Builder
+    {
+        return Activity::query()
+            ->where('tenant_id', $this->tenant->id)
             ->with([
                 'causer',
                 'subject' => function ($morphTo): void {
@@ -51,15 +70,28 @@ final class GetActivityLogIndexData
                         ClientAccessGrant::class => ['dossier:id,title'],
                     ]);
                 },
-            ])
-            ->latest();
+            ]);
+    }
 
-        $query->getQuery()->limit(self::Limit);
+    protected function allowedFilters(): array
+    {
+        return [
+            AllowedFilter::exact('event'),
+            ScoutSearchFilter::make(Activity::class, 'description'),
+        ];
+    }
 
-        return $query
-            ->get()
-            ->map(fn (Activity $activity): array => $this->mapActivity($activity))
-            ->all();
+    protected function allowedSorts(): array
+    {
+        return [
+            AllowedSort::field('created_at'),
+            AllowedSort::field('event'),
+        ];
+    }
+
+    protected function defaultSort(): string
+    {
+        return '-created_at';
     }
 
     /**
@@ -75,21 +107,22 @@ final class GetActivityLogIndexData
      *     attribute_changes: array{attributes: array<string, mixed>, old: array<string, mixed>}|null
      * }
      */
-    private function mapActivity(Activity $activity): array
+    protected function mapModel(Model $model): array
     {
-        $event = is_string($activity->event) ? $activity->event : null;
+        /** @var Activity $model */
+        $event = is_string($model->event) ? $model->event : null;
         $auditEvent = $event !== null ? AuditEvent::tryFrom($event) : null;
 
         return [
-            'id' => $activity->id,
+            'id' => $model->id,
             'event' => $event,
-            'label' => $auditEvent?->label() ?? $activity->description,
-            'description' => $activity->description,
-            'causer_name' => $this->resolveCauserName($activity),
-            'subject' => $this->resolveSubject($activity),
-            'created_at' => $activity->created_at?->toIso8601String(),
-            'properties' => $this->displayProperties($activity),
-            'attribute_changes' => $this->displayAttributeChanges($activity),
+            'label' => $auditEvent?->label() ?? $model->description,
+            'description' => $model->description,
+            'causer_name' => $this->resolveCauserName($model),
+            'subject' => $this->resolveSubject($model),
+            'created_at' => $model->created_at?->toIso8601String(),
+            'properties' => $this->displayProperties($model),
+            'attribute_changes' => $this->displayAttributeChanges($model),
         ];
     }
 

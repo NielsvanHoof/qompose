@@ -50,8 +50,11 @@ test('staff can view system and firm templates', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('questionnaires/index')
-            ->has('system_templates', 4)
-            ->has('firm_templates', 1)
+            ->has('system_templates.data', 4)
+            ->where('system_templates.total', 4)
+            ->has('firm_templates.data', 1)
+            ->where('firm_templates.total', 1)
+            ->has('indexQuery')
             ->where('can_manage', true));
 });
 

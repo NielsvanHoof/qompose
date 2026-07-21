@@ -37,5 +37,6 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="PERMISSION_TESTING" value="true"/>
         <env name="OCR_DRIVER" value="mock"/>
+        <env name="SCOUT_DRIVER" value="collection"/>
     </php>
 </phpunit>

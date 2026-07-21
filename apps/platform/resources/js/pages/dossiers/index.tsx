@@ -1,19 +1,27 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
+import IndexPagination from '@/components/index-query/index-pagination';
+import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Button } from '@/components/ui/button';
 import DossiersListCard from '@/features/dossiers/dossiers-list-card';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { create, index as dossierIndex } from '@/routes/workspaces/dossiers';
+import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
 /**
  * Dossiers index — list of all firm dossiers.
  */
 export default function DossierIndex({
     dossiers,
+    indexQuery,
 }: {
-    dossiers: DossierSummary[];
+    dossiers: Paginated<DossierSummary>;
+    indexQuery: IndexQueryConfig;
+    /** Current Spatie filter bag — consumed by useIndexQuery via usePage(). */
+    filters?: Record<string, string>;
+    sort?: string | null;
 }) {
     const currentWorkspace = useCurrentWorkspace();
 
@@ -56,7 +64,9 @@ export default function DossierIndex({
                     </div>
                 </div>
 
+                <IndexQueryToolbar config={indexQuery} />
                 <DossiersListCard dossiers={dossiers} />
+                <IndexPagination paginator={dossiers} />
             </div>
         </>
     );

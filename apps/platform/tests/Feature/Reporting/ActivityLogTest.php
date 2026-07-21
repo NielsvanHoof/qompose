@@ -53,13 +53,15 @@ test('owner can view the activity log with structured audit entries', function (
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/activity/index')
-            ->has('activities', 1)
-            ->where('activities.0.event', AuditEvent::DossierViewed->value)
-            ->where('activities.0.label', AuditEvent::DossierViewed->label())
-            ->where('activities.0.causer_name', $owner->name)
-            ->where('activities.0.subject.type', 'Dossier')
-            ->where('activities.0.subject.id', $dossier->id)
-            ->where('activities.0.subject.name', 'Payroll 2025'));
+            ->has('activities.data', 1)
+            ->where('activities.total', 1)
+            ->has('indexQuery')
+            ->where('activities.data.0.event', AuditEvent::DossierViewed->value)
+            ->where('activities.data.0.label', AuditEvent::DossierViewed->label())
+            ->where('activities.data.0.causer_name', $owner->name)
+            ->where('activities.data.0.subject.type', 'Dossier')
+            ->where('activities.data.0.subject.id', $dossier->id)
+            ->where('activities.data.0.subject.name', 'Payroll 2025'));
 });
 
 test('activity log does not include entries from another tenant', function () {
@@ -106,9 +108,9 @@ test('activity log does not include entries from another tenant', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/activity/index')
-            ->has('activities', 1)
-            ->where('activities.0.event', AuditEvent::DossierCompleted->value)
-            ->where('activities.0.subject.name', 'Own dossier'));
+            ->has('activities.data', 1)
+            ->where('activities.data.0.event', AuditEvent::DossierCompleted->value)
+            ->where('activities.data.0.subject.name', 'Own dossier'));
 });
 
 test('activity log resolves client access grant subjects using the dossier title', function () {
@@ -142,11 +144,11 @@ test('activity log resolves client access grant subjects using the dossier title
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/activity/index')
-            ->has('activities', 1)
-            ->where('activities.0.event', AuditEvent::ClientPortalAccessGrantCreated->value)
-            ->where('activities.0.subject.type', 'ClientAccessGrant')
-            ->where('activities.0.subject.id', $result['grant']->id)
-            ->where('activities.0.subject.name', 'Annual accounts 2025'));
+            ->has('activities.data', 1)
+            ->where('activities.data.0.event', AuditEvent::ClientPortalAccessGrantCreated->value)
+            ->where('activities.data.0.subject.type', 'ClientAccessGrant')
+            ->where('activities.data.0.subject.id', $result['grant']->id)
+            ->where('activities.data.0.subject.name', 'Annual accounts 2025'));
 });
 
 test('reviewer cannot view the activity log', function () {

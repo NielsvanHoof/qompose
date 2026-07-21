@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Laravel\Scout\Searchable;
 use RuntimeException;
 use Spatie\Activitylog\Models\Activity as SpatieActivity;
 
@@ -15,6 +16,22 @@ use Spatie\Activitylog\Models\Activity as SpatieActivity;
  */
 final class Activity extends SpatieActivity
 {
+    use Searchable;
+
+    /**
+     * Columns Scout's database engine searches with LIKE.
+     *
+     * @return array{id: int, description: string, event: string}
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'description' => $this->description ?? '',
+            'event' => $this->event ?? '',
+        ];
+    }
+
     /**
      * @return BelongsTo<Tenant, $this>
      */

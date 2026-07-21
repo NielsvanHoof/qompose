@@ -29,6 +29,40 @@ final class DossierController extends Controller
 
         return Inertia::render('dossiers/index', [
             'dossiers' => $getDossierIndexData->handle(),
+            // Current Spatie query-string values for the shared IndexQuery UI.
+            'filters' => request()->input('filter', []),
+            'sort' => request()->query('sort'),
+            // Toolbar metadata for shared IndexQuery UI (filters / sorts / defaults).
+            'indexQuery' => [
+                'filters' => [
+                    ['key' => 'q', 'type' => 'search', 'label' => __('Search')],
+                    [
+                        'key' => 'status',
+                        'type' => 'select',
+                        'label' => __('Status'),
+                        'options' => [
+                            ['value' => 'draft', 'label' => __('Draft')],
+                            ['value' => 'awaiting_client', 'label' => __('Awaiting client')],
+                            ['value' => 'in_review', 'label' => __('In review')],
+                            ['value' => 'completed', 'label' => __('Completed')],
+                        ],
+                    ],
+                    ['key' => 'client', 'type' => 'search', 'label' => __('Client')],
+                ],
+                'sorts' => [
+                    ['key' => '-updated_at', 'label' => __('Recently updated')],
+                    ['key' => 'updated_at', 'label' => __('Oldest updated')],
+                    ['key' => 'title', 'label' => __('Title (A–Z)')],
+                    ['key' => '-title', 'label' => __('Title (Z–A)')],
+                    ['key' => 'status', 'label' => __('Status (A–Z)')],
+                    ['key' => '-created_at', 'label' => __('Newest first')],
+                    ['key' => 'created_at', 'label' => __('Oldest first')],
+                ],
+                'defaults' => [
+                    'sort' => '-updated_at',
+                    'per_page' => 15,
+                ],
+            ],
         ]);
     }
 

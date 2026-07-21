@@ -22,6 +22,29 @@ final class ClientController extends Controller
 
         return Inertia::render('clients/index', [
             'clients' => $getClientIndexData->handle(),
+            // Current Spatie query-string values for the shared IndexQuery UI.
+            'filters' => request()->input('filter', []),
+            'sort' => request()->query('sort'),
+            // Toolbar metadata for shared IndexQuery UI (filters / sorts / defaults).
+            'indexQuery' => [
+                'filters' => [
+                    ['key' => 'q', 'type' => 'search', 'label' => __('Search')],
+                ],
+                'sorts' => [
+                    ['key' => 'name', 'label' => __('Name (A–Z)')],
+                    ['key' => '-name', 'label' => __('Name (Z–A)')],
+                    ['key' => 'email', 'label' => __('Email (A–Z)')],
+                    ['key' => '-email', 'label' => __('Email (Z–A)')],
+                    ['key' => '-dossiers_count', 'label' => __('Most dossiers')],
+                    ['key' => 'dossiers_count', 'label' => __('Fewest dossiers')],
+                    ['key' => '-created_at', 'label' => __('Newest first')],
+                    ['key' => 'created_at', 'label' => __('Oldest first')],
+                ],
+                'defaults' => [
+                    'sort' => 'name',
+                    'per_page' => 15,
+                ],
+            ],
         ]);
     }
 

@@ -1,8 +1,11 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
+import IndexPagination from '@/components/index-query/index-pagination';
+import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import MediaDocumentsCard from '@/features/media/media-documents-card';
 import type { MediaDocument } from '@/features/media/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { index as mediaIndex } from '@/routes/workspaces/media';
+import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
 /**
  * Media library index — all document requests across dossiers.
@@ -10,9 +13,14 @@ import { index as mediaIndex } from '@/routes/workspaces/media';
 export default function MediaLibraryIndex({
     documents,
     can_download: canDownload,
+    indexQuery,
 }: {
-    documents: MediaDocument[];
+    documents: Paginated<MediaDocument>;
     can_download: boolean;
+    indexQuery: IndexQueryConfig;
+    /** Current Spatie filter bag — consumed by useIndexQuery via usePage(). */
+    filters?: Record<string, string>;
+    sort?: string | null;
 }) {
     const currentWorkspace = useCurrentWorkspace();
 
@@ -40,10 +48,12 @@ export default function MediaLibraryIndex({
                     </p>
                 </div>
 
+                <IndexQueryToolbar config={indexQuery} />
                 <MediaDocumentsCard
                     documents={documents}
                     canDownload={canDownload}
                 />
+                <IndexPagination paginator={documents} />
             </div>
         </>
     );

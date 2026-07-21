@@ -33,6 +33,38 @@ final class QuestionnaireTemplateController extends Controller
                     'label' => $category->label(),
                 ]),
             'can_manage' => request()->user()?->can('create', QuestionnaireTemplate::class) ?? false,
+            // Current Spatie query-string values for the shared IndexQuery UI.
+            'filters' => request()->input('filter', []),
+            'sort' => request()->query('sort'),
+            // Toolbar metadata for shared IndexQuery UI (filters / sorts / defaults).
+            'indexQuery' => [
+                'filters' => [
+                    ['key' => 'q', 'type' => 'search', 'label' => __('Search')],
+                    [
+                        'key' => 'category',
+                        'type' => 'select',
+                        'label' => __('Category'),
+                        'options' => collect(QuestionnaireTemplateCategory::cases())
+                            ->map(fn (QuestionnaireTemplateCategory $category): array => [
+                                'value' => $category->value,
+                                'label' => $category->label(),
+                            ])
+                            ->values()
+                            ->all(),
+                    ],
+                ],
+                'sorts' => [
+                    ['key' => 'name', 'label' => __('Name (A–Z)')],
+                    ['key' => '-name', 'label' => __('Name (Z–A)')],
+                    ['key' => 'category', 'label' => __('Category (A–Z)')],
+                    ['key' => '-items_count', 'label' => __('Most items')],
+                    ['key' => 'items_count', 'label' => __('Fewest items')],
+                ],
+                'defaults' => [
+                    'sort' => 'name',
+                    'per_page' => 15,
+                ],
+            ],
         ]);
     }
 

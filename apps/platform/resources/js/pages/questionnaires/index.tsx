@@ -2,6 +2,8 @@ import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import QuestionnaireTemplateController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateController';
 import EmptyState from '@/components/empty-state';
+import IndexPagination from '@/components/index-query/index-pagination';
+import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +20,7 @@ import {
     show as showTemplate,
     index as templateIndex,
 } from '@/routes/workspaces/templates';
+import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
 /**
  * Template library — system packs plus firm-owned copies.
@@ -26,10 +29,15 @@ export default function TemplateIndex({
     system_templates: systemTemplates,
     firm_templates: firmTemplates,
     can_manage: canManage,
+    indexQuery,
 }: {
-    system_templates: TemplateSummary[];
-    firm_templates: TemplateSummary[];
+    system_templates: Paginated<TemplateSummary>;
+    firm_templates: Paginated<TemplateSummary>;
     can_manage: boolean;
+    indexQuery: IndexQueryConfig;
+    /** Current Spatie filter bag — consumed by useIndexQuery via usePage(). */
+    filters?: Record<string, string>;
+    sort?: string | null;
 }) {
     const currentWorkspace = useCurrentWorkspace();
 
@@ -69,6 +77,9 @@ export default function TemplateIndex({
                     )}
                 </div>
 
+                {/* Shared filters/sort apply to both system and firm buckets. */}
+                <IndexQueryToolbar config={indexQuery} />
+
                 <TemplateSection
                     title="System templates"
                     description="Read-only starter packs. Copy one to edit for your firm."
@@ -98,93 +109,112 @@ function TemplateSection({
 }: {
     title: string;
     description: string;
-    templates: TemplateSummary[];
+    templates: Paginated<TemplateSummary>;
     canManage: boolean;
     empty: string;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const rows = templates.data;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {templates.length === 0 ? (
-                    <EmptyState title={empty} />
-                ) : (
-                    <div className="divide-y rounded-md border">
-                        {templates.map((template) => (
-                            <div
-                                key={template.id}
-                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                            >
-                                <div className="min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Link
-                                            href={showTemplate({
-                                                tenant: currentWorkspace,
-                                                template: template.id,
-                                            })}
-                                            className="font-medium hover:underline"
-                                        >
-                                            {template.name}
-                                        </Link>
-                                        <Badge variant="secondary">
-                                            {template.category_label}
-                                        </Badge>
-                                    </div>
-                                    {template.description && (
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            {template.description}
-                                        </p>
-                                    )}
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        {template.items_count} items
-                                    </p>
-                                </div>
-
-                                <div className="flex flex-wrap gap-2">
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link
-                                            href={showTemplate({
-                                                tenant: currentWorkspace,
-                                                template: template.id,
-                                            })}
-                                        >
-                                            {template.is_system
-                                                ? 'View'
-                                                : 'Edit'}
-                                        </Link>
-                                    </Button>
-                                    {canManage && (
-                                        <Form
-                                            {...QuestionnaireTemplateController.copy.form(
-                                                {
+        <div className="flex flex-col gap-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>
+                        {description}
+                        {templates.total > 0 && (
+                            <>
+                                {' '}
+                                · {templates.total}{' '}
+                                {templates.total === 1
+                                    ? 'template'
+                                    : 'templates'}
+                            </>
+                        )}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {rows.length === 0 ? (
+                        <EmptyState title={empty} />
+                    ) : (
+                        <div className="divide-y rounded-md border">
+                            {rows.map((template) => (
+                                <div
+                                    key={template.id}
+                                    className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                                >
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Link
+                                                href={showTemplate({
                                                     tenant: currentWorkspace,
                                                     template: template.id,
-                                                },
-                                            )}
+                                                })}
+                                                className="font-medium hover:underline"
+                                            >
+                                                {template.name}
+                                            </Link>
+                                            <Badge variant="secondary">
+                                                {template.category_label}
+                                            </Badge>
+                                        </div>
+                                        {template.description && (
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                {template.description}
+                                            </p>
+                                        )}
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {template.items_count} items
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            asChild
                                         >
-                                            {({ processing }) => (
-                                                <Button
-                                                    type="submit"
-                                                    size="sm"
-                                                    variant="secondary"
-                                                    disabled={processing}
-                                                >
-                                                    Copy to my firm
-                                                </Button>
-                                            )}
-                                        </Form>
-                                    )}
+                                            <Link
+                                                href={showTemplate({
+                                                    tenant: currentWorkspace,
+                                                    template: template.id,
+                                                })}
+                                            >
+                                                {template.is_system
+                                                    ? 'View'
+                                                    : 'Edit'}
+                                            </Link>
+                                        </Button>
+                                        {canManage && (
+                                            <Form
+                                                {...QuestionnaireTemplateController.copy.form(
+                                                    {
+                                                        tenant: currentWorkspace,
+                                                        template: template.id,
+                                                    },
+                                                )}
+                                            >
+                                                {({ processing }) => (
+                                                    <Button
+                                                        type="submit"
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        disabled={processing}
+                                                    >
+                                                        Copy to my firm
+                                                    </Button>
+                                                )}
+                                            </Form>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+            <IndexPagination paginator={templates} />
+        </div>
     );
 }

@@ -16,6 +16,7 @@ import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { show } from '@/routes/workspaces/dossiers';
+import type { Paginated } from '@/types/pagination';
 
 /**
  * Full dossier list for the dossiers index page.
@@ -23,23 +24,25 @@ import { show } from '@/routes/workspaces/dossiers';
 export default function DossiersListCard({
     dossiers,
 }: {
-    dossiers: DossierSummary[];
+    dossiers: Paginated<DossierSummary>;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const rows = dossiers.data;
+    const total = dossiers.total;
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>{t('All dossiers')}</CardTitle>
                 <CardDescription>
-                    {dossiers.length === 1
+                    {total === 1
                         ? t('1 dossier')
-                        : t(':count dossiers', { count: dossiers.length })}
+                        : t(':count dossiers', { count: total })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {dossiers.length === 0 ? (
+                {rows.length === 0 ? (
                     <EmptyState
                         title={t(
                             'Create a dossier to start collecting documents.',
@@ -47,7 +50,7 @@ export default function DossiersListCard({
                     />
                 ) : (
                     <div className="divide-y rounded-md border">
-                        {dossiers.map((dossier) => (
+                        {rows.map((dossier) => (
                             <Link
                                 key={dossier.id}
                                 href={show({

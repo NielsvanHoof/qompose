@@ -10,7 +10,9 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Queries\Notifications\GetWorkspaceNotificationsForUser;
 use App\Queries\Tenancy\GetWorkspaceNavigationForUser;
+use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Middleware;
 
@@ -39,6 +41,27 @@ final class HandleInertiaRequests extends Middleware
     public function version(Request $request): ?string
     {
         return parent::version($request);
+    }
+
+    /**
+     * Keep Spatie filter[key] brackets readable in the address bar.
+     *
+     * Request::fullUrl() percent-encodes [ and ] as %5B/%5D. Inertia syncs
+     * page.url into history after each visit, so we only unescape brackets
+     * and leave other encodings (e.g. %26) intact.
+     *
+     * @see https://inertiajs.com/docs/v3/the-basics/routing
+     */
+    public function urlResolver(): Closure
+    {
+        return function (Request $request): string {
+            $url = Str::start(
+                Str::after($request->fullUrl(), $request->getSchemeAndHttpHost()),
+                '/',
+            );
+
+            return str_replace(['%5B', '%5D'], ['[', ']'], $url);
+        };
     }
 
     /**

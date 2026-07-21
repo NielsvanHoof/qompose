@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Laravel\Scout\Searchable;
 
 /**
  * Questionnaire item on a dossier (file upload, text, or yes/no).
@@ -51,7 +52,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 final class DocumentRequest extends Model
 {
     /** @use HasFactory<DocumentRequestFactory> */
-    use BelongsToTenant, HasFactory;
+    use BelongsToTenant, HasFactory, Searchable;
 
     /**
      * @var array<string, mixed>
@@ -61,6 +62,20 @@ final class DocumentRequest extends Model
         'status' => 'pending',
         'sort_order' => 0,
     ];
+
+    /**
+     * Columns Scout's database engine searches with LIKE.
+     *
+     * @return array{id: int, title: string, instructions: string}
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'instructions' => $this->instructions ?? '',
+        ];
+    }
 
     /**
      * @return BelongsTo<Dossier, $this>

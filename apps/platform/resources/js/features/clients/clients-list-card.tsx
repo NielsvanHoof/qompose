@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/card';
 import type { ClientSummary } from '@/features/clients/types';
 import { useTranslation } from '@/hooks/use-translation';
+import type { Paginated } from '@/types/pagination';
 
 /**
  * Client list for the clients index page.
@@ -15,28 +16,30 @@ import { useTranslation } from '@/hooks/use-translation';
 export default function ClientsListCard({
     clients,
 }: {
-    clients: ClientSummary[];
+    clients: Paginated<ClientSummary>;
 }) {
     const { t } = useTranslation();
+    const rows = clients.data;
+    const total = clients.total;
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>{t('All clients')}</CardTitle>
                 <CardDescription>
-                    {clients.length === 1
+                    {total === 1
                         ? t('1 client')
-                        : t(':count clients', { count: clients.length })}
+                        : t(':count clients', { count: total })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {clients.length === 0 ? (
+                {rows.length === 0 ? (
                     <EmptyState
                         title={t('Add your first client to create a dossier.')}
                     />
                 ) : (
                     <div className="divide-y rounded-md border">
-                        {clients.map((client) => (
+                        {rows.map((client) => (
                             <div
                                 key={client.id}
                                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"

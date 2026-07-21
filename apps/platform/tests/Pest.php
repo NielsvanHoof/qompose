@@ -48,15 +48,26 @@ pest()->presets()->custom('qompose', function () {
 
         expect('App\Queries')
             ->classes()
-            ->toBeFinal(),
+            ->toBeFinal()
+            ->ignoring([
+                'App\Queries\PaginatedIndexQuery',
+            ]),
 
         expect('App\Queries')
             ->classes()
-            ->toHaveMethod('handle'),
+            ->toHaveMethod('handle')
+            ->ignoring([
+                'App\Queries\PaginatedIndexQuery',
+                'App\Queries\Filters',
+            ]),
 
         expect('App\Queries')
             ->classes()
-            ->not->toHaveMethod('__invoke'),
+            ->not->toHaveMethod('__invoke')
+            ->ignoring([
+                'App\Queries\PaginatedIndexQuery',
+                'App\Queries\Filters',
+            ]),
 
         expect('App\Http\Controllers\Controller')
             ->toBeAbstract(),

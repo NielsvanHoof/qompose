@@ -12,6 +12,7 @@ import type { ActivityLogEntry } from '@/features/audit/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
+import type { Paginated } from '@/types/pagination';
 
 type Translate = (
     key: string,
@@ -24,27 +25,29 @@ type Translate = (
 export default function ActivityLogCard({
     activities,
 }: {
-    activities: ActivityLogEntry[];
+    activities: Paginated<ActivityLogEntry>;
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const rows = activities.data;
+    const total = activities.total;
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>{t('Recent activity')}</CardTitle>
                 <CardDescription>
-                    {activities.length === 0
+                    {total === 0
                         ? t('No audit events yet')
-                        : activities.length === 1
-                          ? t('Latest 1 event')
-                          : t('Latest :count events', {
-                                count: activities.length,
+                        : total === 1
+                          ? t('1 event')
+                          : t(':count events', {
+                                count: total,
                             })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {activities.length === 0 ? (
+                {rows.length === 0 ? (
                     <EmptyState
                         title={t(
                             'Audit events will appear here as your team works in this workspace.',
@@ -52,7 +55,7 @@ export default function ActivityLogCard({
                     />
                 ) : (
                     <div className="divide-y rounded-md border">
-                        {activities.map((activity) => (
+                        {rows.map((activity) => (
                             <div
                                 key={activity.id}
                                 className="flex flex-col gap-2 px-4 py-3"

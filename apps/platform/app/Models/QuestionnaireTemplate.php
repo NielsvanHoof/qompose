@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Scout\Searchable;
 
 /**
  * Reusable questionnaire pack — system-wide (tenant_id null) or firm-owned.
@@ -33,7 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 final class QuestionnaireTemplate extends Model
 {
     /** @use HasFactory<QuestionnaireTemplateFactory> */
-    use HasFactory;
+    use HasFactory, Searchable;
 
     /**
      * @var array<string, mixed>
@@ -64,6 +65,20 @@ final class QuestionnaireTemplate extends Model
             $builder->where('tenant_id', null)
                 ->orWhere('tenant_id', $tenant->getKey());
         });
+    }
+
+    /**
+     * Columns Scout's database engine searches with LIKE.
+     *
+     * @return array{id: int, name: string, description: string}
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'description' => $this->description ?? '',
+        ];
     }
 
     public function isSystem(): bool

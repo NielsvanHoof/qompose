@@ -62,19 +62,21 @@ test('staff can view the media library with pending and uploaded documents', fun
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/media/index')
             ->where('can_download', true)
-            ->has('documents', 2)
-            ->where('documents.0.title', fn (string $title) => in_array($title, [
+            ->has('documents.data', 2)
+            ->where('documents.total', 2)
+            ->has('indexQuery')
+            ->where('documents.data.0.title', fn (string $title) => in_array($title, [
                 $pending->title,
                 $uploadedRequest->title,
             ], true))
-            ->where('documents', fn ($documents) => collect($documents)->contains(
+            ->where('documents.data', fn ($documents) => collect($documents)->contains(
                 fn (array $document): bool => $document['title'] === 'Pending payslip'
                     && $document['status'] === 'pending'
                     && $document['uploaded_document'] === null
                     && $document['client_name'] === $client->name
                     && $document['dossier']['id'] === $dossier->id,
             ))
-            ->where('documents', fn ($documents) => collect($documents)->contains(
+            ->where('documents.data', fn ($documents) => collect($documents)->contains(
                 fn (array $document): bool => $document['title'] === 'Uploaded ID'
                     && $document['status'] === 'submitted'
                     && $document['uploaded_document']['original_filename'] === 'passport.pdf',
@@ -117,8 +119,9 @@ test('media library does not include document requests from another tenant', fun
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/media/index')
-            ->has('documents', 1)
-            ->where('documents.0.title', 'Own request'));
+            ->has('documents.data', 1)
+            ->where('documents.total', 1)
+            ->where('documents.data.0.title', 'Own request'));
 });
 
 test('reviewer can browse the media library but cannot download', function () {
@@ -162,7 +165,8 @@ test('reviewer can browse the media library but cannot download', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('workspaces/media/index')
             ->where('can_download', false)
-            ->has('documents', 1));
+            ->has('documents.data', 1)
+            ->where('documents.total', 1));
 
     $this->get(workspaceRoute(
         'workspaces.uploaded-documents.download',
