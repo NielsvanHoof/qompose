@@ -36,12 +36,22 @@ final class ClientChangesRequestedNotification extends Notification implements S
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->firmName}: changes requested for {$this->dossierTitle}")
-            ->greeting("Hello {$this->clientName},")
-            ->line("{$this->firmName} has reviewed your submission for “{$this->dossierTitle}”.")
-            ->line("Changes are needed for “{$this->documentRequestTitle}”.")
-            ->line('Open the secure portal using the link from your original invitation to read the feedback and submit the corrected information.')
-            ->line('For your security, the review feedback is only shown inside the portal.')
-            ->line('If you did not expect this email, contact the firm directly.');
+            ->subject(__(':firm: changes requested for :title', [
+                'firm' => $this->firmName,
+                'title' => $this->dossierTitle,
+            ]))
+            ->greeting(__('Hello :name,', [
+                'name' => $this->clientName,
+            ]))
+            ->line(__(':firm has reviewed your submission for “:title”.', [
+                'firm' => $this->firmName,
+                'title' => $this->dossierTitle,
+            ]))
+            ->line(__('Changes are needed for “:item”.', [
+                'item' => $this->documentRequestTitle,
+            ]))
+            ->line(__('Open the secure portal using the link from your original invitation to read the feedback and submit the corrected information.'))
+            ->line(__('For your security, the review feedback is only shown inside the portal.'))
+            ->line(__('If you did not expect this email, contact the firm directly.'));
     }
 }

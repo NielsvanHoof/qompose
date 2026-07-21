@@ -39,6 +39,7 @@ test('shared authenticated user data is explicitly projected', function () {
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'locale' => $user->getAttributes()['locale'] ?? null,
             ]));
 });
 

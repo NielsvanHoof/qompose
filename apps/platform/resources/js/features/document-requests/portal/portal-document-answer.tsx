@@ -4,6 +4,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import { useTranslation } from '@/hooks/use-translation';
 import { inlinePortalActionOptions } from '@/lib/inline-portal-action-options';
 
 /**
@@ -14,6 +15,8 @@ export function PortalTextDocumentAnswer({
 }: {
     documentRequest: PortalDocumentRequest;
 }) {
+    const { t } = useTranslation();
+
     return (
         <Form
             {...ClientPortalAnswerController.store.form({
@@ -26,7 +29,7 @@ export function PortalTextDocumentAnswer({
                 <>
                     <div className="grid gap-2">
                         <Label htmlFor={`answer-${documentRequest.id}`}>
-                            Your answer
+                            {t('Your answer')}
                         </Label>
                         <textarea
                             id={`answer-${documentRequest.id}`}
@@ -40,8 +43,8 @@ export function PortalTextDocumentAnswer({
                     </div>
                     <Button type="submit" disabled={processing}>
                         {documentRequest.answer_text
-                            ? 'Update answer'
-                            : 'Submit answer'}
+                            ? t('Update answer')
+                            : t('Submit answer')}
                     </Button>
                 </>
             )}
@@ -57,18 +60,20 @@ export function PortalBooleanDocumentAnswer({
 }: {
     documentRequest: PortalDocumentRequest;
 }) {
+    const { t } = useTranslation();
+
     return (
         <div className="flex flex-wrap gap-2">
             <BooleanAnswerButton
                 documentRequestId={documentRequest.id}
                 value={true}
-                label="Yes"
+                label={t('Yes')}
                 active={documentRequest.answer_boolean === true}
             />
             <BooleanAnswerButton
                 documentRequestId={documentRequest.id}
                 value={false}
-                label="No"
+                label={t('No')}
                 active={documentRequest.answer_boolean === false}
             />
         </div>

@@ -1,5 +1,5 @@
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import EmptyState from '@/components/empty-state';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -8,11 +8,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { documentRequestStatusLabel } from '@/features/document-requests/document-request-status';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
-import type {
-    DocumentRequestStatus,
-    PortalDocumentRequest,
-} from '@/features/document-requests/types';
+import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Client-portal questionnaire with uploads and typed answers.
@@ -24,6 +23,7 @@ export default function PortalDocumentRequestsCard({
     firmName: string;
     documentRequests: PortalDocumentRequest[];
 }) {
+    const { t } = useTranslation();
     const submittedCount = documentRequests.filter(
         (item) => item.status === 'submitted' || item.status === 'accepted',
     ).length;
@@ -34,17 +34,22 @@ export default function PortalDocumentRequestsCard({
     return (
         <Card className="border-primary/10 shadow-sm">
             <CardHeader>
-                <CardTitle>Questionnaire</CardTitle>
+                <CardTitle>{t('Questionnaire')}</CardTitle>
                 <CardDescription>
-                    Complete each item below. Submitted items are locked while
-                    they are reviewed; if changes are requested, correct and
-                    resubmit them.
+                    {t(
+                        'Complete each item below. Submitted items are locked while they are reviewed; if changes are requested, correct and resubmit them.',
+                    )}
                     {documentRequests.length > 0 && (
                         <>
                             {' '}
-                            Progress: {submittedCount} /{' '}
-                            {documentRequests.length} answered · {approvedCount}{' '}
-                            approved
+                            {t(
+                                'Progress: :submitted / :total answered · :approved approved',
+                                {
+                                    submitted: submittedCount,
+                                    total: documentRequests.length,
+                                    approved: approvedCount,
+                                },
+                            )}
                         </>
                     )}
                 </CardDescription>
@@ -52,7 +57,10 @@ export default function PortalDocumentRequestsCard({
             <CardContent>
                 {documentRequests.length === 0 ? (
                     <EmptyState
-                        title={`Nothing has been requested yet. Check back later or contact ${firmName}.`}
+                        title={t(
+                            'Nothing has been requested yet. Check back later or contact :firm.',
+                            { firm: firmName },
+                        )}
                     />
                 ) : (
                     <div className="divide-y rounded-md border">
@@ -68,11 +76,11 @@ export default function PortalDocumentRequestsCard({
                                                 {documentRequest.title}
                                             </p>
                                             <Badge variant="outline">
-                                                {
+                                                {t(
                                                     getQuestionnaireItemTypeDefinition(
                                                         documentRequest.type,
-                                                    ).label
-                                                }
+                                                    ).label,
+                                                )}
                                             </Badge>
                                         </div>
                                         {documentRequest.instructions && (
@@ -82,7 +90,10 @@ export default function PortalDocumentRequestsCard({
                                         )}
                                     </div>
                                     <Badge variant="outline">
-                                        {statusLabel(documentRequest.status)}
+                                        {documentRequestStatusLabel(
+                                            documentRequest.status,
+                                            t,
+                                        )}
                                     </Badge>
                                 </div>
 
@@ -90,7 +101,7 @@ export default function PortalDocumentRequestsCard({
                                     documentRequest.rejection_reason && (
                                         <Alert variant="destructive">
                                             <AlertTitle>
-                                                Changes requested
+                                                {t('Changes requested')}
                                             </AlertTitle>
                                             <AlertDescription>
                                                 {
@@ -108,11 +119,13 @@ export default function PortalDocumentRequestsCard({
                                 {!documentRequest.can_respond &&
                                 documentRequest.status === 'submitted' ? (
                                     <p className="text-sm text-muted-foreground">
-                                        Submitted and waiting for review.
+                                        {t('Submitted and waiting for review.')}
                                     </p>
                                 ) : documentRequest.status === 'accepted' ? (
                                     <p className="text-sm text-success-foreground">
-                                        Approved by {firmName}.
+                                        {t('Approved by :firm.', {
+                                            firm: firmName,
+                                        })}
                                     </p>
                                 ) : null}
                             </div>
@@ -122,10 +135,6 @@ export default function PortalDocumentRequestsCard({
             </CardContent>
         </Card>
     );
-}
-
-function statusLabel(status: DocumentRequestStatus): string {
-    return status === 'accepted' ? 'approved' : status.replaceAll('_', ' ');
 }
 
 /**

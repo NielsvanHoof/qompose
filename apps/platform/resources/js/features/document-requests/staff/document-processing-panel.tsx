@@ -3,11 +3,13 @@ import UploadedDocumentController from '@/actions/App/Http/Controllers/Dossiers/
 import ErrorState from '@/components/error-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { documentProcessingStatusLabel } from '@/features/document-requests/document-processing-status';
 import type {
     DocumentProcessingStatus,
     UploadedDocument,
 } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';
 
@@ -22,6 +24,7 @@ export default function DocumentProcessingPanel({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
     const isComplete = uploadedDocument.processing_status === 'completed';
 
     return (
@@ -37,10 +40,12 @@ export default function DocumentProcessingPanel({
                                 uploadedDocument.processing_status,
                             )}
                         >
-                            OCR{' '}
-                            {processingLabel(
-                                uploadedDocument.processing_status,
-                            )}
+                            {t('OCR :status', {
+                                status: documentProcessingStatusLabel(
+                                    uploadedDocument.processing_status,
+                                    t,
+                                ),
+                            })}
                         </Badge>
                     </div>
                     <p className="text-muted-foreground">
@@ -57,7 +62,7 @@ export default function DocumentProcessingPanel({
                                     uploadedDocument: uploadedDocument.id,
                                 })}
                             >
-                                View extraction
+                                {t('View extraction')}
                             </Link>
                         </Button>
                     )}
@@ -69,7 +74,7 @@ export default function DocumentProcessingPanel({
                                     uploadedDocument: uploadedDocument.id,
                                 })}
                             >
-                                Download
+                                {t('Download')}
                             </a>
                         </Button>
                     )}
@@ -80,7 +85,7 @@ export default function DocumentProcessingPanel({
                 uploadedDocument.processing_error && (
                     <ErrorState
                         variant="inline"
-                        title="Processing failed"
+                        title={t('Processing failed')}
                         description={uploadedDocument.processing_error}
                     />
                 )}
@@ -88,15 +93,11 @@ export default function DocumentProcessingPanel({
             {(uploadedDocument.processing_status === 'pending' ||
                 uploadedDocument.processing_status === 'processing') && (
                 <p className="text-muted-foreground">
-                    Analyzing document structure (forms and tables)…
+                    {t('Analyzing document structure (forms and tables)…')}
                 </p>
             )}
         </div>
     );
-}
-
-function processingLabel(status: DocumentProcessingStatus): string {
-    return status.replaceAll('_', ' ');
 }
 
 function processingBadgeVariant(

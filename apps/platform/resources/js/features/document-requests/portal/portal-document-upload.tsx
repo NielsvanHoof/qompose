@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import { useTranslation } from '@/hooks/use-translation';
 import { inlinePortalActionOptions } from '@/lib/inline-portal-action-options';
 
 /**
@@ -17,6 +18,7 @@ export default function PortalDocumentUpload({
 }: {
     documentRequest: PortalDocumentRequest;
 }) {
+    const { t } = useTranslation();
     const form = useForm<{ document: File | null }>({
         document: null,
     });
@@ -42,8 +44,8 @@ export default function PortalDocumentUpload({
                 <div className="grid min-w-48 flex-1 gap-1">
                     <Label htmlFor={`document-${documentRequest.id}`}>
                         {documentRequest.uploaded_document
-                            ? 'Replace file'
-                            : 'Upload file'}
+                            ? t('Replace file')
+                            : t('Upload file')}
                     </Label>
                     <Input
                         id={`document-${documentRequest.id}`}
@@ -62,7 +64,7 @@ export default function PortalDocumentUpload({
                     size="sm"
                     disabled={form.processing || !form.data.document}
                 >
-                    {form.processing ? 'Uploading…' : 'Upload'}
+                    {form.processing ? t('Uploading…') : t('Upload')}
                 </Button>
             </div>
             {form.progress && (

@@ -5,6 +5,7 @@ import EmptyState from '@/components/empty-state';
 import Heading from '@/components/heading';
 import PasskeyItem from '@/features/security/passkey-item';
 import PasskeyRegistration from '@/features/security/passkey-register';
+import { useTranslation } from '@/hooks/use-translation';
 import type { Passkey } from '@/types/auth';
 
 export type Props = {
@@ -14,6 +15,7 @@ export type Props = {
 
 export default function ManagePasskeys(props: Props) {
     const passkeys = props.passkeys ?? [];
+    const { t } = useTranslation();
 
     const handleDelete = (id: number, onError: () => void) => {
         router.delete(destroy.url(id), {
@@ -35,8 +37,8 @@ export default function ManagePasskeys(props: Props) {
         <div className="space-y-6">
             <Heading
                 variant="small"
-                title="Passkeys"
-                description="Manage your passkeys for passwordless sign-in"
+                title={t('Passkeys')}
+                description={t('Manage your passkeys for passwordless sign-in')}
             />
 
             <div className="overflow-hidden rounded-lg border border-border">
@@ -52,8 +54,10 @@ export default function ManagePasskeys(props: Props) {
                     <EmptyState
                         variant="panel"
                         icon={KeyRound}
-                        title="No passkeys yet"
-                        description="Add a passkey to sign in without a password"
+                        title={t('No passkeys yet')}
+                        description={t(
+                            'Add a passkey to sign in without a password',
+                        )}
                     />
                 )}
             </div>

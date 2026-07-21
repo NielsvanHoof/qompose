@@ -8,31 +8,37 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import CreateFirmForm from '@/features/workspaces/create-firm-form';
+import { useTranslation } from '@/hooks/use-translation';
 import { store } from '@/routes/onboarding/firm';
 
 /**
  * First-run card to create the accounting firm.
  */
 export default function FirmOnboardingCard() {
+    const { t } = useTranslation();
+
     return (
         <Card className="w-full">
             <CardHeader>
                 <Building2 className="size-8 text-muted-foreground" />
-                <CardTitle>Set up your firm</CardTitle>
+                <CardTitle>{t('Set up your firm')}</CardTitle>
                 <CardDescription>
-                    Start by adding the accounting firm that will manage client
-                    dossiers.
+                    {t(
+                        'Start by adding the accounting firm that will manage client dossiers.',
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <Heading
-                    title="What is your firm called?"
-                    description="Next, you will add your first client and create a dossier."
+                    title={t('What is your firm called?')}
+                    description={t(
+                        'Next, you will add your first client and create a dossier.',
+                    )}
                 />
 
                 <CreateFirmForm
                     action={store.form()}
-                    submitLabel="Continue to your first client"
+                    submitLabel={t('Continue to your first client')}
                 />
             </CardContent>
         </Card>

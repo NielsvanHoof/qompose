@@ -7,6 +7,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import type { DocumentRequest } from '@/features/document-requests/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Invite-tab checklist: which questionnaire items still need a client response.
@@ -16,6 +17,7 @@ export default function WaitingItemsSummary({
 }: {
     documentRequests: DocumentRequest[];
 }) {
+    const { t } = useTranslation();
     const waiting = documentRequests.filter(
         (request) =>
             request.status === 'pending' || request.status === 'rejected',
@@ -24,14 +26,18 @@ export default function WaitingItemsSummary({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Still waiting</CardTitle>
+                <CardTitle>{t('Still waiting')}</CardTitle>
                 <CardDescription>
-                    Items the client still needs to submit or update.
+                    {t('Items the client still needs to submit or update.')}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {waiting.length === 0 ? (
-                    <EmptyState title="Nothing waiting — switch to Review when uploads arrive." />
+                    <EmptyState
+                        title={t(
+                            'Nothing waiting — switch to Review when uploads arrive.',
+                        )}
+                    />
                 ) : (
                     <ul className="space-y-2 text-sm">
                         {waiting.map((request) => (
@@ -44,8 +50,8 @@ export default function WaitingItemsSummary({
                                 </span>
                                 <span className="shrink-0 text-xs text-muted-foreground capitalize">
                                     {request.status === 'rejected'
-                                        ? 'changes requested'
-                                        : 'pending'}
+                                        ? t('Changes requested')
+                                        : t('Pending')}
                                 </span>
                             </li>
                         ))}

@@ -45,12 +45,22 @@ final class ClientPortalInviteNotification extends Notification implements Shoul
         }
 
         return (new MailMessage)
-            ->subject("{$this->firmName}: documents requested for {$this->dossier->title}")
-            ->greeting("Hello {$client->name},")
-            ->line("{$this->firmName} has asked you to upload documents for “{$this->dossier->title}”.")
-            ->line('Open the secure portal with the button below. No account or password is required.')
-            ->action('Open document portal', $this->portalUrl)
-            ->line('This link expires on '.$this->expiresAt->timezone(config('app.timezone'))->format('j F Y, H:i').'.')
-            ->line('If you did not expect this email, you can ignore it.');
+            ->subject(__(':firm: documents requested for :title', [
+                'firm' => $this->firmName,
+                'title' => $this->dossier->title,
+            ]))
+            ->greeting(__('Hello :name,', [
+                'name' => $client->name,
+            ]))
+            ->line(__(':firm has asked you to upload documents for “:title”.', [
+                'firm' => $this->firmName,
+                'title' => $this->dossier->title,
+            ]))
+            ->line(__('Open the secure portal with the button below. No account or password is required.'))
+            ->action(__('Open document portal'), $this->portalUrl)
+            ->line(__('This link expires on :expires.', [
+                'expires' => $this->expiresAt->timezone(config('app.timezone'))->format('j F Y, H:i'),
+            ]))
+            ->line(__('If you did not expect this email, you can ignore it.'));
     }
 }

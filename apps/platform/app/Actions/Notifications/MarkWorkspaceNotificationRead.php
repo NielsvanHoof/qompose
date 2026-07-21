@@ -17,8 +17,10 @@ final class MarkWorkspaceNotificationRead
 {
     public function handle(User $user, Tenant $tenant, string $notificationId): DatabaseNotification
     {
-        $notification = $user->notifications()
+        $notification = DatabaseNotification::query()
             ->whereKey($notificationId)
+            ->where('notifiable_type', $user->getMorphClass())
+            ->where('notifiable_id', $user->getKey())
             ->where('type', ClientQuestionnaireCompletedNotification::class)
             ->where('data->tenant_id', (string) $tenant->getKey())
             ->first();

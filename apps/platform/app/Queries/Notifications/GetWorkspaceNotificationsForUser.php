@@ -20,7 +20,7 @@ final class GetWorkspaceNotificationsForUser
     /**
      * @return array{
      *     unread_count: int,
-     *     items: list<array{
+     *     items: array<int, array{
      *         id: string,
      *         type: string,
      *         message: string,
@@ -35,18 +35,23 @@ final class GetWorkspaceNotificationsForUser
      */
     public function handle(User $user, Tenant $tenant): array
     {
-        $baseQuery = $user->notifications()
+        $baseQuery = DatabaseNotification::query()
+            ->where('notifiable_type', $user->getMorphClass())
+            ->where('notifiable_id', $user->getKey())
             ->where('type', ClientQuestionnaireCompletedNotification::class)
             // ->> returns text on pgsql; bind as string to avoid text = integer errors.
             ->where('data->tenant_id', (string) $tenant->getKey());
 
-        $unreadCount = (clone $baseQuery)->whereNull('read_at')->count();
+        $unreadQuery = clone $baseQuery;
+        $unreadQuery->getQuery()->whereNull('read_at');
+        $unreadCount = $unreadQuery->toBase()->count();
+
+        $recentQuery = clone $baseQuery;
+        $recentQuery->latest();
+        $recentQuery->getQuery()->limit(self::Limit);
 
         /** @var Collection<int, DatabaseNotification> $notifications */
-        $notifications = (clone $baseQuery)
-            ->latest()
-            ->limit(self::Limit)
-            ->get();
+        $notifications = $recentQuery->get();
 
         return [
             'unread_count' => $unreadCount,
@@ -76,7 +81,7 @@ final class GetWorkspaceNotificationsForUser
         $data = $notification->data;
 
         return [
-            'id' => (string) $notification->id,
+            'id' => $notification->id,
             'type' => (string) ($data['type'] ?? 'client_questionnaire_completed'),
             'message' => (string) ($data['message'] ?? ''),
             'dossier_id' => (int) ($data['dossier_id'] ?? 0),

@@ -1,5 +1,8 @@
 import type { DossierStatus } from '@/features/dossiers/types';
 
+/**
+ * English keys for dossier statuses. Pass through `t()` for display.
+ */
 export const DOSSIER_STATUS_LABELS: Record<DossierStatus, string> = {
     draft: 'Draft',
     awaiting_client: 'Awaiting client',
@@ -10,8 +13,14 @@ export const DOSSIER_STATUS_LABELS: Record<DossierStatus, string> = {
 export type DossierStatusBadgeVariant =
     'default' | 'secondary' | 'destructive' | 'outline';
 
-export function dossierStatusLabel(status: DossierStatus): string {
-    return DOSSIER_STATUS_LABELS[status];
+/**
+ * Resolve a translated label for a dossier status.
+ */
+export function dossierStatusLabel(
+    status: DossierStatus,
+    t: (key: string) => string,
+): string {
+    return t(DOSSIER_STATUS_LABELS[status]);
 }
 
 export function dossierStatusBadgeVariant(

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Actions\Localization\LoadFrontendTranslations;
+use App\Enums\Locale;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Queries\Notifications\GetWorkspaceNotificationsForUser;
@@ -26,6 +28,7 @@ final class HandleInertiaRequests extends Middleware
     public function __construct(
         private readonly GetWorkspaceNavigationForUser $getWorkspaceNavigationForUser,
         private readonly GetWorkspaceNotificationsForUser $getWorkspaceNotificationsForUser,
+        private readonly LoadFrontendTranslations $loadFrontendTranslations,
     ) {}
 
     /**
@@ -49,15 +52,27 @@ final class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        $locale = app()->getLocale();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'locale' => $locale,
+            'available_locales' => array_map(
+                fn (Locale $availableLocale): array => [
+                    'code' => $availableLocale->value,
+                    'label' => $availableLocale->label(),
+                ],
+                Locale::cases(),
+            ),
+            'translations' => fn (): array => $this->loadFrontendTranslations->handle($locale),
             'auth' => [
                 'user' => $user instanceof User
                     ? [
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
+                        'locale' => $user->getAttributes()['locale'] ?? null,
                     ]
                     : null,
             ],

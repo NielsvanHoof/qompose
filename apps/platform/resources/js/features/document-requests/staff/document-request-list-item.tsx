@@ -7,15 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { documentRequestStatusLabel } from '@/features/document-requests/document-request-status';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
 import QuestionnaireItemTypeSelect from '@/features/document-requests/questionnaire-item-type-select';
 import DocumentRequestReview from '@/features/document-requests/staff/document-request-review';
-import type {
-    DocumentRequest,
-    DocumentRequestStatus,
-} from '@/features/document-requests/types';
+import type { DocumentRequest } from '@/features/document-requests/types';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 type DocumentRequestListItemProps = {
@@ -41,6 +40,7 @@ export default function DocumentRequestListItem({
     DragHandle,
 }: DocumentRequestListItemProps) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
     const typeDefinition = getQuestionnaireItemTypeDefinition(
         documentRequest.type,
     );
@@ -51,9 +51,9 @@ export default function DocumentRequestListItem({
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-1">
                     <DragHandle />
-                    <Badge variant="outline">{typeDefinition.label}</Badge>
+                    <Badge variant="outline">{t(typeDefinition.label)}</Badge>
                     <Badge variant="secondary">
-                        {statusLabel(documentRequest.status)}
+                        {documentRequestStatusLabel(documentRequest.status, t)}
                     </Badge>
                 </div>
                 {canEdit && (
@@ -71,7 +71,9 @@ export default function DocumentRequestListItem({
                                 size="icon"
                                 variant="ghost"
                                 disabled={processing}
-                                aria-label={`Delete ${documentRequest.title}`}
+                                aria-label={t('Delete :title', {
+                                    title: documentRequest.title,
+                                })}
                             >
                                 <Trash2 aria-hidden="true" />
                             </Button>
@@ -99,7 +101,7 @@ export default function DocumentRequestListItem({
                             />
                             <div className="grid gap-2">
                                 <Label htmlFor={`title-${documentRequest.id}`}>
-                                    Title
+                                    {t('Title')}
                                 </Label>
                                 <Input
                                     id={`title-${documentRequest.id}`}
@@ -113,7 +115,7 @@ export default function DocumentRequestListItem({
                                 <Label
                                     htmlFor={`instructions-${documentRequest.id}`}
                                 >
-                                    Instructions
+                                    {t('Instructions')}
                                 </Label>
                                 <textarea
                                     id={`instructions-${documentRequest.id}`}
@@ -132,7 +134,7 @@ export default function DocumentRequestListItem({
                                 disabled={processing}
                                 className="w-fit"
                             >
-                                Save item
+                                {t('Save item')}
                             </Button>
                         </>
                     )}
@@ -154,8 +156,4 @@ export default function DocumentRequestListItem({
             />
         </div>
     );
-}
-
-function statusLabel(status: DocumentRequestStatus): string {
-    return status === 'accepted' ? 'approved' : status.replaceAll('_', ' ');
 }

@@ -42,7 +42,11 @@ final class GetActivityLogIndexData
             ->where('tenant_id', $tenant->id)
             ->with([
                 'causer',
-                'subject' => function (MorphTo $morphTo): void {
+                'subject' => function ($morphTo): void {
+                    if (! $morphTo instanceof MorphTo) {
+                        return;
+                    }
+
                     $morphTo->morphWith([
                         ClientAccessGrant::class => ['dossier:id,title'],
                     ]);

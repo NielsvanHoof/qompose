@@ -10,7 +10,13 @@ import {
 } from '@/components/ui/card';
 import type { ActivityLogEntry } from '@/features/audit/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
+
+type Translate = (
+    key: string,
+    replacements?: Record<string, string | number>,
+) => string;
 
 /**
  * Structured list of recent tenant audit activity.
@@ -21,23 +27,28 @@ export default function ActivityLogCard({
     activities: ActivityLogEntry[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Recent activity</CardTitle>
+                <CardTitle>{t('Recent activity')}</CardTitle>
                 <CardDescription>
                     {activities.length === 0
-                        ? 'No audit events yet'
+                        ? t('No audit events yet')
                         : activities.length === 1
-                          ? 'Latest 1 event'
-                          : `Latest ${activities.length} events`}
+                          ? t('Latest 1 event')
+                          : t('Latest :count events', {
+                                count: activities.length,
+                            })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {activities.length === 0 ? (
                     <EmptyState
-                        title="Audit events will appear here as your team works in this workspace."
+                        title={t(
+                            'Audit events will appear here as your team works in this workspace.',
+                        )}
                     />
                 ) : (
                     <div className="divide-y rounded-md border">
@@ -60,7 +71,7 @@ export default function ActivityLogCard({
                                 </div>
 
                                 <p className="text-sm text-muted-foreground">
-                                    {activity.causer_name ?? 'System'}
+                                    {activity.causer_name ?? t('System')}
                                     {activity.subject && (
                                         <>
                                             {' · '}
@@ -75,12 +86,20 @@ export default function ActivityLogCard({
                                                     className="underline-offset-4 hover:underline"
                                                 >
                                                     {activity.subject.name ??
-                                                        `Dossier #${activity.subject.id}`}
+                                                        t('Dossier #:id', {
+                                                            id: activity.subject
+                                                                .id,
+                                                        })}
                                                 </Link>
                                             ) : (
                                                 <span>
                                                     {activity.subject.name ??
-                                                        `${activity.subject.type} #${activity.subject.id}`}
+                                                        t(':type #:id', {
+                                                            type: activity
+                                                                .subject.type,
+                                                            id: activity.subject
+                                                                .id,
+                                                        })}
                                                 </span>
                                             )}
                                         </>
@@ -96,6 +115,7 @@ export default function ActivityLogCard({
                                             activity.properties.route,
                                             formatAttributeChanges(
                                                 activity.attribute_changes,
+                                                t,
                                             ),
                                         ]
                                             .filter(Boolean)
@@ -116,6 +136,7 @@ export default function ActivityLogCard({
  */
 function formatAttributeChanges(
     changes: ActivityLogEntry['attribute_changes'],
+    t: Translate,
 ): string | null {
     if (!changes) {
         return null;
@@ -132,5 +153,5 @@ function formatAttributeChanges(
         return null;
     }
 
-    return `Changed: ${keys.join(', ')}`;
+    return t('Changed: :keys', { keys: keys.join(', ') });
 }

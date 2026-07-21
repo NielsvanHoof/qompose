@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Settings\LocaleController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Middleware\InitializeTenantFromSession;
@@ -39,6 +40,9 @@ Route::middleware([
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
+
+    Route::get('settings/language', [LocaleController::class, 'edit'])->name('language.edit');
+    Route::patch('settings/language', [LocaleController::class, 'update'])->name('language.update');
 });
 
 Route::get('.well-known/passkey-endpoints', function () {

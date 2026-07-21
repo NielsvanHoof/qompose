@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import type { MediaDocument } from '@/features/media/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 
@@ -27,20 +28,27 @@ export default function MediaDocumentsCard({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>All documents</CardTitle>
+                <CardTitle>{t('All documents')}</CardTitle>
                 <CardDescription>
                     {documents.length === 1
-                        ? '1 document request'
-                        : `${documents.length} document requests`}
+                        ? t('1 document request')
+                        : t(':count document requests', {
+                              count: documents.length,
+                          })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {documents.length === 0 ? (
-                    <EmptyState title="Document requests will appear here once you add them to a dossier." />
+                    <EmptyState
+                        title={t(
+                            'Document requests will appear here once you add them to a dossier.',
+                        )}
+                    />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {documents.map((document) => (
@@ -78,14 +86,14 @@ export default function MediaDocumentsCard({
                                         </p>
                                     ) : (
                                         <p className="mt-1 text-sm text-muted-foreground">
-                                            No file uploaded yet
+                                            {t('No file uploaded yet')}
                                         </p>
                                     )}
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-2">
                                     <Badge variant="secondary">
-                                        {document.status.replaceAll('_', ' ')}
+                                        {statusLabel(document.status, t)}
                                     </Badge>
 
                                     <Button variant="outline" size="sm" asChild>
@@ -96,7 +104,7 @@ export default function MediaDocumentsCard({
                                             })}
                                         >
                                             <FolderOpen />
-                                            Dossier
+                                            {t('Dossier')}
                                         </Link>
                                     </Button>
 
@@ -118,7 +126,7 @@ export default function MediaDocumentsCard({
                                                         },
                                                     )}
                                                 >
-                                                    Download
+                                                    {t('Download')}
                                                 </a>
                                             </Button>
                                         )}
@@ -130,4 +138,24 @@ export default function MediaDocumentsCard({
             </CardContent>
         </Card>
     );
+}
+
+/**
+ * Human-readable labels for document request statuses shown in the media library.
+ * Includes changes_requested for forward-compat even though it is not in the
+ * current DocumentRequestStatus union.
+ */
+function statusLabel(
+    status: string,
+    t: (key: string, replacements?: Record<string, string | number>) => string,
+): string {
+    const labels: Record<string, string> = {
+        pending: t('Pending'),
+        submitted: t('Submitted'),
+        accepted: t('Accepted'),
+        rejected: t('Rejected'),
+        changes_requested: t('Changes requested'),
+    };
+
+    return labels[status] ?? status;
 }

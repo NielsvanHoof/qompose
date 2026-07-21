@@ -31,7 +31,7 @@ export type DossierSummary = {
     id: number;
     title: string;
     reference: string | null;
-    status: string;
+    status: DossierStatus;
     client_name: string;
     updated_at?: string;
 };

@@ -37,11 +37,7 @@ export function WorkspaceNotifications(): React.ReactElement | null {
     return <WorkspaceNotificationsSubscriber slug={currentFirm.slug} />;
 }
 
-function WorkspaceNotificationsSubscriber({
-    slug,
-}: {
-    slug: string;
-}): null {
+function WorkspaceNotificationsSubscriber({ slug }: { slug: string }): null {
     useWorkspaceNotifications(slug);
 
     return null;

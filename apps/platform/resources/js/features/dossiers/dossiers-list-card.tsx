@@ -8,8 +8,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    dossierStatusBadgeVariant,
+    dossierStatusLabel,
+} from '@/features/dossiers/dossier-status';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { show } from '@/routes/workspaces/dossiers';
 
 /**
@@ -21,20 +26,25 @@ export default function DossiersListCard({
     dossiers: DossierSummary[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>All dossiers</CardTitle>
+                <CardTitle>{t('All dossiers')}</CardTitle>
                 <CardDescription>
                     {dossiers.length === 1
-                        ? '1 dossier'
-                        : `${dossiers.length} dossiers`}
+                        ? t('1 dossier')
+                        : t(':count dossiers', { count: dossiers.length })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {dossiers.length === 0 ? (
-                    <EmptyState title="Create a dossier to start collecting documents." />
+                    <EmptyState
+                        title={t(
+                            'Create a dossier to start collecting documents.',
+                        )}
+                    />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {dossiers.map((dossier) => (
@@ -56,8 +66,12 @@ export default function DossiersListCard({
                                             ` · ${dossier.reference}`}
                                     </p>
                                 </div>
-                                <Badge variant="secondary">
-                                    {dossier.status.replace('_', ' ')}
+                                <Badge
+                                    variant={dossierStatusBadgeVariant(
+                                        dossier.status,
+                                    )}
+                                >
+                                    {dossierStatusLabel(dossier.status, t)}
                                 </Badge>
                             </Link>
                         ))}

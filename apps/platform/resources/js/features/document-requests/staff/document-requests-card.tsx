@@ -14,6 +14,7 @@ import DocumentRequestListItem from '@/features/document-requests/staff/document
 import type { DocumentRequest } from '@/features/document-requests/types';
 import type { DossierStatus } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Staff questionnaire editor: edit, drag-reorder, delete, and collect answers.
@@ -34,6 +35,7 @@ export default function DocumentRequestsCard({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
     const canEdit = canManage && dossierStatus !== 'completed';
     const { post, setData } = useHttp({
         document_request_ids: [] as number[],
@@ -55,16 +57,20 @@ export default function DocumentRequestsCard({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Questionnaire</CardTitle>
+                <CardTitle>{t('Questionnaire')}</CardTitle>
                 <CardDescription>
-                    Tailor items for this dossier. Drag the grip to reorder.
-                    Clients upload via the portal. Staff can upload on behalf of
-                    a client when needed (for example email or walk-in).
+                    {t(
+                        'Tailor items for this dossier. Drag the grip to reorder. Clients upload via the portal. Staff can upload on behalf of a client when needed (for example email or walk-in).',
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {documentRequests.length === 0 ? (
-                    <EmptyState title="No items yet. Apply a template or add a request." />
+                    <EmptyState
+                        title={t(
+                            'No items yet. Apply a template or add a request.',
+                        )}
+                    />
                 ) : (
                     <SortableList
                         items={documentRequests}

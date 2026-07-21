@@ -32,7 +32,7 @@ final class DossierCompletionController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Dossier completed.',
+            'message' => __('Dossier completed.'),
         ]);
 
         return to_route(

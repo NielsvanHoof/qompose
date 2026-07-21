@@ -15,6 +15,7 @@ import type { QuestionnaireItemType } from '@/features/document-requests/types';
 
 type QuestionnaireItemTypeDefinition = {
     value: QuestionnaireItemType;
+    /** English translation key — resolve with `t()` before display. */
     label: string;
     StaffContent: ComponentType<StaffDocumentRequestTypeProps>;
     PortalContent: ComponentType<PortalDocumentRequestTypeProps>;
@@ -23,6 +24,7 @@ type QuestionnaireItemTypeDefinition = {
 /**
  * This registry is the frontend source of truth for questionnaire item types.
  * The exhaustive record forces every new type to provide both renderers.
+ * Labels are English keys — resolve with `t()` (or via helpers below).
  */
 const questionnaireItemTypeRegistry = {
     file: {
@@ -46,11 +48,24 @@ const questionnaireItemTypeRegistry = {
 } satisfies Record<QuestionnaireItemType, QuestionnaireItemTypeDefinition>;
 
 /**
- * Ordered definitions are reused by every request type select.
+ * Ordered definitions with English label keys (not yet translated).
+ * Prefer `getQuestionnaireItemTypeDefinitions(t)` when rendering labels.
  */
 export const questionnaireItemTypeDefinitions = Object.values(
     questionnaireItemTypeRegistry,
 );
+
+/**
+ * Ordered definitions with labels resolved through the translation function.
+ */
+export function getQuestionnaireItemTypeDefinitions(
+    t: (key: string) => string,
+): QuestionnaireItemTypeDefinition[] {
+    return questionnaireItemTypeDefinitions.map((def) => ({
+        ...def,
+        label: t(def.label),
+    }));
+}
 
 export function getQuestionnaireItemTypeDefinition(
     type: QuestionnaireItemType,

@@ -9,8 +9,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    dossierStatusBadgeVariant,
+    dossierStatusLabel,
+} from '@/features/dossiers/dossier-status';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     index as dossierIndex,
     show as showDossier,
@@ -25,23 +30,30 @@ export default function RecentDossiersCard({
     dossiers: DossierSummary[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <div>
-                    <CardTitle>Recently updated dossiers</CardTitle>
+                    <CardTitle>{t('Recently updated dossiers')}</CardTitle>
                     <CardDescription>
-                        The latest activity across your firm.
+                        {t('The latest activity across your firm.')}
                     </CardDescription>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
-                    <Link href={dossierIndex(currentWorkspace)}>View all</Link>
+                    <Link href={dossierIndex(currentWorkspace)}>
+                        {t('View all')}
+                    </Link>
                 </Button>
             </CardHeader>
             <CardContent>
                 {dossiers.length === 0 ? (
-                    <EmptyState title="Create a dossier to start collecting documents." />
+                    <EmptyState
+                        title={t(
+                            'Create a dossier to start collecting documents.',
+                        )}
+                    />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {dossiers.map((dossier) => (
@@ -63,8 +75,12 @@ export default function RecentDossiersCard({
                                             ` · ${dossier.reference}`}
                                     </p>
                                 </div>
-                                <Badge variant="secondary">
-                                    {dossier.status.replace('_', ' ')}
+                                <Badge
+                                    variant={dossierStatusBadgeVariant(
+                                        dossier.status,
+                                    )}
+                                >
+                                    {dossierStatusLabel(dossier.status, t)}
                                 </Badge>
                             </Link>
                         ))}

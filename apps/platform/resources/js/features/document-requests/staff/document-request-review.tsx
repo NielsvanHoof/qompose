@@ -16,6 +16,7 @@ import {
 import { Label } from '@/components/ui/label';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
 import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
@@ -29,21 +30,30 @@ export default function DocumentRequestReview({
     canReview: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     if (documentRequest.status === 'rejected') {
         return (
             <Alert variant="destructive">
                 <RotateCcw aria-hidden="true" />
-                <AlertTitle>Changes requested</AlertTitle>
+                <AlertTitle>{t('Changes requested')}</AlertTitle>
                 <AlertDescription>
+                    {/* Rejection reason is user-generated — do not translate. */}
                     <p>{documentRequest.rejection_reason}</p>
                     {documentRequest.reviewed_at && (
                         <p>
-                            Reviewed
                             {documentRequest.reviewed_by_name
-                                ? ` by ${documentRequest.reviewed_by_name}`
-                                : ''}{' '}
-                            on {formatDateTime(documentRequest.reviewed_at)}.
+                                ? t('Reviewed by :name on :date.', {
+                                      name: documentRequest.reviewed_by_name,
+                                      date: formatDateTime(
+                                          documentRequest.reviewed_at,
+                                      ),
+                                  })
+                                : t('Reviewed on :date.', {
+                                      date: formatDateTime(
+                                          documentRequest.reviewed_at,
+                                      ),
+                                  })}
                         </p>
                     )}
                 </AlertDescription>
@@ -55,7 +65,7 @@ export default function DocumentRequestReview({
         return (
             <Alert variant="success">
                 <Check aria-hidden="true" />
-                <AlertTitle>Approved</AlertTitle>
+                <AlertTitle>{t('Approved')}</AlertTitle>
                 {documentRequest.reviewed_at && (
                     <AlertDescription>
                         {documentRequest.reviewed_by_name
@@ -81,7 +91,7 @@ export default function DocumentRequestReview({
     return (
         <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 px-3 py-3">
             <p className="mr-auto text-sm text-muted-foreground">
-                This item is ready for review.
+                {t('This item is ready for review.')}
             </p>
 
             <Form
@@ -93,7 +103,7 @@ export default function DocumentRequestReview({
                         <input type="hidden" name="decision" value="accepted" />
                         <Button type="submit" size="sm" disabled={processing}>
                             <Check aria-hidden="true" />
-                            Approve
+                            {t('Approve')}
                         </Button>
                     </>
                 )}
@@ -103,15 +113,16 @@ export default function DocumentRequestReview({
                 <DialogTrigger asChild>
                     <Button type="button" size="sm" variant="outline">
                         <RotateCcw aria-hidden="true" />
-                        Request changes
+                        {t('Request changes')}
                     </Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Request changes</DialogTitle>
+                        <DialogTitle>{t('Request changes')}</DialogTitle>
                         <DialogDescription>
-                            Explain exactly what the client should correct or
-                            upload again.
+                            {t(
+                                'Explain exactly what the client should correct or upload again.',
+                            )}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -133,7 +144,7 @@ export default function DocumentRequestReview({
                                     <Label
                                         htmlFor={`rejection-${documentRequest.id}`}
                                     >
-                                        Feedback for the client
+                                        {t('Feedback for the client')}
                                     </Label>
                                     <textarea
                                         id={`rejection-${documentRequest.id}`}
@@ -141,7 +152,9 @@ export default function DocumentRequestReview({
                                         rows={4}
                                         required
                                         className="rounded-md border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                        placeholder="The document is missing page 2. Please upload the complete statement."
+                                        placeholder={t(
+                                            'The document is missing page 2. Please upload the complete statement.',
+                                        )}
                                     />
                                     <InputError
                                         message={errors.rejection_reason}
@@ -153,7 +166,7 @@ export default function DocumentRequestReview({
                                         variant="destructive"
                                         disabled={processing}
                                     >
-                                        Request changes
+                                        {t('Request changes')}
                                     </Button>
                                 </DialogFooter>
                             </>

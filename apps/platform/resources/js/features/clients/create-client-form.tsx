@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 
 /**
@@ -12,6 +13,7 @@ import { index as clientIndex } from '@/routes/workspaces/clients';
  */
 export default function CreateClientForm() {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     return (
         <Form
@@ -21,35 +23,37 @@ export default function CreateClientForm() {
             {({ errors, processing }) => (
                 <>
                     <div className="grid gap-2">
-                        <Label htmlFor="name">Name</Label>
+                        <Label htmlFor="name">{t('Name')}</Label>
                         <Input
                             id="name"
                             name="name"
                             required
                             autoComplete="name"
-                            placeholder="Jane Client"
+                            placeholder={t('Jane Client')}
                         />
                         <InputError message={errors.name} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
+                        <Label htmlFor="email">{t('Email address')}</Label>
                         <Input
                             id="email"
                             name="email"
                             type="email"
                             required
                             autoComplete="email"
-                            placeholder="jane@example.com"
+                            placeholder={t('jane@example.com')}
                         />
                         <InputError message={errors.email} />
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button disabled={processing}>Create client</Button>
+                        <Button disabled={processing}>
+                            {t('Create client')}
+                        </Button>
                         <Button variant="ghost" asChild>
                             <Link href={clientIndex(currentWorkspace)}>
-                                Cancel
+                                {t('Cancel')}
                             </Link>
                         </Button>
                     </div>

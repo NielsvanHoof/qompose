@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import type { DossierClientOption } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 
@@ -26,18 +27,19 @@ export default function CreateDossierForm({
     clients: DossierClientOption[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     if (clients.length === 0) {
         return (
             <EmptyState
                 className="mt-6"
-                title="Create a client before creating a dossier."
+                title={t('Create a client before creating a dossier.')}
                 variant="panel"
                 bordered
                 action={
                     <Button asChild>
                         <Link href={clientIndex(currentWorkspace)}>
-                            Go to clients
+                            {t('Go to clients')}
                         </Link>
                     </Button>
                 }
@@ -53,10 +55,12 @@ export default function CreateDossierForm({
             {({ errors, processing }) => (
                 <>
                     <div className="grid gap-2">
-                        <Label htmlFor="client_id">Client</Label>
+                        <Label htmlFor="client_id">{t('Client')}</Label>
                         <Select required defaultValue="" name="client_id">
                             <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select a client" />
+                                <SelectValue
+                                    placeholder={t('Select a client')}
+                                />
                             </SelectTrigger>
                             <SelectContent className="space-y-1 bg-background p-1">
                                 {clients.map((client) => (
@@ -79,31 +83,35 @@ export default function CreateDossierForm({
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Dossier name</Label>
+                        <Label htmlFor="title">{t('Dossier name')}</Label>
                         <Input
                             id="title"
                             name="title"
                             required
-                            placeholder="2025 payroll documents"
+                            placeholder={t('2025 payroll documents')}
                         />
                         <InputError message={errors.title} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="reference">Reference (optional)</Label>
+                        <Label htmlFor="reference">
+                            {t('Reference (optional)')}
+                        </Label>
                         <Input
                             id="reference"
                             name="reference"
-                            placeholder="PAY-2025-001"
+                            placeholder={t('PAY-2025-001')}
                         />
                         <InputError message={errors.reference} />
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button disabled={processing}>Create dossier</Button>
+                        <Button disabled={processing}>
+                            {t('Create dossier')}
+                        </Button>
                         <Button variant="ghost" asChild>
                             <Link href={dossierIndex(currentWorkspace)}>
-                                Cancel
+                                {t('Cancel')}
                             </Link>
                         </Button>
                     </div>

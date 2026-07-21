@@ -32,7 +32,7 @@ final class ClientPortalUploadController extends Controller
         $file = $request->file('document');
 
         if ($file === null) {
-            return back()->withErrors(['document' => 'A document file is required.']);
+            return back()->withErrors(['document' => __('A document file is required.')]);
         }
 
         $submitPortalUpload->handle(
@@ -43,7 +43,7 @@ final class ClientPortalUploadController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Document uploaded. Thank you.',
+            'message' => __('Document uploaded. Thank you.'),
         ]);
 
         return to_route('portal.show');

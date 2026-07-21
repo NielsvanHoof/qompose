@@ -10,6 +10,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import NotificationList from '@/features/notifications/notification-list';
+import { useTranslation } from '@/hooks/use-translation';
 import { readAll as readAllNotifications } from '@/routes/workspaces/notifications';
 
 /**
@@ -18,6 +19,7 @@ import { readAll as readAllNotifications } from '@/routes/workspaces/notificatio
  */
 export default function NotificationBell() {
     const { current_firm: currentFirm, notifications } = usePage().props;
+    const { t } = useTranslation();
 
     if (!currentFirm || !notifications) {
         return null;
@@ -49,8 +51,10 @@ export default function NotificationBell() {
                     className="relative size-9"
                     aria-label={
                         unreadCount > 0
-                            ? `Notifications, ${unreadCount} unread`
-                            : 'Notifications'
+                            ? t('Notifications, :count unread', {
+                                  count: unreadCount,
+                              })
+                            : t('Notifications')
                     }
                 >
                     <Bell className="size-5" />
@@ -67,7 +71,7 @@ export default function NotificationBell() {
             <DropdownMenuContent align="end" className="w-80 p-0">
                 <div className="flex items-center justify-between gap-2 px-3 py-2">
                     <DropdownMenuLabel className="p-0">
-                        Notifications
+                        {t('Notifications')}
                     </DropdownMenuLabel>
                     <Button
                         type="button"
@@ -77,7 +81,7 @@ export default function NotificationBell() {
                         disabled={unreadCount === 0}
                         onClick={markAllRead}
                     >
-                        Mark all read
+                        {t('Mark all read')}
                     </Button>
                 </div>
                 <DropdownMenuSeparator className="m-0" />

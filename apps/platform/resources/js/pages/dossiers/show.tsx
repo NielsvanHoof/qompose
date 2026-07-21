@@ -7,8 +7,8 @@ import AddDocumentRequestCard from '@/features/document-requests/staff/add-docum
 import DocumentRequestsCard from '@/features/document-requests/staff/document-requests-card';
 import ApplyTemplateCard from '@/features/dossiers/apply-template-card';
 import {
-    STAGE_HINTS,
-    STAGE_LABELS,
+    dossierStageHint,
+    dossierStageLabel,
     STAGE_ORDER,
 } from '@/features/dossiers/dossier-stage';
 import DossierStageProgress from '@/features/dossiers/dossier-stage-progress';
@@ -21,6 +21,7 @@ import PortalLinkBanner from '@/features/portal/portal-link-banner';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useDossierStageTab } from '@/hooks/use-dossier-stage-tab';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     index as dossierIndex,
     show as showDossier,
@@ -47,6 +48,7 @@ export default function ShowDossier({
     can_download: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
     const [tab, setTab] = useDossierStageTab(dossier.status);
 
     // Poll while OCR is still running so extracted JSON appears without a refresh.
@@ -78,7 +80,7 @@ export default function ShowDossier({
     setLayoutProps({
         breadcrumbs: [
             {
-                title: 'Dossiers',
+                title: t('Dossiers'),
                 href: dossierIndex(currentWorkspace),
             },
             {
@@ -135,7 +137,7 @@ export default function ShowDossier({
                         aria-live="polite"
                         className="text-sm text-muted-foreground"
                     >
-                        {STAGE_HINTS[tab]}
+                        {dossierStageHint(tab, t)}
                     </p>
 
                     {tab === 'prepare' && (
@@ -206,7 +208,12 @@ export default function ShowDossier({
                                     onClick={() => setTab(previousStage)}
                                 >
                                     <ArrowLeft aria-hidden="true" />
-                                    Back to {STAGE_LABELS[previousStage]}
+                                    {t('Back to :stage', {
+                                        stage: dossierStageLabel(
+                                            previousStage,
+                                            t,
+                                        ),
+                                    })}
                                 </Button>
                             ) : (
                                 <span />
@@ -220,13 +227,17 @@ export default function ShowDossier({
                                     disabled={nextDisabled}
                                     onClick={() => setTab(nextStage)}
                                 >
-                                    Next: {STAGE_LABELS[nextStage]}
+                                    {t('Next: :stage', {
+                                        stage: dossierStageLabel(nextStage, t),
+                                    })}
                                     <ArrowRight aria-hidden="true" />
                                 </Button>
                             ) : null}
                             {nextDisabled && (
                                 <p className="text-xs text-muted-foreground">
-                                    Add at least one questionnaire item first.
+                                    {t(
+                                        'Add at least one questionnaire item first.',
+                                    )}
                                 </p>
                             )}
                         </div>

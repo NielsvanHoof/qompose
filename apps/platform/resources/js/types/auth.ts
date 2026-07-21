@@ -2,6 +2,7 @@ export type User = {
     id: number;
     name: string;
     email: string;
+    locale?: string | null;
     avatar?: string;
 };
 

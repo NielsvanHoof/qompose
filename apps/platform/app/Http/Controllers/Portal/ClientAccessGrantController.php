@@ -52,12 +52,12 @@ final class ClientAccessGrantController extends Controller
         if ($sendInvite) {
             Inertia::flash('toast', [
                 'type' => 'success',
-                'message' => 'Client invite queued. Copy the portal link now if you need it again.',
+                'message' => __('Client invite queued. Copy the portal link now if you need it again.'),
             ]);
         } else {
             Inertia::flash('toast', [
                 'type' => 'success',
-                'message' => 'Client access link created. Copy it now — it will not be shown again.',
+                'message' => __('Client access link created. Copy it now — it will not be shown again.'),
             ]);
         }
 
@@ -84,7 +84,7 @@ final class ClientAccessGrantController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Client access grant revoked.',
+            'message' => __('Client access grant revoked.'),
         ]);
 
         return to_route(

@@ -4,17 +4,43 @@ export const STAGE_ORDER = ['prepare', 'invite', 'review'] as const;
 
 export type DossierStageTab = (typeof STAGE_ORDER)[number];
 
+/**
+ * English keys for dossier stage labels. Pass through `t()` for display.
+ */
 export const STAGE_LABELS: Record<DossierStageTab, string> = {
     prepare: 'Prepare',
     invite: 'Invite',
     review: 'Review',
 };
 
+/**
+ * English keys for dossier stage hints. Pass through `t()` for display.
+ */
 export const STAGE_HINTS: Record<DossierStageTab, string> = {
     prepare: 'Build the questionnaire, then continue to Invite.',
     invite: 'Send a portal link so the client can upload. Then continue to Review.',
     review: 'Check OCR results, approve or request changes, then complete the dossier.',
 };
+
+/**
+ * Resolve a translated label for a dossier stage.
+ */
+export function dossierStageLabel(
+    stage: DossierStageTab,
+    t: (key: string) => string,
+): string {
+    return t(STAGE_LABELS[stage]);
+}
+
+/**
+ * Resolve a translated hint for a dossier stage.
+ */
+export function dossierStageHint(
+    stage: DossierStageTab,
+    t: (key: string) => string,
+): string {
+    return t(STAGE_HINTS[stage]);
+}
 
 /**
  * Pick the tab that matches where the dossier is in the workflow.

@@ -7,6 +7,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import type { WorkspaceDashboardMetrics } from '@/features/dashboard/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Four metric summary cards on the workspace dashboard.
@@ -16,29 +17,31 @@ export default function DashboardMetricsGrid({
 }: {
     metrics: WorkspaceDashboardMetrics;
 }) {
+    const { t } = useTranslation();
+
     const metricCards = [
         {
-            label: 'Clients',
+            label: t('Clients'),
             value: metrics.clients,
-            description: 'People and organisations you support',
+            description: t('People and organisations you support'),
             icon: Users,
         },
         {
-            label: 'Open dossiers',
+            label: t('Open dossiers'),
             value: metrics.open_dossiers,
-            description: 'Dossiers that still need attention',
+            description: t('Dossiers that still need attention'),
             icon: FolderOpen,
         },
         {
-            label: 'Awaiting client',
+            label: t('Awaiting client'),
             value: metrics.awaiting_client,
-            description: 'Waiting for requested information',
+            description: t('Waiting for requested information'),
             icon: FileClock,
         },
         {
-            label: 'Outstanding requests',
+            label: t('Outstanding requests'),
             value: metrics.outstanding_document_requests,
-            description: 'Documents still missing or rejected',
+            description: t('Documents still missing or rejected'),
             icon: ClipboardList,
         },
     ];

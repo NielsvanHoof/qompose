@@ -1,11 +1,12 @@
 import { Check } from 'lucide-react';
 import {
     type DossierStageTab,
+    dossierStageLabel,
     dossierStageProgress,
-    STAGE_LABELS,
     STAGE_ORDER,
 } from '@/features/dossiers/dossier-stage';
 import type { Dossier } from '@/features/dossiers/types';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 export default function DossierStageProgress({
@@ -17,10 +18,11 @@ export default function DossierStageProgress({
     activeTab: DossierStageTab;
     onStageSelect: (stage: DossierStageTab) => void;
 }) {
+    const { t } = useTranslation();
     const states = dossierStageProgress(dossier, activeTab);
 
     return (
-        <nav aria-label="Dossier workflow progress">
+        <nav aria-label={t('Dossier workflow progress')}>
             <ol className="flex items-center gap-2">
                 {STAGE_ORDER.map((stage, index) => {
                     const state = states[stage];
@@ -70,7 +72,7 @@ export default function DossierStageProgress({
                                     )}
                                 </span>
                                 <span className="truncate">
-                                    {STAGE_LABELS[stage]}
+                                    {dossierStageLabel(stage, t)}
                                 </span>
                             </button>
                         </li>

@@ -7,6 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * One-time flash of the client portal URL after creating an access grant.
@@ -19,6 +20,7 @@ export default function PortalLinkBanner({
     portalUrl: string;
     token?: string | null;
 }) {
+    const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
 
     const copyPortalLink = async () => {
@@ -29,10 +31,11 @@ export default function PortalLinkBanner({
     return (
         <Card className="border-primary/40">
             <CardHeader>
-                <CardTitle>Client portal link</CardTitle>
+                <CardTitle>{t('Client portal link')}</CardTitle>
                 <CardDescription>
-                    Copy this link now. The plain token is shown once and cannot
-                    be retrieved again.
+                    {t(
+                        'Copy this link now. The plain token is shown once and cannot be retrieved again.',
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -41,7 +44,7 @@ export default function PortalLinkBanner({
                 </code>
                 {token && (
                     <p className="text-xs text-muted-foreground">
-                        Token: {token.slice(0, 8)}…
+                        {t('Token: :token…', { token: token.slice(0, 8) })}
                     </p>
                 )}
                 <Button
@@ -50,7 +53,7 @@ export default function PortalLinkBanner({
                     onClick={copyPortalLink}
                     aria-live="polite"
                 >
-                    {copied ? 'Copied' : 'Copy portal link'}
+                    {copied ? t('Copied') : t('Copy portal link')}
                 </Button>
             </CardContent>
         </Card>

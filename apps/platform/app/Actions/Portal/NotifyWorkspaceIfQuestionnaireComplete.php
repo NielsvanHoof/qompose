@@ -30,7 +30,7 @@ final class NotifyWorkspaceIfQuestionnaireComplete
     public function handle(Dossier $dossier): void
     {
         // Empty dossiers never count as complete.
-        if (! $dossier->documentRequests()->exists()) {
+        if (! $dossier->documentRequests()->toBase()->exists()) {
             return;
         }
 
@@ -52,11 +52,10 @@ final class NotifyWorkspaceIfQuestionnaireComplete
             throw new RuntimeException('Dossier tenant is missing.');
         }
 
-        $message = sprintf(
-            '%s finished the questionnaire for “%s”.',
-            $client->name,
-            $dossier->title,
-        );
+        $message = __(':client finished the questionnaire for “:dossier”.', [
+            'client' => $client->name,
+            'dossier' => $dossier->title,
+        ]);
 
         $dossierUrl = route('workspaces.dossiers.show', [
             'tenant' => $tenant,

@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
 export default function DossierWorkflowCard({
@@ -31,35 +32,40 @@ export default function DossierWorkflowCard({
     dossier: Dossier;
     canReview: boolean;
 }) {
+    const { t } = useTranslation();
     const summary = dossier.review_summary;
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Review progress</CardTitle>
+                <CardTitle>{t('Review progress')}</CardTitle>
                 <CardDescription>
-                    Review submitted items and complete the dossier when
-                    everything is approved.
+                    {t(
+                        'Review submitted items and complete the dossier when everything is approved.',
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                    <ReviewCount label="Waiting" value={summary.pending} />
+                    <ReviewCount label={t('Waiting')} value={summary.pending} />
                     <ReviewCount
-                        label="Ready to review"
+                        label={t('Ready to review')}
                         value={summary.submitted}
                     />
                     <ReviewCount
-                        label="Changes requested"
+                        label={t('Changes requested')}
                         value={summary.rejected}
                     />
-                    <ReviewCount label="Approved" value={summary.accepted} />
+                    <ReviewCount
+                        label={t('Approved')}
+                        value={summary.accepted}
+                    />
                 </div>
 
                 {dossier.status === 'completed' ? (
                     <div className="flex items-center gap-2 rounded-md border border-success-border bg-success-muted px-3 py-2 text-sm font-medium text-success-foreground">
                         <CheckCircle2 className="size-4" aria-hidden="true" />
-                        Dossier completed
+                        {t('Dossier completed')}
                     </div>
                 ) : canReview ? (
                     <div className="space-y-2">
@@ -69,14 +75,15 @@ export default function DossierWorkflowCard({
                         />
                         {!dossier.ready_to_complete && (
                             <p className="text-xs text-muted-foreground">
-                                Every item must be approved first.
+                                {t('Every item must be approved first.')}
                             </p>
                         )}
                     </div>
                 ) : (
                     <p className="text-xs text-muted-foreground">
-                        A reviewer will complete the dossier after all items
-                        have been approved.
+                        {t(
+                            'A reviewer will complete the dossier after all items have been approved.',
+                        )}
                     </p>
                 )}
             </CardContent>
@@ -92,21 +99,23 @@ function CompleteDossierDialog({
     ready: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <Button type="button" className="w-full" disabled={!ready}>
                     <CheckCircle2 aria-hidden="true" />
-                    Complete dossier
+                    {t('Complete dossier')}
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Complete this dossier?</DialogTitle>
+                    <DialogTitle>{t('Complete this dossier?')}</DialogTitle>
                     <DialogDescription>
-                        This marks the dossier as finished. The client will no
-                        longer be able to submit changes.
+                        {t(
+                            'This marks the dossier as finished. The client will no longer be able to submit changes.',
+                        )}
                     </DialogDescription>
                 </DialogHeader>
                 <Form
@@ -122,11 +131,11 @@ function CompleteDossierDialog({
                             <DialogFooter className="gap-2">
                                 <DialogClose asChild>
                                     <Button type="button" variant="secondary">
-                                        Cancel
+                                        {t('Cancel')}
                                     </Button>
                                 </DialogClose>
                                 <Button type="submit" disabled={processing}>
-                                    Complete dossier
+                                    {t('Complete dossier')}
                                 </Button>
                             </DialogFooter>
                         </>

@@ -73,7 +73,7 @@ final class UploadedDocumentController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Document uploaded.',
+            'message' => __('Document uploaded.'),
         ]);
 
         return to_route(

@@ -46,8 +46,8 @@ final class DocumentRequestReviewController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => $decision === DocumentRequestStatus::Accepted
-                ? 'Item approved.'
-                : 'Changes requested. The client notification has been queued.',
+                ? __('Item approved.')
+                : __('Changes requested. The client notification has been queued.'),
         ]);
 
         return to_route(

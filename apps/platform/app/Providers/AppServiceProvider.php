@@ -57,18 +57,6 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Include Reverb in `php artisan dev` when broadcasting is enabled.
-     */
-    private function configureDevCommands(): void
-    {
-        if (config('broadcasting.default') !== 'reverb') {
-            return;
-        }
-
-        DevCommands::artisan('reverb:start', 'reverb');
-    }
-
-    /**
      * Configure default behaviors for production-ready applications.
      */
     protected function configureDefaults(): void
@@ -92,6 +80,18 @@ final class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict();
 
         Model::preventLazyLoading(! app()->isProduction());
+    }
+
+    /**
+     * Include Reverb in `php artisan dev` when broadcasting is enabled.
+     */
+    private function configureDevCommands(): void
+    {
+        if (config('broadcasting.default') !== 'reverb') {
+            return;
+        }
+
+        DevCommands::artisan('reverb:start', 'reverb');
     }
 
     /**

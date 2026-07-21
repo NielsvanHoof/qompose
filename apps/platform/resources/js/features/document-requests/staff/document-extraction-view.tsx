@@ -1,11 +1,12 @@
-import { Button } from '@/components/ui/button';
 import EmptyState from '@/components/empty-state';
+import { Button } from '@/components/ui/button';
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import type { DocumentExtraction } from '@/features/document-requests/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Renders AnalyzeDocument key/values and tables, with raw JSON collapsed.
@@ -17,9 +18,13 @@ export default function DocumentExtractionView({
     extraction: DocumentExtraction | null;
     rawJson: string | null;
 }) {
+    const { t } = useTranslation();
+
     if (extraction === null && (rawJson === null || rawJson === '')) {
         return (
-            <EmptyState title="No extraction data is available for this file yet." />
+            <EmptyState
+                title={t('No extraction data is available for this file yet.')}
+            />
         );
     }
 
@@ -30,9 +35,11 @@ export default function DocumentExtractionView({
     return (
         <div className="space-y-8">
             <section className="space-y-3">
-                <h2 className="text-lg font-semibold tracking-tight">Fields</h2>
+                <h2 className="text-lg font-semibold tracking-tight">
+                    {t('Fields')}
+                </h2>
                 {keyEntries.length === 0 ? (
-                    <EmptyState title="No form fields detected." />
+                    <EmptyState title={t('No form fields detected.')} />
                 ) : (
                     <dl className="divide-y rounded-md border">
                         {keyEntries.map(([key, value]) => (
@@ -40,6 +47,7 @@ export default function DocumentExtractionView({
                                 key={key}
                                 className="grid gap-1 px-3 py-2 sm:grid-cols-[minmax(8rem,14rem)_1fr] sm:gap-4"
                             >
+                                {/* OCR field keys are document content — do not translate. */}
                                 <dt className="text-sm font-medium text-muted-foreground">
                                     {key}
                                 </dt>
@@ -53,9 +61,11 @@ export default function DocumentExtractionView({
             </section>
 
             <section className="space-y-3">
-                <h2 className="text-lg font-semibold tracking-tight">Tables</h2>
+                <h2 className="text-lg font-semibold tracking-tight">
+                    {t('Tables')}
+                </h2>
                 {tables.length === 0 ? (
-                    <EmptyState title="No tables detected." />
+                    <EmptyState title={t('No tables detected.')} />
                 ) : (
                     <div className="space-y-4">
                         {tables.map((table) => {
@@ -110,7 +120,7 @@ export default function DocumentExtractionView({
                             size="sm"
                             className="px-0"
                         >
-                            Raw JSON
+                            {t('Raw JSON')}
                         </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>

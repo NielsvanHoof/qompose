@@ -6,6 +6,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import type { WorkspaceDashboardMetrics } from '@/features/dashboard/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Sidebar summary of dossiers in review and outstanding requests.
@@ -20,12 +21,14 @@ export default function ReviewQueueCard({
         | 'outstanding_document_requests'
     >;
 }) {
+    const { t } = useTranslation();
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Review queue</CardTitle>
+                <CardTitle>{t('Review queue')}</CardTitle>
                 <CardDescription>
-                    Work that needs your attention now.
+                    {t('Work that needs your attention now.')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -34,7 +37,7 @@ export default function ReviewQueueCard({
                         {metrics.in_review}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                        dossiers currently in review
+                        {t('dossiers currently in review')}
                     </p>
                 </div>
                 <div>
@@ -42,7 +45,7 @@ export default function ReviewQueueCard({
                         {metrics.submitted_document_requests}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                        submitted items ready for review
+                        {t('submitted items ready for review')}
                     </p>
                 </div>
                 <div>
@@ -50,7 +53,7 @@ export default function ReviewQueueCard({
                         {metrics.outstanding_document_requests}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                        items still with the client
+                        {t('items still with the client')}
                     </p>
                 </div>
             </CardContent>

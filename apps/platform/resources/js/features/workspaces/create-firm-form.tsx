@@ -3,6 +3,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslation } from '@/hooks/use-translation';
 import type { RouteFormDefinition } from '@/wayfinder';
 
 /**
@@ -17,18 +18,20 @@ export default function CreateFirmForm({
     action: RouteFormDefinition<'post'>;
     submitLabel: string;
 }) {
+    const { t } = useTranslation();
+
     return (
         <Form {...action} className="space-y-4">
             {({ errors, processing }) => (
                 <>
                     <div className="grid gap-2">
-                        <Label htmlFor="name">Firm name</Label>
+                        <Label htmlFor="name">{t('Firm name')}</Label>
                         <Input
                             id="name"
                             name="name"
                             required
                             autoComplete="organization"
-                            placeholder="Acme Accountants"
+                            placeholder={t('Acme Accountants')}
                             autoFocus
                         />
                         <InputError message={errors.name} />

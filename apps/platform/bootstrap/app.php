@@ -8,6 +8,7 @@ use App\Http\Middleware\HardenClientPortalResponse;
 use App\Http\Middleware\InitializeTenantFromRoute;
 use App\Http\Middleware\InitializeTenantFromSession;
 use App\Http\Middleware\ResolveClientPortalGrant;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -27,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->encryptCookies(except: ['appearance', 'locale', 'sidebar_state']);
 
         // Tenant must be current before route model binding so BelongsToTenant scopes apply.
         $middleware->prependToPriorityList(
@@ -48,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             HandleAppearance::class,
+            SetLocale::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);

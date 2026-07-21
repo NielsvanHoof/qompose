@@ -9,6 +9,7 @@ import DocumentProcessingPanel from '@/features/document-requests/staff/document
 import DocumentRequestUpload from '@/features/document-requests/staff/document-request-upload';
 import type { DocumentRequest } from '@/features/document-requests/types';
 import type { DossierStatus } from '@/features/dossiers/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 export type StaffDocumentRequestTypeProps = {
     dossierId: number;
@@ -62,13 +63,16 @@ function WaitingForClientUpload({
 }: {
     dossierStatus: DossierStatus;
 }) {
+    const { t } = useTranslation();
+
     return (
         <div className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-            <p>Waiting for the client to upload via the portal.</p>
+            <p>{t('Waiting for the client to upload via the portal.')}</p>
             {dossierStatus === 'draft' && (
                 <p className="mt-1">
-                    Invite the client from Client Access so they can upload
-                    securely.
+                    {t(
+                        'Invite the client from Client Access so they can upload securely.',
+                    )}
                 </p>
             )}
         </div>
@@ -87,10 +91,11 @@ function StaffUploadOnBehalfFallback({
     documentRequest: DocumentRequest;
     hasUpload: boolean;
 }) {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const triggerLabel = hasUpload
-        ? 'Replace on behalf of client'
-        : 'Upload on behalf of client';
+        ? t('Replace on behalf of client')
+        : t('Upload on behalf of client');
 
     return (
         <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
@@ -101,7 +106,7 @@ function StaffUploadOnBehalfFallback({
                     size="sm"
                     className="px-0"
                 >
-                    {open ? 'Hide staff upload' : triggerLabel}
+                    {open ? t('Hide staff upload') : triggerLabel}
                 </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -126,6 +131,7 @@ export function StaffTextRequestContent({
 
     return (
         <AnswerPreview>
+            {/* Answer text is user-generated — do not translate. */}
             <p className="font-medium whitespace-pre-wrap">
                 {documentRequest.answer_text}
             </p>
@@ -139,6 +145,8 @@ export function StaffTextRequestContent({
 export function StaffBooleanRequestContent({
     documentRequest,
 }: StaffDocumentRequestTypeProps) {
+    const { t } = useTranslation();
+
     if (documentRequest.answer_boolean === null) {
         return null;
     }
@@ -146,16 +154,18 @@ export function StaffBooleanRequestContent({
     return (
         <AnswerPreview>
             <p className="font-medium">
-                {documentRequest.answer_boolean ? 'Yes' : 'No'}
+                {documentRequest.answer_boolean ? t('Yes') : t('No')}
             </p>
         </AnswerPreview>
     );
 }
 
 function AnswerPreview({ children }: { children: ReactNode }) {
+    const { t } = useTranslation();
+
     return (
         <div className="rounded-md bg-muted/50 px-3 py-2 text-sm">
-            <p className="text-muted-foreground">Answer</p>
+            <p className="text-muted-foreground">{t('Answer')}</p>
             {children}
         </div>
     );

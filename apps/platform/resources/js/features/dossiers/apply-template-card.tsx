@@ -19,10 +19,15 @@ import {
 } from '@/components/ui/select';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
-function formatTemplateLabel(template: ApplyTemplateOption): string {
-    const suffix = template.is_system ? ' · System' : '';
+function formatTemplateLabel(
+    template: ApplyTemplateOption,
+    t: (key: string) => string,
+): string {
+    // Template name and category come from the DB — do not translate those.
+    const suffix = template.is_system ? ` · ${t('System')}` : '';
 
     return `${template.name} · ${template.category_label} (${template.items_count})${suffix}`;
 }
@@ -38,6 +43,7 @@ export default function ApplyTemplateCard({
     templates: ApplyTemplateOption[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     if (templates.length === 0) {
         return null;
@@ -46,9 +52,9 @@ export default function ApplyTemplateCard({
     return (
         <Card className="min-w-0">
             <CardHeader>
-                <CardTitle>Apply template</CardTitle>
+                <CardTitle>{t('Apply template')}</CardTitle>
                 <CardDescription>
-                    Append a reusable pack. Existing items are kept.
+                    {t('Append a reusable pack. Existing items are kept.')}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -64,7 +70,7 @@ export default function ApplyTemplateCard({
                         <>
                             <div className="grid min-w-0 gap-2">
                                 <Label htmlFor="questionnaire_template_id">
-                                    Template
+                                    {t('Template')}
                                 </Label>
                                 <Select
                                     required
@@ -72,7 +78,11 @@ export default function ApplyTemplateCard({
                                     defaultValue=""
                                 >
                                     <SelectTrigger className="w-full min-w-0">
-                                        <SelectValue placeholder="Select a template…" />
+                                        <SelectValue
+                                            placeholder={t(
+                                                'Select a template…',
+                                            )}
+                                        />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background">
                                         {templates.map((template) => (
@@ -82,9 +92,13 @@ export default function ApplyTemplateCard({
                                                 className="truncate"
                                                 title={formatTemplateLabel(
                                                     template,
+                                                    t,
                                                 )}
                                             >
-                                                {formatTemplateLabel(template)}
+                                                {formatTemplateLabel(
+                                                    template,
+                                                    t,
+                                                )}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -95,7 +109,7 @@ export default function ApplyTemplateCard({
                             </div>
 
                             <Button disabled={processing} className="w-full">
-                                Apply template
+                                {t('Apply template')}
                             </Button>
                         </>
                     )}

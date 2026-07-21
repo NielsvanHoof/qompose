@@ -18,7 +18,10 @@ export default function BrandShieldWatermark({
             src={brandShields[variant]}
             alt=""
             aria-hidden
-            className={cn('pointer-events-none absolute object-contain', className)}
+            className={cn(
+                'pointer-events-none absolute object-contain',
+                className,
+            )}
         />
     );
 }

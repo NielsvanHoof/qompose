@@ -42,7 +42,7 @@ final class ClientPortalAnswerController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Answer saved. Thank you.',
+            'message' => __('Answer saved. Thank you.'),
         ]);
 
         return to_route('portal.show');

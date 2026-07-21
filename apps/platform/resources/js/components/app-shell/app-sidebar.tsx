@@ -20,6 +20,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import { index as activityIndex } from '@/routes/workspaces/activity';
@@ -31,40 +32,41 @@ import type { NavItem } from '@/types';
 
 export function AppSidebar() {
     const { current_firm: currentFirm } = usePage().props;
+    const { t } = useTranslation();
     const dashboardRoute = currentFirm
         ? workspaceDashboard(currentFirm)
         : dashboard();
 
     const mainNavItems: NavItem[] = [
         {
-            title: 'Dashboard',
+            title: t('Dashboard'),
             href: dashboardRoute,
             icon: LayoutGrid,
         },
         ...(currentFirm
             ? [
                   {
-                      title: 'Dossiers',
+                      title: t('Dossiers'),
                       href: dossierIndex(currentFirm),
                       icon: FolderGit2,
                   },
                   {
-                      title: 'Clients',
+                      title: t('Clients'),
                       href: clientIndex(currentFirm),
                       icon: Users,
                   },
                   {
-                      title: 'Templates',
+                      title: t('Templates'),
                       href: templateIndex(currentFirm),
                       icon: ClipboardList,
                   },
                   {
-                      title: 'Media Library',
+                      title: t('Media Library'),
                       href: mediaIndex(currentFirm),
                       icon: Images,
                   },
                   {
-                      title: 'Activity',
+                      title: t('Activity'),
                       href: activityIndex(currentFirm),
                       icon: ScrollText,
                   },

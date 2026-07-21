@@ -24,6 +24,7 @@ import {
 import { Label } from '@/components/ui/label';
 import type { AccessGrant } from '@/features/portal/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format-date-time';
 import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 
@@ -44,20 +45,23 @@ export default function ClientAccessCard({
     canCreate: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
     const [sendInvite, setSendInvite] = useState(true);
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Client access</CardTitle>
+                <CardTitle>{t('Client access')}</CardTitle>
                 <CardDescription>
-                    Email a magic link so {clientName} can upload documents
-                    without an account.
+                    {t(
+                        'Email a magic link so :name can upload documents without an account.',
+                        { name: clientName },
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 {accessGrants.length === 0 ? (
-                    <EmptyState title="No access grants yet." />
+                    <EmptyState title={t('No access grants yet.')} />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {accessGrants.map((grant) => (
@@ -67,17 +71,24 @@ export default function ClientAccessCard({
                             >
                                 <div className="text-sm">
                                     <p>
-                                        Expires{' '}
-                                        {formatDateTime(grant.expires_at)}
+                                        {t('Expires :datetime', {
+                                            datetime: formatDateTime(
+                                                grant.expires_at,
+                                            ),
+                                        })}
                                     </p>
                                     <p className="text-muted-foreground">
                                         {grant.is_valid
-                                            ? 'Active'
+                                            ? t('Active')
                                             : grant.revoked_at
-                                              ? 'Revoked'
-                                              : 'Expired'}
+                                              ? t('Revoked')
+                                              : t('Expired')}
                                         {grant.last_used_at &&
-                                            ` · Last used ${formatDateTime(grant.last_used_at)}`}
+                                            ` · ${t('Last used :datetime', {
+                                                datetime: formatDateTime(
+                                                    grant.last_used_at,
+                                                ),
+                                            })}`}
                                     </p>
                                 </div>
                                 {grant.is_valid && (
@@ -120,7 +131,9 @@ export default function ClientAccessCard({
                                         }
                                     />
                                     <Label htmlFor="send_invite">
-                                        Email invite to {clientEmail}
+                                        {t('Email invite to :email', {
+                                            email: clientEmail,
+                                        })}
                                     </Label>
                                 </div>
                                 <Button
@@ -129,8 +142,8 @@ export default function ClientAccessCard({
                                     variant="secondary"
                                 >
                                     {sendInvite
-                                        ? 'Create link & email client'
-                                        : 'Create 7-day portal link'}
+                                        ? t('Create link & email client')
+                                        : t('Create 7-day portal link')}
                                 </Button>
                             </>
                         )}
@@ -143,26 +156,28 @@ export default function ClientAccessCard({
 
 function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <Button type="button" variant="outline" size="sm">
-                    Revoke
+                    {t('Revoke')}
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Revoke portal access?</DialogTitle>
+                    <DialogTitle>{t('Revoke portal access?')}</DialogTitle>
                     <DialogDescription>
-                        The client will no longer be able to use this link. You
-                        can create a new one anytime.
+                        {t(
+                            'The client will no longer be able to use this link. You can create a new one anytime.',
+                        )}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>
                         <Button type="button" variant="secondary">
-                            Cancel
+                            {t('Cancel')}
                         </Button>
                     </DialogClose>
                     <Button
@@ -178,7 +193,7 @@ function RevokeAccessGrantButton({ grantId }: { grantId: number }) {
                             )
                         }
                     >
-                        Revoke access
+                        {t('Revoke access')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

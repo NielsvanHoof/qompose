@@ -7,6 +7,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import type { ClientSummary } from '@/features/clients/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Client list for the clients index page.
@@ -16,19 +17,23 @@ export default function ClientsListCard({
 }: {
     clients: ClientSummary[];
 }) {
+    const { t } = useTranslation();
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>All clients</CardTitle>
+                <CardTitle>{t('All clients')}</CardTitle>
                 <CardDescription>
                     {clients.length === 1
-                        ? '1 client'
-                        : `${clients.length} clients`}
+                        ? t('1 client')
+                        : t(':count clients', { count: clients.length })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {clients.length === 0 ? (
-                    <EmptyState title="Add your first client to create a dossier." />
+                    <EmptyState
+                        title={t('Add your first client to create a dossier.')}
+                    />
                 ) : (
                     <div className="divide-y rounded-md border">
                         {clients.map((client) => (
@@ -45,8 +50,8 @@ export default function ClientsListCard({
                                 <p className="text-sm text-muted-foreground">
                                     {client.dossiers_count}{' '}
                                     {client.dossiers_count === 1
-                                        ? 'dossier'
-                                        : 'dossiers'}
+                                        ? t('dossier')
+                                        : t('dossiers')}
                                 </p>
                             </div>
                         ))}

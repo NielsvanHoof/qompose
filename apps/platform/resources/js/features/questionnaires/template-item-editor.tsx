@@ -14,6 +14,7 @@ import QuestionnaireItemTypeSelect from '@/features/document-requests/questionna
 import type { QuestionnaireItemType } from '@/features/document-requests/types';
 import type { TemplateItem } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Add, edit, reorder, and delete items on a firm-owned template.
@@ -28,6 +29,7 @@ export default function TemplateItemEditor({
     canManage: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
     const { post, setData } = useHttp({
         item_ids: [] as number[],
     });
@@ -49,7 +51,7 @@ export default function TemplateItemEditor({
         <div className="space-y-6">
             {items.length === 0 ? (
                 <EmptyState
-                    title="No items yet. Add your first question below."
+                    title={t('No items yet. Add your first question below.')}
                     bordered
                 />
             ) : (
@@ -64,11 +66,11 @@ export default function TemplateItemEditor({
                                 <div className="flex items-center gap-1">
                                     {canManage && <DragHandle />}
                                     <Badge variant="outline">
-                                        {
+                                        {t(
                                             getQuestionnaireItemTypeDefinition(
                                                 item.type,
-                                            ).label
-                                        }
+                                            ).label,
+                                        )}
                                     </Badge>
                                 </div>
                                 {canManage && (
@@ -118,7 +120,7 @@ export default function TemplateItemEditor({
                                                 disabled={processing}
                                                 className="w-fit"
                                             >
-                                                Save item
+                                                {t('Save item')}
                                             </Button>
                                         </>
                                     )}
@@ -149,7 +151,9 @@ export default function TemplateItemEditor({
                 >
                     {({ errors, processing }) => (
                         <>
-                            <p className="text-sm font-medium">Add item</p>
+                            <p className="text-sm font-medium">
+                                {t('Add item')}
+                            </p>
                             <ItemFields
                                 defaults={{
                                     type: 'file',
@@ -159,7 +163,7 @@ export default function TemplateItemEditor({
                                 errors={errors}
                             />
                             <Button type="submit" disabled={processing}>
-                                Add item
+                                {t('Add item')}
                             </Button>
                         </>
                     )}
@@ -180,6 +184,8 @@ function ItemFields({
     };
     errors: Partial<Record<string, string>>;
 }) {
+    const { t } = useTranslation();
+
     return (
         <>
             <QuestionnaireItemTypeSelect
@@ -187,17 +193,17 @@ function ItemFields({
                 error={errors.type}
             />
             <div className="grid gap-2">
-                <Label>Title</Label>
+                <Label>{t('Title')}</Label>
                 <Input
                     name="title"
                     required
                     defaultValue={defaults.title}
-                    placeholder="Kopie identiteitsbewijs"
+                    placeholder={t('Copy of identity document')}
                 />
                 <InputError message={errors.title} />
             </div>
             <div className="grid gap-2">
-                <Label>Instructions (optional)</Label>
+                <Label>{t('Instructions (optional)')}</Label>
                 <textarea
                     name="instructions"
                     rows={2}
