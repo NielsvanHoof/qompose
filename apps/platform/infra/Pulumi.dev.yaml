@@ -1,4 +1,0 @@
-config:
-  aws:region: eu-west-1
-  platform-ocr:namePrefix: qompose-platform-dev
-encryptionsalt: v1:4UX4+rhrnkI=:v1:F2i3bpMpd5QRi6FG:cd/lyP+KAqzkKMNXrwn4Tj6BNA/pnA==

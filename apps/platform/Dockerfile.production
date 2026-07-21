@@ -1,0 +1,92 @@
+FROM node:24-bookworm-slim AS node
+
+FROM php:8.5-fpm-bookworm AS php-extension-build
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        libicu-dev \
+        libpq-dev \
+        libzip-dev \
+    && docker-php-ext-install -j1 bcmath intl pcntl pdo_pgsql zip \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/pear
+
+FROM php:8.5-fpm-bookworm AS php-base
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        curl \
+        libicu72 \
+        libpq5 \
+        libzip4 \
+        nginx \
+        supervisor \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=php-extension-build /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=php-extension-build /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
+
+FROM php-base AS build
+
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+COPY --from=node /usr/local/bin/ /usr/local/bin/
+COPY --from=node /usr/local/lib/node_modules/ /usr/local/lib/node_modules/
+
+WORKDIR /var/www/html
+
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-progress \
+    --no-scripts \
+    --optimize-autoloader \
+    --prefer-dist
+
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+
+COPY . .
+
+ARG REVERB_PUBLIC_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT=443
+ARG VITE_REVERB_SCHEME=https
+
+RUN composer run-script post-autoload-dump \
+    && APP_ENV=local \
+        VITE_REVERB_APP_KEY="$REVERB_PUBLIC_KEY" \
+        VITE_REVERB_HOST="$VITE_REVERB_HOST" \
+        VITE_REVERB_PORT="$VITE_REVERB_PORT" \
+        VITE_REVERB_SCHEME="$VITE_REVERB_SCHEME" \
+        npm run build \
+    && rm -rf node_modules \
+    && mkdir -p \
+        bootstrap/cache \
+        storage/app/private \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+    && chown -R www-data:www-data bootstrap/cache storage
+
+FROM php-base AS runtime
+
+WORKDIR /var/www/html
+
+COPY --from=build --chown=www-data:www-data /var/www/html /var/www/html
+
+COPY docker/production/nginx.conf /etc/nginx/nginx.conf
+COPY docker/production/php.ini /usr/local/etc/php/conf.d/production.ini
+COPY docker/production/supervisor.conf /etc/supervisor/conf.d/qompose.conf
+COPY docker/production/entrypoint.sh /usr/local/bin/qompose-entrypoint
+
+USER www-data
+
+EXPOSE 8080
+
+ENTRYPOINT ["qompose-entrypoint"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/qompose.conf"]

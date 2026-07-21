@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\Ocr\StartsDocumentOcr;
+use App\Contracts\Production\ChecksReadiness;
 use App\Enums\OcrDriver;
 use App\Models\Activity;
 use App\Models\Client;
@@ -22,6 +23,8 @@ use App\Policies\Portal\ClientAccessGrantPolicy;
 use App\Policies\Questionnaires\QuestionnaireTemplatePolicy;
 use App\Services\Ocr\Configuration\OcrConfigurationValidator;
 use App\Services\Ocr\Drivers\OcrDriverFactory;
+use App\Services\Production\InfrastructureReadinessCheck;
+use App\Services\Production\ProductionConfigurationValidator;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Carbon\CarbonImmutable;
@@ -43,14 +46,18 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->registerOcrBindings();
+        $this->app->bind(ChecksReadiness::class, InfrastructureReadinessCheck::class);
     }
 
     /**
      * Bootstrap any application services.
      */
-    public function boot(OcrConfigurationValidator $ocrConfigurationValidator): void
-    {
+    public function boot(
+        OcrConfigurationValidator $ocrConfigurationValidator,
+        ProductionConfigurationValidator $productionConfigurationValidator,
+    ): void {
         $ocrConfigurationValidator->validate();
+        $productionConfigurationValidator->validate();
         $this->configurePolicies();
         $this->configureDefaults();
         $this->configureDevCommands();

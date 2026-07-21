@@ -1,8 +1,6 @@
-name: platform-ocr
-description: AWS infra for platform document OCR (S3, Textract SNS/SQS)
+name: qompose-platform
+description: Production AWS infrastructure for the Qompose application
 runtime:
   name: nodejs
   options:
     typescript: true
-backend:
-  url: file://~

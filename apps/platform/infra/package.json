@@ -1,9 +1,10 @@
 {
-  "name": "platform-ocr-infra",
+  "name": "qompose-platform-infra",
   "private": true,
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
+    "test": "npm run build && node --test bin/*.test.js",
     "preview": "pulumi preview",
     "up": "pulumi up",
     "destroy": "pulumi destroy"

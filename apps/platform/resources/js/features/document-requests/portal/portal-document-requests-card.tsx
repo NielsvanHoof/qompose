@@ -8,8 +8,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
 import { getQuestionnaireItemTypeDefinition } from '@/features/document-requests/questionnaire-item-type-registry';
+import { documentRequestStatusLabel } from '@/features/document-requests/status/document-request-status';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 

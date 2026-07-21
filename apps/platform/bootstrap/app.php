@@ -23,11 +23,20 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
         then: function (): void {
+            require __DIR__.'/../routes/health.php';
             require __DIR__.'/../routes/tenant.php';
             require __DIR__.'/../routes/portal.php';
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustHosts(
+            at: fn (): array => (array) config('production.allowed_hosts', []),
+            subdomains: false,
+        );
+        $middleware->trustProxies(
+            at: 'REMOTE_ADDR',
+            headers: Request::HEADER_X_FORWARDED_AWS_ELB,
+        );
         $middleware->encryptCookies(except: ['appearance', 'locale', 'sidebar_state']);
 
         // Tenant must be current before route model binding so BelongsToTenant scopes apply.
