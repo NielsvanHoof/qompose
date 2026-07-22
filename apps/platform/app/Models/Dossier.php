@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Laravel\Scout\Searchable;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -27,12 +28,13 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property DossierStatus $status
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 #[Fillable(['tenant_id', 'client_id', 'title', 'reference', 'status'])]
 final class Dossier extends Model
 {
     /** @use HasFactory<DossierFactory> */
-    use BelongsToTenant, HasFactory, LogsActivity, LogsTenantAuditableActivity, Searchable;
+    use BelongsToTenant, HasFactory, LogsActivity, LogsTenantAuditableActivity, Searchable, SoftDeletes;
 
     /**
      * @var array<string, mixed>

@@ -2,6 +2,7 @@ import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import CreateClientForm from '@/features/clients/create-client-form';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     index as clientIndex,
     create as createClient,
@@ -12,15 +13,16 @@ import {
  */
 export default function CreateClient() {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     setLayoutProps({
         breadcrumbs: [
             {
-                title: 'Clients',
+                title: t('Clients'),
                 href: clientIndex(currentWorkspace),
             },
             {
-                title: 'New client',
+                title: t('New client'),
                 href: createClient(currentWorkspace),
             },
         ],
@@ -28,12 +30,14 @@ export default function CreateClient() {
 
     return (
         <>
-            <Head title="New client" />
+            <Head title={t('New client')} />
 
             <div className="mx-auto w-full max-w-xl p-4 md:p-8">
                 <Heading
-                    title="New client"
-                    description="Add the person or organisation that will provide documents."
+                    title={t('New client')}
+                    description={t(
+                        'Add the person or organisation that will provide documents.',
+                    )}
                 />
 
                 <CreateClientForm />

@@ -8,9 +8,11 @@ use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 
 final class StoreClientAccessGrantRequest extends FormRequest
 {
+    use LocalizesValidationAttributes;
     /**
      * Staff who can create dossiers may also issue client portal access grants.
      */

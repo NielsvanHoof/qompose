@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCopyToClipboard } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -21,11 +21,11 @@ export default function PortalLinkBanner({
     token?: string | null;
 }) {
     const { t } = useTranslation();
-    const [copied, setCopied] = useState(false);
+    const [copiedText, copy] = useCopyToClipboard();
+    const copied = copiedText === portalUrl;
 
     const copyPortalLink = async () => {
-        await navigator.clipboard.writeText(portalUrl);
-        setCopied(true);
+        await copy(portalUrl);
     };
 
     return (

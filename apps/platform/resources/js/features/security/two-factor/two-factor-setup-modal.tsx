@@ -2,6 +2,7 @@ import { Form } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { Check, Copy, ScanLine } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCopyToClipboard } from 'usehooks-ts';
 import AlertError from '@/components/alert-error';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,6 @@ import {
 } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/hooks/use-appearance';
-import { useClipboard } from '@/hooks/use-clipboard';
 import { useTranslation } from '@/hooks/use-translation';
 import { OTP_MAX_LENGTH, OTP_SLOTS } from '@/hooks/use-two-factor-auth';
 import { confirm } from '@/routes/two-factor';
@@ -67,7 +67,7 @@ function TwoFactorSetupStep({
 }) {
     const { t } = useTranslation();
     const { resolvedAppearance } = useAppearance();
-    const [copiedText, copy] = useClipboard();
+    const [copiedText, copy] = useCopyToClipboard();
     const IconComponent = copiedText === manualSetupKey ? Check : Copy;
     const qrCodeImageSrc = qrCodeSvg
         ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrCodeSvg)}`

@@ -1,36 +1,8 @@
-import { useSyncExternalStore } from 'react';
+import { useMediaQuery } from 'usehooks-ts';
 
 const MOBILE_BREAKPOINT = 768;
 
-const mql =
-    typeof window === 'undefined'
-        ? undefined
-        : window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-
-function mediaQueryListener(callback: (event: MediaQueryListEvent) => void) {
-    if (!mql) {
-        return () => {};
-    }
-
-    mql.addEventListener('change', callback);
-
-    return () => {
-        mql.removeEventListener('change', callback);
-    };
-}
-
-function isSmallerThanBreakpoint(): boolean {
-    return mql?.matches ?? false;
-}
-
-function getServerSnapshot(): boolean {
-    return false;
-}
-
+/** Matches shadcn sidebar mobile breakpoint (viewport width below 768px). */
 export function useIsMobile(): boolean {
-    return useSyncExternalStore(
-        mediaQueryListener,
-        isSmallerThanBreakpoint,
-        getServerSnapshot,
-    );
+    return useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
 }

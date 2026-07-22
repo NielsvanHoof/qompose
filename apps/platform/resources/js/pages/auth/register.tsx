@@ -63,7 +63,7 @@ export default function Register({ passwordRules }: Props) {
                                     tabIndex={0}
                                     autoComplete="email"
                                     name="email"
-                                    placeholder="email@example.com"
+                                    placeholder={t('email@example.com')}
                                 />
                                 <InputError message={errors.email} />
                             </div>

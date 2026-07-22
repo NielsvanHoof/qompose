@@ -13,11 +13,13 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useTranslation } from '@/hooks/use-translation';
 import { create as createFirm } from '@/routes/firms';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 
 export function WorkspaceSwitcher() {
     const { current_firm: currentFirm, workspaces = [] } = usePage().props;
+    const { t } = useTranslation();
 
     if (!currentFirm) {
         return null;
@@ -44,7 +46,7 @@ export function WorkspaceSwitcher() {
                         align="end"
                         side="top"
                     >
-                        <DropdownMenuLabel>Your firms</DropdownMenuLabel>
+                        <DropdownMenuLabel>{t('Your firms')}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         {workspaces.map((firm) => (
                             <DropdownMenuItem
@@ -69,7 +71,7 @@ export function WorkspaceSwitcher() {
                             onSelect={() => router.visit(createFirm.url())}
                         >
                             <Plus />
-                            <span>Create new firm</span>
+                            <span>{t('Create new firm')}</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

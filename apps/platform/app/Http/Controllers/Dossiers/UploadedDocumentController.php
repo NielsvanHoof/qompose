@@ -41,7 +41,7 @@ final class UploadedDocumentController extends Controller
         $file = $request->file('document');
 
         if ($file === null) {
-            return back()->withErrors(['document' => 'A document file is required.']);
+            return back()->withErrors(['document' => __('A document file is required.')]);
         }
 
         $uploadStaffDocument->handle($documentRequest, $file);

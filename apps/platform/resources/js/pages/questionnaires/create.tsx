@@ -18,6 +18,7 @@ import {
     create as createTemplate,
     index as templateIndex,
 } from '@/routes/workspaces/templates';
+import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Create a blank firm-owned questionnaire template.
@@ -28,15 +29,16 @@ export default function CreateTemplate({
     categories: TemplateCategoryOption[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     setLayoutProps({
         breadcrumbs: [
             {
-                title: 'Templates',
+                title: t('Templates'),
                 href: templateIndex(currentWorkspace),
             },
             {
-                title: 'New template',
+                title: t('New template'),
                 href: createTemplate(currentWorkspace),
             },
         ],
@@ -44,12 +46,14 @@ export default function CreateTemplate({
 
     return (
         <>
-            <Head title="New template" />
+            <Head title={t('New template')} />
 
             <div className="mx-auto w-full max-w-xl p-4 md:p-8">
                 <Heading
-                    title="New template"
-                    description="Create a reusable questionnaire for your firm."
+                    title={t('New template')}
+                    description={t(
+                        'Create a reusable questionnaire for your firm.',
+                    )}
                 />
 
                 <Form
@@ -61,25 +65,27 @@ export default function CreateTemplate({
                     {({ errors, processing }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label htmlFor="name">{t('Name')}</Label>
                                 <Input
                                     id="name"
                                     name="name"
                                     required
-                                    placeholder="KYC light"
+                                    placeholder={t('KYC light')}
                                 />
                                 <InputError message={errors.name} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="category">Category</Label>
+                                <Label htmlFor="category">{t('Category')}</Label>
                                 <Select
                                     required
                                     defaultValue="custom"
                                     name="category"
                                 >
                                     <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select a category" />
+                                        <SelectValue
+                                            placeholder={t('Select a category')}
+                                        />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background">
                                         {categories.map((category) => (
@@ -97,20 +103,20 @@ export default function CreateTemplate({
 
                             <div className="grid gap-2">
                                 <Label htmlFor="description">
-                                    Description (optional)
+                                    {t('Description (optional)')}
                                 </Label>
                                 <textarea
                                     id="description"
                                     name="description"
                                     rows={3}
                                     className="rounded-md border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                    placeholder="When to use this pack…"
+                                    placeholder={t('When to use this pack…')}
                                 />
                                 <InputError message={errors.description} />
                             </div>
 
                             <Button disabled={processing}>
-                                Create template
+                                {t('Create template')}
                             </Button>
                         </>
                     )}

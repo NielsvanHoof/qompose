@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useState } from 'react';
+import { useDebounceCallback } from 'usehooks-ts';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -48,7 +49,7 @@ export default function IndexQueryToolbar({
         });
     }, [filters, config.filters]);
 
-    // Always read latest filters/config without re-firing the debounce on URL sync.
+    // Always read latest filters/config when the debounced callback runs.
     const applySearchDrafts = useEffectEvent(
         (nextDrafts: Record<string, string>) => {
             const nextFilters: Record<string, string> = { ...filters };
@@ -76,14 +77,20 @@ export default function IndexQueryToolbar({
         },
     );
 
-    // Debounce search filter updates — only re-run when drafts change.
-    useEffect(() => {
-        const timeout = window.setTimeout(() => {
-            applySearchDrafts(drafts);
-        }, 300);
+    const debouncedApplySearchDrafts = useDebounceCallback(
+        (nextDrafts: Record<string, string>) => {
+            applySearchDrafts(nextDrafts);
+        },
+        300,
+    );
 
-        return () => window.clearTimeout(timeout);
-    }, [drafts]);
+    function handleSearchChange(key: string, value: string): void {
+        setDrafts((prev) => {
+            const nextDrafts = { ...prev, [key]: value };
+            debouncedApplySearchDrafts(nextDrafts);
+            return nextDrafts;
+        });
+    }
 
     function handleSelectChange(key: string, value: string): void {
         const nextFilters: Record<string, string> = { ...filters };
@@ -118,10 +125,10 @@ export default function IndexQueryToolbar({
                                 value={drafts[filter.key] ?? ''}
                                 placeholder={t(filter.label)}
                                 onChange={(event) =>
-                                    setDrafts((prev) => ({
-                                        ...prev,
-                                        [filter.key]: event.target.value,
-                                    }))
+                                    handleSearchChange(
+                                        filter.key,
+                                        event.target.value,
+                                    )
                                 }
                             />
                         </div>

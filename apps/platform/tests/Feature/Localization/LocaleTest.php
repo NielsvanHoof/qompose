@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
+use App\Enums\QuestionnaireTemplateCategory;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -109,7 +112,45 @@ test('audit event labels are translated for the active locale', function () {
 
     expect(AuditEvent::DossierViewed->label())->toBe('Dossier bekeken')
         ->and(AuditEvent::DocumentUploaded->label())->toBe('Document geüpload')
-        ->and(AuditEvent::AccessDenied->label())->toBe('Toegang geweigerd');
+        ->and(AuditEvent::AccessDenied->label())->toBe('Toegang geweigerd')
+        ->and(AuditEvent::DossierDeleted->label())->toBe('Dossier gearchiveerd')
+        ->and(AuditEvent::ClientDeleted->label())->toBe('Klant gearchiveerd');
+});
+
+test('questionnaire template category labels are translated for the active locale', function () {
+    app()->setLocale('nl');
+
+    expect(QuestionnaireTemplateCategory::Jaarrekening->label())->toBe('Jaarrekening')
+        ->and(QuestionnaireTemplateCategory::Fiscale->label())->toBe('Fiscale aangifte')
+        ->and(QuestionnaireTemplateCategory::Custom->label())->toBe('Aangepast');
+});
+
+test('validation errors use translated sentences for dutch locale', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $user = User::factory()->create(['locale' => 'nl']);
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $user);
+
+    $response = $this->actingAs($user)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.clients.store', $tenant), [
+            'name' => '',
+            'email' => 'not-an-email',
+        ]);
+
+    $response->assertSessionHasErrors(['name', 'email']);
+
+    expect($response->getSession()->get('errors')->get('name')[0])
+        ->toBe('Naam is verplicht.')
+        ->and($response->getSession()->get('errors')->get('email')[0])
+        ->toBe('E-mailadres is geen geldig e-mailadres.');
+});
+
+test('fortify password reset status is translated for dutch locale', function () {
+    app()->setLocale('nl');
+
+    expect(__('passwords.sent'))
+        ->toBe('We hebben je een link gestuurd om je wachtwoord te resetten.');
 });
 
 test('media and workspace translation keys are shared with inertia', function () {

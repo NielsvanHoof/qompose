@@ -8,10 +8,12 @@ use App\Enums\QuestionnaireTemplateCategory;
 use App\Models\QuestionnaireTemplate;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Validation\Rule;
 
 final class StoreQuestionnaireTemplateRequest extends FormRequest
 {
+    use LocalizesValidationAttributes;
     public function authorize(): bool
     {
         $user = $this->user();

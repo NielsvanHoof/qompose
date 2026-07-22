@@ -10,6 +10,7 @@ import {
     useDossierPermissions,
 } from '@/features/dossiers/permissions/dossier-permissions-context';
 import ApplyTemplateCard from '@/features/dossiers/show/apply-template-card';
+import ArchiveDossierButton from '@/features/dossiers/show/archive-dossier-button';
 import DossierWorkflowCard from '@/features/dossiers/show/dossier-workflow-card';
 import WaitingItemsSummary from '@/features/dossiers/show/waiting-items-summary';
 import {
@@ -123,7 +124,15 @@ function DossierShowBody({
                     title={dossier.title}
                     description={`${dossier.client.name} · ${dossier.client.email}`}
                 />
-                <DossierStatusBadge status={dossier.status} />
+                <div className="flex flex-wrap items-center gap-2">
+                    <DossierStatusBadge status={dossier.status} />
+                    {canManage && (
+                        <ArchiveDossierButton
+                            dossierId={dossier.id}
+                            dossierTitle={dossier.title}
+                        />
+                    )}
+                </div>
             </div>
 
             {accessGrantPortalUrl && (

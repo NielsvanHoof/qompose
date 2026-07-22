@@ -3,6 +3,7 @@ import Heading from '@/components/heading';
 import CreateDossierForm from '@/features/dossiers/create/create-dossier-form';
 import type { DossierClientOption } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     create as createDossier,
     index as dossierIndex,
@@ -17,15 +18,16 @@ export default function CreateDossier({
     clients: DossierClientOption[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     setLayoutProps({
         breadcrumbs: [
             {
-                title: 'Dossiers',
+                title: t('Dossiers'),
                 href: dossierIndex(currentWorkspace),
             },
             {
-                title: 'New dossier',
+                title: t('New dossier'),
                 href: createDossier(currentWorkspace),
             },
         ],
@@ -33,12 +35,14 @@ export default function CreateDossier({
 
     return (
         <>
-            <Head title="New dossier" />
+            <Head title={t('New dossier')} />
 
             <div className="mx-auto w-full max-w-xl p-4 md:p-8">
                 <Heading
-                    title="New dossier"
-                    description="Create a document collection for an existing client."
+                    title={t('New dossier')}
+                    description={t(
+                        'Create a document collection for an existing client.',
+                    )}
                 />
 
                 <CreateDossierForm clients={clients} />

@@ -6,11 +6,13 @@ namespace App\Policies\Clients;
 
 use App\Enums\Permission;
 use App\Models\Client;
-use App\Models\Tenant;
 use App\Models\User;
+use App\Policies\Concerns\AuthorizesTenantPermission;
 
 final class ClientPolicy
 {
+    use AuthorizesTenantPermission;
+
     public function viewAny(User $user): bool
     {
         return $user->can(Permission::ManageClients->value);
@@ -18,15 +20,24 @@ final class ClientPolicy
 
     public function view(User $user, Client $client): bool
     {
-        $tenant = $client->tenant;
-
-        return $user->can(Permission::ManageClients->value)
-            && $tenant instanceof Tenant
-            && $user->belongsToTenant($tenant);
+        return $this->userHasPermissionInTenant(
+            $user,
+            $client->tenant,
+            Permission::ManageClients,
+        );
     }
 
     public function create(User $user): bool
     {
         return $user->can(Permission::ManageClients->value);
+    }
+
+    public function delete(User $user, Client $client): bool
+    {
+        return $this->userHasPermissionInTenant(
+            $user,
+            $client->tenant,
+            Permission::ManageClients,
+        );
     }
 }

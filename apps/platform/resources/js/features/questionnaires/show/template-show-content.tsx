@@ -26,6 +26,7 @@ import type {
     TemplateDetail,
 } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { index as templateIndex } from '@/routes/workspaces/templates';
 
 /**
@@ -43,6 +44,7 @@ export default function TemplateShowContent({
     canCopy: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     return (
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
@@ -54,7 +56,7 @@ export default function TemplateShowContent({
                             {template.category_label}
                         </Badge>
                         {template.is_system && (
-                            <Badge variant="outline">System</Badge>
+                            <Badge variant="outline">{t('System')}</Badge>
                         )}
                     </div>
                     {template.description && (
@@ -78,7 +80,7 @@ export default function TemplateShowContent({
                                     variant="secondary"
                                     disabled={processing}
                                 >
-                                    Copy to my firm
+                                    {t('Copy to my firm')}
                                 </Button>
                             )}
                         </Form>
@@ -96,13 +98,15 @@ export default function TemplateShowContent({
                                     variant="destructive"
                                     disabled={processing}
                                 >
-                                    Delete
+                                    {t('Delete')}
                                 </Button>
                             )}
                         </Form>
                     )}
                     <Button variant="outline" asChild>
-                        <Link href={templateIndex(currentWorkspace)}>Back</Link>
+                        <Link href={templateIndex(currentWorkspace)}>
+                            {t('Back')}
+                        </Link>
                     </Button>
                 </div>
             </div>
@@ -110,9 +114,9 @@ export default function TemplateShowContent({
             {canManage && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Template details</CardTitle>
+                        <CardTitle>{t('Template details')}</CardTitle>
                         <CardDescription>
-                            Update the name, category, and description.
+                            {t('Update the name, category, and description.')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -126,7 +130,7 @@ export default function TemplateShowContent({
                             {({ errors, processing }) => (
                                 <>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="name">Name</Label>
+                                        <Label htmlFor="name">{t('Name')}</Label>
                                         <Input
                                             id="name"
                                             name="name"
@@ -137,7 +141,7 @@ export default function TemplateShowContent({
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="category">
-                                            Category
+                                            {t('Category')}
                                         </Label>
                                         <Select
                                             required
@@ -162,7 +166,7 @@ export default function TemplateShowContent({
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="description">
-                                            Description
+                                            {t('Description')}
                                         </Label>
                                         <textarea
                                             id="description"
@@ -178,7 +182,7 @@ export default function TemplateShowContent({
                                         />
                                     </div>
                                     <Button disabled={processing}>
-                                        Save details
+                                        {t('Save details')}
                                     </Button>
                                 </>
                             )}
@@ -189,11 +193,11 @@ export default function TemplateShowContent({
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Questionnaire items</CardTitle>
+                    <CardTitle>{t('Questionnaire items')}</CardTitle>
                     <CardDescription>
                         {template.is_system
-                            ? 'System templates are read-only. Copy to customise.'
-                            : 'Add, edit, or remove items. Drag the grip to reorder.'}
+                            ? t('System templates are read-only. Copy to customise.')
+                            : t('Add, edit, or remove items. Drag the grip to reorder.')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

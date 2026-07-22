@@ -8,11 +8,13 @@ use App\Enums\DossierStatus;
 use App\Enums\Permission;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
-use App\Models\Tenant;
 use App\Models\User;
+use App\Policies\Concerns\AuthorizesTenantPermission;
 
 final class DocumentRequestPolicy
 {
+    use AuthorizesTenantPermission;
+
     /**
      * Media library and any future document-request index use the same gate as dossiers.
      */
@@ -28,11 +30,11 @@ final class DocumentRequestPolicy
 
     public function view(User $user, DocumentRequest $documentRequest): bool
     {
-        $tenant = $documentRequest->tenant;
-
-        return $user->can(Permission::ViewDossiers->value)
-            && $tenant instanceof Tenant
-            && $user->belongsToTenant($tenant);
+        return $this->userHasPermissionInTenant(
+            $user,
+            $documentRequest->tenant,
+            Permission::ViewDossiers,
+        );
     }
 
     /**
@@ -64,13 +66,10 @@ final class DocumentRequestPolicy
         DocumentRequest $documentRequest,
         Permission $permission,
     ): bool {
-        $tenant = $documentRequest->tenant;
         $dossier = $documentRequest->dossier;
 
-        return $user->can($permission->value)
-            && $tenant instanceof Tenant
+        return $this->userHasPermissionInTenant($user, $documentRequest->tenant, $permission)
             && $dossier instanceof Dossier
-            && $dossier->status !== DossierStatus::Completed
-            && $user->belongsToTenant($tenant);
+            && $dossier->status !== DossierStatus::Completed;
     }
 }

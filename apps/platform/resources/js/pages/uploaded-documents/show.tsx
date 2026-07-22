@@ -11,6 +11,7 @@ import type {
     DocumentProcessingStatus,
 } from '@/features/document-requests/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 import { formatDateTime } from '@/lib/format-date-time';
 import {
@@ -44,6 +45,7 @@ export default function ShowUploadedDocument({
     can_download: canDownload,
 }: ExtractionPageProps) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     const isProcessing =
         uploadedDocument.processing_status === 'pending' ||
@@ -71,7 +73,7 @@ export default function ShowUploadedDocument({
     setLayoutProps({
         breadcrumbs: [
             {
-                title: 'Dossiers',
+                title: t('Dossiers'),
                 href: dossierIndex(currentWorkspace),
             },
             ...(dossier
@@ -97,9 +99,7 @@ export default function ShowUploadedDocument({
 
     return (
         <>
-            <Head
-                title={`Extraction · ${uploadedDocument.original_filename}`}
-            />
+            <Head title={`${t('Extraction')} · ${uploadedDocument.original_filename}`} />
 
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -107,8 +107,10 @@ export default function ShowUploadedDocument({
                         title={uploadedDocument.original_filename}
                         description={
                             documentRequest
-                                ? `Extraction for “${documentRequest.title}”`
-                                : 'Document extraction'
+                                ? t('Extraction for “:title”', {
+                                      title: documentRequest.title,
+                                  })
+                                : t('Document extraction')
                         }
                     />
                     <div className="flex flex-wrap items-center gap-2">
@@ -127,7 +129,7 @@ export default function ShowUploadedDocument({
                                         dossier: dossier.id,
                                     })}
                                 >
-                                    Back to dossier
+                                    {t('Back to dossier')}
                                 </Link>
                             </Button>
                         )}
@@ -142,7 +144,7 @@ export default function ShowUploadedDocument({
                                         },
                                     )}
                                 >
-                                    Download
+                                    {t('Download')}
                                 </a>
                             </Button>
                         )}
@@ -150,7 +152,7 @@ export default function ShowUploadedDocument({
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                    {formatBytes(uploadedDocument.size_bytes)} · uploaded{' '}
+                    {formatBytes(uploadedDocument.size_bytes)} · {t('uploaded')}{' '}
                     {formatDateTime(uploadedDocument.uploaded_at)}
                 </p>
 
@@ -158,7 +160,7 @@ export default function ShowUploadedDocument({
                     uploadedDocument.processing_error && (
                         <ErrorState
                             variant="inline"
-                            title="Processing failed"
+                            title={t('Processing failed')}
                             description={uploadedDocument.processing_error}
                         />
                     )}
@@ -166,8 +168,9 @@ export default function ShowUploadedDocument({
                 {(uploadedDocument.processing_status === 'pending' ||
                     uploadedDocument.processing_status === 'processing') && (
                     <p className="text-sm text-muted-foreground">
-                        Analysis is still running. Results will appear
-                        automatically.
+                        {t(
+                            'Analysis is still running. Results will appear automatically.',
+                        )}
                     </p>
                 )}
 

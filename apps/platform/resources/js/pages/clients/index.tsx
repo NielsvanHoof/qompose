@@ -21,9 +21,11 @@ import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 export default function ClientIndex({
     clients,
     indexQuery,
+    can_manage: canManage = false,
 }: {
     clients: Paginated<ClientSummary>;
     indexQuery: IndexQueryConfig;
+    can_manage?: boolean;
     /** Current Spatie filter bag — consumed by useIndexQuery via usePage(). */
     filters?: Record<string, string>;
     sort?: string | null;
@@ -71,7 +73,7 @@ export default function ClientIndex({
                 </div>
 
                 <IndexQueryToolbar config={indexQuery} />
-                <ClientsListCard clients={clients} />
+                <ClientsListCard clients={clients} canManage={canManage} />
                 <IndexPagination paginator={clients} />
             </div>
         </>

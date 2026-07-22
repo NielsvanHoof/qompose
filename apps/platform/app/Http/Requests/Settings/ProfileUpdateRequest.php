@@ -8,9 +8,11 @@ use App\Concerns\EnsuresAuthenticatedUser;
 use App\Concerns\ProfileValidationRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 
 final class ProfileUpdateRequest extends FormRequest
 {
+    use LocalizesValidationAttributes;
     use EnsuresAuthenticatedUser, ProfileValidationRules;
 
     /**

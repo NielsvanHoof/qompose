@@ -219,7 +219,11 @@ test('adviser can apply a template and edit dossier items', function () {
         'documentRequest' => $firstTemplateItem,
     ]))->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
 
-    expect(DocumentRequest::query()->whereKey($firstTemplateItem->id)->exists())->toBeFalse();
+    expect(DocumentRequest::query()->whereKey($firstTemplateItem->id)->exists())->toBeFalse()
+        ->and(Activity::query()
+            ->where('event', AuditEvent::DocumentRequestDeleted->value)
+            ->where('subject_id', $firstTemplateItem->id)
+            ->exists())->toBeTrue();
 });
 
 test('firm templates are isolated between tenants', function () {

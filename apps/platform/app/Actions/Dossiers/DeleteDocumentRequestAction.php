@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Dossiers;
 
+use App\Actions\Audit\LogAuditActivityAction;
+use App\Enums\AuditEvent;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
 use Illuminate\Filesystem\FilesystemManager;
@@ -15,6 +17,7 @@ final class DeleteDocumentRequestAction
 {
     public function __construct(
         private readonly FilesystemManager $filesystems,
+        private readonly LogAuditActivityAction $logAuditActivity,
     ) {}
 
     public function handle(DocumentRequest $documentRequest): void
@@ -35,6 +38,16 @@ final class DeleteDocumentRequestAction
                     'path' => $uploadedDocument->path,
                 ]
                 : null;
+
+            $this->logAuditActivity->handle(
+                AuditEvent::DocumentRequestDeleted,
+                $lockedDocumentRequest,
+                [
+                    'title' => $lockedDocumentRequest->title,
+                    'type' => $lockedDocumentRequest->type->value,
+                    'dossier_id' => $lockedDocumentRequest->dossier_id,
+                ],
+            );
 
             $lockedDocumentRequest->deleteOrFail();
 

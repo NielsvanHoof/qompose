@@ -8,9 +8,11 @@ use App\Concerns\EnsuresAuthenticatedUser;
 use App\Concerns\PasswordValidationRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 
 final class PasswordUpdateRequest extends FormRequest
 {
+    use LocalizesValidationAttributes;
     use EnsuresAuthenticatedUser, PasswordValidationRules;
 
     /**

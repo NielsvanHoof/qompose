@@ -6,6 +6,7 @@ namespace App\Queries\Reporting;
 
 use App\Enums\AuditEvent;
 use App\Models\Activity;
+use App\Models\Client;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use App\Models\User;
@@ -78,6 +79,8 @@ final class ActivityLogRowMapper
 
         if ($subject instanceof ClientAccessGrant) {
             $name = $subject->dossier?->title;
+        } elseif ($subject instanceof Client) {
+            $name = $subject->name;
         } elseif ($subject instanceof Dossier) {
             $name = $subject->title;
         } elseif ($subject instanceof Model) {

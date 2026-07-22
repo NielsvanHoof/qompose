@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Questionnaires;
 
+use App\Actions\Audit\LogAuditActivityAction;
 use App\Actions\Questionnaires\CreateQuestionnaireTemplateItemAction;
 use App\Actions\Questionnaires\ReorderQuestionnaireTemplateItemsAction;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Questionnaires\ReorderQuestionnaireTemplateItemsRequest;
 use App\Http\Requests\Questionnaires\StoreQuestionnaireTemplateItemRequest;
@@ -50,8 +52,18 @@ final class QuestionnaireTemplateItemController extends Controller
         Tenant $tenant,
         QuestionnaireTemplate $template,
         QuestionnaireTemplateItem $item,
+        LogAuditActivityAction $logAuditActivity,
     ): RedirectResponse {
         $this->authorize('update', $template);
+
+        $logAuditActivity->handle(
+            AuditEvent::QuestionnaireTemplateItemDeleted,
+            $item,
+            [
+                'title' => $item->title,
+                'template_id' => $template->id,
+            ],
+        );
 
         $item->delete();
 

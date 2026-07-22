@@ -33,7 +33,7 @@ final class WorkspaceOnboardingController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Firm created. Add your first client to get started.',
+            'message' => __('Firm created. Add your first client to get started.'),
         ]);
 
         return to_route('workspaces.clients.create', ['tenant' => $tenant]);

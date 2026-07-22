@@ -7,10 +7,12 @@ namespace App\Http\Requests\Settings;
 use App\Concerns\EnsuresAuthenticatedUser;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Laravel\Fortify\InteractsWithTwoFactorState;
 
 final class TwoFactorAuthenticationRequest extends FormRequest
 {
+    use LocalizesValidationAttributes;
     use EnsuresAuthenticatedUser, InteractsWithTwoFactorState;
 
     /**

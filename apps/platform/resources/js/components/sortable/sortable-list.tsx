@@ -17,6 +17,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/hooks/use-translation';
 import { applyIdOrder, reorderIds, sameIdOrder } from '@/lib/reorder';
 import { cn } from '@/lib/utils';
 
@@ -45,6 +46,8 @@ export default function SortableList<T extends { id: number }>({
     className,
     renderItem,
 }: SortableListProps<T>) {
+    const { t } = useTranslation();
+
     // Local order for snappy UI while Inertia reloads props.
     const [orderedItems, setOrderedItems] = useState(items);
     // false on SSR + first client paint so markup matches, then enable DnD.
@@ -98,7 +101,7 @@ export default function SortableList<T extends { id: number }>({
                     <div key={item.id}>
                         {renderItem(item, {
                             DragHandle: () =>
-                                enabled ? <StaticDragHandle /> : null,
+                                enabled ? <StaticDragHandle label={t('Drag to reorder')} /> : null,
                         })}
                     </div>
                 ))}
@@ -118,7 +121,11 @@ export default function SortableList<T extends { id: number }>({
             >
                 <div className={className}>
                     {orderedItems.map((item) => (
-                        <SortableRow key={item.id} id={item.id}>
+                        <SortableRow
+                            key={item.id}
+                            id={item.id}
+                            label={t('Drag to reorder')}
+                        >
                             {(DragHandle) => renderItem(item, { DragHandle })}
                         </SortableRow>
                     ))}
@@ -129,14 +136,14 @@ export default function SortableList<T extends { id: number }>({
 }
 
 /** Grip shown during SSR / pre-hydration — same look, no dnd-kit attrs. */
-function StaticDragHandle() {
+function StaticDragHandle({ label }: { label: string }) {
     return (
         <Button
             type="button"
             size="icon"
             variant="ghost"
             className="pointer-events-none cursor-grab touch-none"
-            aria-label="Drag to reorder"
+            aria-label={label}
             tabIndex={-1}
         >
             <GripVertical />
@@ -146,9 +153,11 @@ function StaticDragHandle() {
 
 function SortableRow({
     id,
+    label,
     children,
 }: {
     id: number;
+    label: string;
     children: (DragHandle: () => ReactNode) => ReactNode;
 }) {
     const {
@@ -175,7 +184,7 @@ function SortableRow({
             size="icon"
             variant="ghost"
             className="cursor-grab touch-none active:cursor-grabbing"
-            aria-label="Drag to reorder"
+            aria-label={label}
             {...attributes}
             {...listeners}
         >

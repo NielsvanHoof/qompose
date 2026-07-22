@@ -6,12 +6,14 @@ namespace App\Http\Controllers\Dossiers;
 
 use App\Actions\Audit\LogAuditActivityAction;
 use App\Actions\Dossiers\CreateDossierAction;
+use App\Actions\Dossiers\DeleteDossierAction;
 use App\Enums\AuditEvent;
 use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreDossierRequest;
 use App\Models\Dossier;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Queries\Dossiers\FetchDossierCreateQuery;
 use App\Queries\Dossiers\FetchDossierIndexQuery;
 use App\Queries\Dossiers\FetchDossierShowQuery;
@@ -19,6 +21,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 use function is_string;
 
@@ -80,6 +83,32 @@ final class DossierController extends Controller
             'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
             ...$data,
         ]);
+    }
+
+    public function destroy(
+        Tenant $tenant,
+        Dossier $dossier,
+        DeleteDossierAction $deleteDossier,
+    ): RedirectResponse {
+        $this->authorize('delete', $dossier);
+
+        $user = request()->user();
+
+        if (! $user instanceof User) {
+            abort(HttpResponse::HTTP_FORBIDDEN);
+        }
+
+        $deleteDossier->handle($dossier, $user);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Dossier archived.'),
+        ]);
+
+        return to_route(
+            'workspaces.dossiers.index',
+            $this->workspaceRouteParameters(),
+        );
     }
 
     private function flashedAccessGrantToken(Request $request): ?string

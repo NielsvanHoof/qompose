@@ -6,6 +6,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import ArchiveClientButton from '@/features/clients/archive-client-button';
 import type { ClientSummary } from '@/features/clients/types';
 import { useTranslation } from '@/hooks/use-translation';
 import type { Paginated } from '@/types/pagination';
@@ -15,8 +16,10 @@ import type { Paginated } from '@/types/pagination';
  */
 export default function ClientsListCard({
     clients,
+    canManage = false,
 }: {
     clients: Paginated<ClientSummary>;
+    canManage?: boolean;
 }) {
     const { t } = useTranslation();
     const rows = clients.data;
@@ -56,6 +59,13 @@ export default function ClientsListCard({
                                         ? t('dossier')
                                         : t('dossiers')}
                                 </p>
+                                {canManage && (
+                                    <ArchiveClientButton
+                                        clientId={client.id}
+                                        clientName={client.name}
+                                        dossiersCount={client.dossiers_count}
+                                    />
+                                )}
                             </div>
                         ))}
                     </div>

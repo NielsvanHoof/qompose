@@ -7,6 +7,7 @@ import {
     PaginationEllipsis,
     PaginationItem,
 } from '@/components/ui/pagination';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import type {
     Paginated,
@@ -24,6 +25,8 @@ export default function IndexPagination<T>({
 }: {
     paginator: Paginated<T>;
 }) {
+    const { t } = useTranslation();
+
     if (paginator.last_page <= 1) {
         return null;
     }
@@ -46,7 +49,7 @@ export default function IndexPagination<T>({
                             href={prevUrl}
                             preserveState
                             preserveScroll
-                            aria-label="Go to previous page"
+                            aria-label={t('Go to previous page')}
                             className={cn(
                                 buttonVariants({
                                     variant: 'ghost',
@@ -56,7 +59,9 @@ export default function IndexPagination<T>({
                             )}
                         >
                             <ChevronLeftIcon />
-                            <span className="hidden sm:block">Previous</span>
+                            <span className="hidden sm:block">
+                                {t('Previous')}
+                            </span>
                         </Link>
                     ) : (
                         <span
@@ -70,7 +75,9 @@ export default function IndexPagination<T>({
                             )}
                         >
                             <ChevronLeftIcon />
-                            <span className="hidden sm:block">Previous</span>
+                            <span className="hidden sm:block">
+                                {t('Previous')}
+                            </span>
                         </span>
                     )}
                 </PaginationItem>
@@ -97,7 +104,7 @@ export default function IndexPagination<T>({
                             href={nextUrl}
                             preserveState
                             preserveScroll
-                            aria-label="Go to next page"
+                            aria-label={t('Go to next page')}
                             className={cn(
                                 buttonVariants({
                                     variant: 'ghost',
@@ -106,7 +113,7 @@ export default function IndexPagination<T>({
                                 'gap-1 px-2.5 sm:pr-2.5',
                             )}
                         >
-                            <span className="hidden sm:block">Next</span>
+                            <span className="hidden sm:block">{t('Next')}</span>
                             <ChevronRightIcon />
                         </Link>
                     ) : (
@@ -120,7 +127,7 @@ export default function IndexPagination<T>({
                                 'pointer-events-none gap-1 px-2.5 opacity-50 sm:pr-2.5',
                             )}
                         >
-                            <span className="hidden sm:block">Next</span>
+                            <span className="hidden sm:block">{t('Next')}</span>
                             <ChevronRightIcon />
                         </span>
                     )}

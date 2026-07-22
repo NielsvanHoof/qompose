@@ -9,10 +9,12 @@ use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Validation\Rule;
 
 final class UpdateDocumentRequestRequest extends FormRequest
 {
+    use LocalizesValidationAttributes;
     public function authorize(): bool
     {
         $dossier = $this->route('dossier');

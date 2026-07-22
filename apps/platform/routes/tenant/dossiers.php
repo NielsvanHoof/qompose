@@ -11,6 +11,7 @@ Route::get('dossiers', [DossierController::class, 'index'])->name('dossiers.inde
 Route::get('dossiers/create', [DossierController::class, 'create'])->name('dossiers.create');
 Route::post('dossiers', [DossierController::class, 'store'])->name('dossiers.store');
 Route::get('dossiers/{dossier}', [DossierController::class, 'show'])->name('dossiers.show');
+Route::delete('dossiers/{dossier}', [DossierController::class, 'destroy'])->name('dossiers.destroy');
 Route::post('dossiers/{dossier}/complete', [DossierCompletionController::class, 'store'])
     ->name('dossiers.complete');
 Route::post('dossiers/{dossier}/apply-template', [DocumentRequestController::class, 'applyTemplate'])

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Settings;
 
+use App\Actions\Audit\LogAuditActivityAction;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
@@ -51,9 +53,19 @@ final class ProfileController extends Controller
     /**
      * Delete the user's profile.
      */
-    public function destroy(ProfileDeleteRequest $request): RedirectResponse
+    public function destroy(ProfileDeleteRequest $request, LogAuditActivityAction $logAuditActivity): RedirectResponse
     {
         $user = $request->authenticatedUser();
+
+        $logAuditActivity->handle(
+            AuditEvent::UserDeleted,
+            properties: [
+                'email' => $user->email,
+                'user_id' => $user->id,
+            ],
+            causer: $user,
+            includeRequestContext: false,
+        );
 
         Auth::logout();
 

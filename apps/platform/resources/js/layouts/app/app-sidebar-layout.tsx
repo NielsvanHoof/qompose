@@ -6,6 +6,7 @@ import { AppSidebar } from '@/components/app-shell/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-shell/app-sidebar-header';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/features/notifications/notification-bell';
+import { useTranslation } from '@/hooks/use-translation';
 import { WorkspaceNotifications } from '@/hooks/use-workspace-notifications';
 import type { AppLayoutProps } from '@/types';
 
@@ -13,6 +14,8 @@ export default function AppSidebarLayout({
     children,
     breadcrumbs = [],
 }: AppLayoutProps) {
+    const { t } = useTranslation();
+
     return (
         <AppShell variant="sidebar">
             {/* Real-time inbox refresh when a client finishes a questionnaire. */}
@@ -30,7 +33,7 @@ export default function AppSidebarLayout({
                                     size="icon"
                                     className="relative size-9"
                                     disabled
-                                    aria-label="Notifications"
+                                    aria-label={t('Notifications')}
                                 >
                                     <Bell className="size-5 opacity-50" />
                                 </Button>

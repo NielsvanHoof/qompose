@@ -23,11 +23,11 @@ enum QuestionnaireTemplateCategory: string
     public function label(): string
     {
         return match ($this) {
-            self::Kyc => 'KYC',
-            self::Jaarrekening => 'Jaarrekening',
-            self::Fiscale => 'Fiscale aangifte',
-            self::Pbc => 'PBC',
-            self::Custom => 'Custom',
+            self::Kyc => __('KYC'),
+            self::Jaarrekening => __('Annual accounts'),
+            self::Fiscale => __('Tax return'),
+            self::Pbc => __('PBC'),
+            self::Custom => __('Custom'),
         };
     }
 }

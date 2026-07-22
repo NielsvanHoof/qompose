@@ -31,7 +31,7 @@ function dossierPolicyContext(): array
     ];
 }
 
-test('owner can viewAny, view, create, and update a draft dossier', function () {
+test('owner can viewAny, view, create, update, and delete a draft dossier', function () {
     $context = dossierPolicyContext();
     $policy = $context['policy'];
     $owner = $context['owner'];
@@ -40,7 +40,8 @@ test('owner can viewAny, view, create, and update a draft dossier', function () 
     expect($policy->viewAny($owner))->toBeTrue()
         ->and($policy->view($owner, $dossier))->toBeTrue()
         ->and($policy->create($owner))->toBeTrue()
-        ->and($policy->update($owner, $dossier))->toBeTrue();
+        ->and($policy->update($owner, $dossier))->toBeTrue()
+        ->and($policy->delete($owner, $dossier))->toBeTrue();
 });
 
 test('update and complete are denied when the dossier is completed', function () {
@@ -52,7 +53,8 @@ test('update and complete are denied when the dossier is completed', function ()
     $dossier->forceFill(['status' => DossierStatus::Completed])->save();
 
     expect($policy->update($owner, $dossier))->toBeFalse()
-        ->and($policy->complete($owner, $dossier))->toBeFalse();
+        ->and($policy->complete($owner, $dossier))->toBeFalse()
+        ->and($policy->delete($owner, $dossier))->toBeTrue();
 });
 
 test('read-only members can view dossiers but cannot create or complete', function () {

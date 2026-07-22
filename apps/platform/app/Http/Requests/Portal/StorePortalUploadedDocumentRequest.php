@@ -13,10 +13,12 @@ use App\Models\Dossier;
 use App\Transitions\DocumentRequestTransitions;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Validation\Rules\File;
 
 final class StorePortalUploadedDocumentRequest extends FormRequest
 {
+    use LocalizesValidationAttributes;
     public function __construct(
         private readonly DocumentRequestTransitions $documentRequestTransitions,
     ) {

@@ -6,11 +6,13 @@ namespace App\Policies\Portal;
 
 use App\Enums\Permission;
 use App\Models\ClientAccessGrant;
-use App\Models\Tenant;
 use App\Models\User;
+use App\Policies\Concerns\AuthorizesTenantPermission;
 
 final class ClientAccessGrantPolicy
 {
+    use AuthorizesTenantPermission;
+
     public function create(User $user): bool
     {
         return $user->can(Permission::CreateDossiers->value);
@@ -18,10 +20,10 @@ final class ClientAccessGrantPolicy
 
     public function revoke(User $user, ClientAccessGrant $grant): bool
     {
-        $tenant = $grant->tenant;
-
-        return $user->can(Permission::CreateDossiers->value)
-            && $tenant instanceof Tenant
-            && $user->belongsToTenant($tenant);
+        return $this->userHasPermissionInTenant(
+            $user,
+            $grant->tenant,
+            Permission::CreateDossiers,
+        );
     }
 }

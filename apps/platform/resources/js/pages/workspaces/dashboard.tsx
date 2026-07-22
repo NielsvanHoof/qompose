@@ -6,6 +6,7 @@ import ReviewQueueCard from '@/features/dashboard/review-queue-card';
 import type { WorkspaceDashboardMetrics } from '@/features/dashboard/types';
 import type { DossierSummary } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { dashboard as workspaceDashboard } from '@/routes/workspaces';
 import { create as createClient } from '@/routes/workspaces/clients';
 import { create as createDossier } from '@/routes/workspaces/dossiers';
@@ -21,11 +22,12 @@ export default function WorkspaceDashboard({
     recent_dossiers: DossierSummary[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
+    const { t } = useTranslation();
 
     setLayoutProps({
         breadcrumbs: [
             {
-                title: 'Dashboard',
+                title: t('Dashboard'),
                 href: workspaceDashboard(currentWorkspace),
             },
         ],
@@ -33,7 +35,7 @@ export default function WorkspaceDashboard({
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title={t('Dashboard')} />
 
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -42,22 +44,22 @@ export default function WorkspaceDashboard({
                             {currentWorkspace.name}
                         </p>
                         <h1 className="text-2xl font-semibold tracking-tight">
-                            Dossier overview
+                            {t('Dossier overview')}
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Keep track of client requests and review work.
+                            {t('Keep track of client requests and review work.')}
                         </p>
                     </div>
 
                     <div className="flex gap-2">
                         <Button variant="outline" asChild>
                             <Link href={createClient(currentWorkspace)}>
-                                New client
+                                {t('New client')}
                             </Link>
                         </Button>
                         <Button asChild>
                             <Link href={createDossier(currentWorkspace)}>
-                                New dossier
+                                {t('New dossier')}
                             </Link>
                         </Button>
                     </div>

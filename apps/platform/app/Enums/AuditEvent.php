@@ -30,6 +30,12 @@ enum AuditEvent: string
     case ClientChangesRequestedFailed = 'client_portal.changes_requested_failed';
     case AccessDenied = 'access.denied';
     case MemberRoleChanged = 'member.role_changed';
+    case DossierDeleted = 'dossier.deleted';
+    case ClientDeleted = 'client.deleted';
+    case DocumentRequestDeleted = 'document_request.deleted';
+    case QuestionnaireTemplateDeleted = 'questionnaire_template.deleted';
+    case QuestionnaireTemplateItemDeleted = 'questionnaire_template_item.deleted';
+    case UserDeleted = 'user.deleted';
 
     public function label(): string
     {
@@ -58,6 +64,12 @@ enum AuditEvent: string
             self::ClientChangesRequestedFailed => __('Client changes-requested notification failed'),
             self::AccessDenied => __('Access denied'),
             self::MemberRoleChanged => __('Member role changed'),
+            self::DossierDeleted => __('Dossier archived'),
+            self::ClientDeleted => __('Client archived'),
+            self::DocumentRequestDeleted => __('Document request deleted'),
+            self::QuestionnaireTemplateDeleted => __('Questionnaire template deleted'),
+            self::QuestionnaireTemplateItemDeleted => __('Questionnaire template item deleted'),
+            self::UserDeleted => __('User account deleted'),
         };
     }
 }
