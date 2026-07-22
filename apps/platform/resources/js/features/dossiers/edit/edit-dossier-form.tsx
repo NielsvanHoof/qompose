@@ -5,15 +5,21 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { EditableDossier } from '@/features/dossiers/types';
+import DossierFollowUpFields from '@/features/dossiers/follow-up/dossier-follow-up-fields';
+import type {
+    EditableDossierWithResponsibility,
+    ResponsibleStaffOption,
+} from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { show as showDossier } from '@/routes/workspaces/dossiers';
 
 export default function EditDossierForm({
     dossier,
+    responsibleStaff,
 }: {
-    dossier: EditableDossier;
+    dossier: EditableDossierWithResponsibility;
+    responsibleStaff: ResponsibleStaffOption[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -65,6 +71,16 @@ export default function EditDossierForm({
                         />
                         <InputError message={errors.reference} />
                     </div>
+
+                    <DossierFollowUpFields
+                        responsibleStaff={responsibleStaff}
+                        defaultDueDate={dossier.due_date ?? ''}
+                        defaultResponsibleUserId={dossier.responsible_user_id}
+                        defaultReminderIntervalDays={
+                            dossier.reminder_interval_days
+                        }
+                        errors={errors}
+                    />
 
                     <div className="flex items-center gap-3">
                         <Button disabled={processing}>

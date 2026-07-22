@@ -48,6 +48,7 @@ final class DeleteDossierAction
                 );
 
                 $lockedDossier->disableLogging();
+                $lockedDossier->forceFill(['next_reminder_at' => null])->save();
                 $lockedDossier->deleteOrFail();
             }
         });

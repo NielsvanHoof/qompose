@@ -9,6 +9,7 @@ use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Models\ClientAccessGrant;
+use App\Models\Dossier;
 use App\Queries\Portal\FetchClientPortalQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +29,13 @@ final class ClientPortalController extends Controller
         $grant = $this->grantFromRequest($request);
 
         DB::transaction(function () use ($grant, $logAuditActivity): void {
-            $grant->forceFill(['last_used_at' => now()])->save();
+            $openedAt = now();
+            $grant->forceFill(['last_used_at' => $openedAt])->save();
+
+            Dossier::query()
+                ->whereKey($grant->dossier_id)
+                ->toBase()
+                ->update(['last_client_opened_at' => $openedAt]);
 
             $logAuditActivity->handle(
                 AuditEvent::ClientPortalAccessed,

@@ -12,7 +12,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import type { DossierClientOption } from '@/features/dossiers/types';
+import DossierFollowUpFields from '@/features/dossiers/follow-up/dossier-follow-up-fields';
+import type {
+    DossierClientOption,
+    ResponsibleStaffOption,
+} from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { index as clientIndex } from '@/routes/workspaces/clients';
@@ -23,8 +27,10 @@ import { index as dossierIndex } from '@/routes/workspaces/dossiers';
  */
 export default function CreateDossierForm({
     clients,
+    responsibleStaff,
 }: {
     clients: DossierClientOption[];
+    responsibleStaff: ResponsibleStaffOption[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -104,6 +110,11 @@ export default function CreateDossierForm({
                         />
                         <InputError message={errors.reference} />
                     </div>
+
+                    <DossierFollowUpFields
+                        responsibleStaff={responsibleStaff}
+                        errors={errors}
+                    />
 
                     <div className="flex items-center gap-3">
                         <Button disabled={processing}>

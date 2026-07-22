@@ -121,7 +121,9 @@ test('firm dashboard shows tenant-scoped operational metrics', function () {
             ->component('workspaces/dashboard')
             ->where('metrics.clients', 1)
             ->where('metrics.open_dossiers', 2)
-            ->where('metrics.awaiting_client', 1)
+            ->where('metrics.needs_review', 1)
+            ->where('metrics.awaiting_client', 2)
+            ->where('metrics.overdue', 0)
             ->where('metrics.in_review', 1)
             ->where('metrics.submitted_document_requests', 1)
             ->where('metrics.outstanding_document_requests', 2));

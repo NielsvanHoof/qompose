@@ -15,9 +15,17 @@ export type PortalDossier = {
     title: string;
     reference: string | null;
     status: DossierStatus;
+    due_date: string | null;
     client: {
         name: string;
     };
     expires_at: string | null;
+    progress: {
+        total: number;
+        completed: number;
+        approved: number;
+        remaining: number;
+        next_incomplete: { id: number; title: string } | null;
+    };
     document_requests: PortalDocumentRequest[];
 };

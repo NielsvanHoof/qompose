@@ -67,6 +67,13 @@ final class IssueClientPortalAccessAction
                     ],
                     $createdBy,
                 );
+
+                if ($dossier->reminder_interval_days !== null) {
+                    $dossier->disableLogging();
+                    $dossier->forceFill([
+                        'next_reminder_at' => now()->addDays($dossier->reminder_interval_days),
+                    ])->save();
+                }
             }
 
             return $result;

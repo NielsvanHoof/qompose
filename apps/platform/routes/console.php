@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\Dossiers\SendScheduledDossierRemindersCommand;
 use App\Models\ClientAccessGrant;
 use Illuminate\Support\Facades\Schedule;
 use Spatie\Health\Commands\DispatchQueueCheckJobsCommand;
@@ -11,6 +12,11 @@ use Spatie\Health\Commands\ScheduleCheckHeartbeatCommand;
 Schedule::command(DispatchQueueCheckJobsCommand::class)->everyMinute()->withoutOverlapping();
 Schedule::command(ScheduleCheckHeartbeatCommand::class)->everyMinute()->withoutOverlapping();
 Schedule::command(RunHealthChecksCommand::class)->everyMinute()->withoutOverlapping();
+
+Schedule::command(SendScheduledDossierRemindersCommand::class)
+    ->hourly()
+    ->onOneServer()
+    ->withoutOverlapping();
 
 Schedule::command('queue:prune-failed', [
     '--hours' => config('retention.failed_jobs_hours'),

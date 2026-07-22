@@ -30,6 +30,13 @@ final class FetchDossierShowQuery
      *         title: string,
      *         reference: string|null,
      *         status: string,
+     *         due_date: string|null,
+     *         responsible_staff: array{id: int, name: string, email: string}|null,
+     *         reminder_interval_days: int|null,
+     *         next_reminder_at: string|null,
+     *         last_client_message_sent_at: string|null,
+     *         last_client_opened_at: string|null,
+     *         has_outstanding_client_items: bool,
      *         ready_to_complete: bool,
      *         review_summary: array{
      *             total: int,
@@ -75,6 +82,7 @@ final class FetchDossierShowQuery
     {
         $dossier->load([
             'client:id,name,email',
+            'responsibleUser:id,name,email',
             'documentRequests' => fn ($query) => $query
                 ->with(['uploadedDocument', 'reviewedBy:id,name'])
                 ->oldest('sort_order'),
@@ -86,6 +94,12 @@ final class FetchDossierShowQuery
         $totalRequestCount = $documentRequests->count();
         $acceptedRequestCount = $documentRequests
             ->where('status', DocumentRequestStatus::Accepted)
+            ->count();
+        $outstandingClientItemCount = $documentRequests
+            ->whereIn('status', [
+                DocumentRequestStatus::Pending,
+                DocumentRequestStatus::Rejected,
+            ])
             ->count();
 
         $templates = QuestionnaireTemplate::queryVisibleToCurrentTenant()
@@ -108,6 +122,19 @@ final class FetchDossierShowQuery
                 'title' => $dossier->title,
                 'reference' => $dossier->reference,
                 'status' => $dossier->status->value,
+                'due_date' => $dossier->due_date?->toDateString(),
+                'responsible_staff' => $dossier->responsibleUser instanceof User
+                    ? [
+                        'id' => $dossier->responsibleUser->id,
+                        'name' => $dossier->responsibleUser->name,
+                        'email' => $dossier->responsibleUser->email,
+                    ]
+                    : null,
+                'reminder_interval_days' => $dossier->reminder_interval_days,
+                'next_reminder_at' => $dossier->next_reminder_at?->toIso8601String(),
+                'last_client_message_sent_at' => $dossier->last_client_message_sent_at?->toIso8601String(),
+                'last_client_opened_at' => $dossier->last_client_opened_at?->toIso8601String(),
+                'has_outstanding_client_items' => $outstandingClientItemCount > 0,
                 'ready_to_complete' => $dossier->status !== DossierStatus::Completed
                     && $totalRequestCount > 0
                     && $acceptedRequestCount === $totalRequestCount,

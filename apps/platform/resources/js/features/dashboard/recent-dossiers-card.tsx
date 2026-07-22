@@ -74,6 +74,21 @@ export default function RecentDossiersCard({
                                         {dossier.reference &&
                                             ` · ${dossier.reference}`}
                                     </p>
+                                    {(dossier.due_date ||
+                                        dossier.responsible_name) && (
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {dossier.due_date
+                                                ? t('Due :date', {
+                                                      date: new Date(
+                                                          `${dossier.due_date}T00:00:00`,
+                                                      ).toLocaleDateString(),
+                                                  })
+                                                : t('No due date')}
+                                            {dossier.responsible_name
+                                                ? ` · ${dossier.responsible_name}`
+                                                : null}
+                                        </p>
+                                    )}
                                 </div>
                                 <Badge
                                     variant={dossierStatusBadgeVariant(

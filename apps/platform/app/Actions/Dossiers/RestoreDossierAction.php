@@ -11,7 +11,6 @@ use App\Models\Dossier;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
 
 final class RestoreDossierAction
 {
@@ -37,10 +36,7 @@ final class RestoreDossierAction
             }
 
             $lockedDossier->disableLogging();
-
-            if (! $lockedDossier->restore()) {
-                throw new RuntimeException('The dossier could not be restored.');
-            }
+            $lockedDossier->forceFill(['deleted_at' => null])->saveOrFail();
 
             $this->logAuditActivity->handle(
                 AuditEvent::DossierRestored,

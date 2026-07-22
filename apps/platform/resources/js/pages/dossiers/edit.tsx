@@ -1,7 +1,10 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import EditDossierForm from '@/features/dossiers/edit/edit-dossier-form';
-import type { EditableDossier } from '@/features/dossiers/types';
+import type {
+    EditableDossierWithResponsibility,
+    ResponsibleStaffOption,
+} from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import {
@@ -10,7 +13,13 @@ import {
     show as showDossier,
 } from '@/routes/workspaces/dossiers';
 
-export default function EditDossier({ dossier }: { dossier: EditableDossier }) {
+export default function EditDossier({
+    dossier,
+    responsible_staff: responsibleStaff,
+}: {
+    dossier: EditableDossierWithResponsibility;
+    responsible_staff: ResponsibleStaffOption[];
+}) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
 
@@ -45,7 +54,10 @@ export default function EditDossier({ dossier }: { dossier: EditableDossier }) {
                         'Update the working title or reference without changing the client relationship.',
                     )}
                 />
-                <EditDossierForm dossier={dossier} />
+                <EditDossierForm
+                    dossier={dossier}
+                    responsibleStaff={responsibleStaff}
+                />
             </div>
         </>
     );

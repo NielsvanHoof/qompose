@@ -32,7 +32,9 @@ final class FetchClientShowQuery
     public function handle(Client $client): array
     {
         $activeDossiersCount = $client->dossiers()->toBase()->count();
-        $archivedDossiersCount = $client->dossiers()->onlyTrashed()->toBase()->count();
+        $archivedDossiersQuery = Dossier::onlyTrashed();
+        $archivedDossiersQuery->getQuery()->where('client_id', $client->id);
+        $archivedDossiersCount = $archivedDossiersQuery->toBase()->count();
 
         $dossiers = Dossier::query()
             ->whereBelongsTo($client)

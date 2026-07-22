@@ -5,6 +5,7 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import AddDocumentRequestCard from '@/features/document-requests/staff/add-document-request-card';
 import DocumentRequestsCard from '@/features/document-requests/staff/document-requests-card';
+import DossierFollowUpCard from '@/features/dossiers/follow-up/dossier-follow-up-card';
 import {
     DossierPermissionsProvider,
     useDossierPermissions,
@@ -36,6 +37,7 @@ type DossierShowContentProps = {
     accessGrantPortalUrl?: string | null;
     canManage: boolean;
     canEdit: boolean;
+    canSendReminder: boolean;
     canReview: boolean;
     canDownload: boolean;
 };
@@ -50,6 +52,7 @@ export default function DossierShowContent({
     accessGrantPortalUrl = null,
     canManage,
     canEdit,
+    canSendReminder,
     canReview,
     canDownload,
 }: DossierShowContentProps) {
@@ -63,6 +66,7 @@ export default function DossierShowContent({
                 accessGrantToken={accessGrantToken}
                 accessGrantPortalUrl={accessGrantPortalUrl}
                 canEdit={canEdit}
+                canSendReminder={canSendReminder}
             />
         </DossierPermissionsProvider>
     );
@@ -74,12 +78,14 @@ function DossierShowBody({
     accessGrantToken,
     accessGrantPortalUrl,
     canEdit,
+    canSendReminder,
 }: {
     dossier: Dossier;
     templates: ApplyTemplateOption[];
     accessGrantToken: string | null;
     accessGrantPortalUrl: string | null;
     canEdit: boolean;
+    canSendReminder: boolean;
 }) {
     const { t } = useTranslation();
     const { canManage } = useDossierPermissions();
@@ -155,6 +161,11 @@ function DossierShowBody({
                     )}
                 </div>
             </div>
+
+            <DossierFollowUpCard
+                dossier={dossier}
+                canSendReminder={canSendReminder}
+            />
 
             {accessGrantPortalUrl && (
                 <PortalLinkBanner

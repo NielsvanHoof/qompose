@@ -1,7 +1,10 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import CreateDossierForm from '@/features/dossiers/create/create-dossier-form';
-import type { DossierClientOption } from '@/features/dossiers/types';
+import type {
+    DossierClientOption,
+    ResponsibleStaffOption,
+} from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import {
@@ -14,8 +17,10 @@ import {
  */
 export default function CreateDossier({
     clients,
+    responsible_staff: responsibleStaff,
 }: {
     clients: DossierClientOption[];
+    responsible_staff: ResponsibleStaffOption[];
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
@@ -45,7 +50,10 @@ export default function CreateDossier({
                     )}
                 />
 
-                <CreateDossierForm clients={clients} />
+                <CreateDossierForm
+                    clients={clients}
+                    responsibleStaff={responsibleStaff}
+                />
             </div>
         </>
     );

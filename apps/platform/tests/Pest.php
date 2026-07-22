@@ -123,6 +123,8 @@ pest()->presets()->custom('qompose', function () {
                 'applyTemplate',
                 'answer',
                 'download',
+                'archived',
+                'restore',
             ]),
 
         expect('App\Models\Activity')

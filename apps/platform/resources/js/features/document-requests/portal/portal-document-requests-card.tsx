@@ -19,17 +19,13 @@ import { useTranslation } from '@/hooks/use-translation';
 export default function PortalDocumentRequestsCard({
     firmName,
     documentRequests,
+    nextIncompleteRequestId,
 }: {
     firmName: string;
     documentRequests: PortalDocumentRequest[];
+    nextIncompleteRequestId: number | null;
 }) {
     const { t } = useTranslation();
-    const submittedCount = documentRequests.filter(
-        (item) => item.status === 'submitted' || item.status === 'accepted',
-    ).length;
-    const approvedCount = documentRequests.filter(
-        (item) => item.status === 'accepted',
-    ).length;
 
     return (
         <Card className="border-primary/10 shadow-sm">
@@ -38,19 +34,6 @@ export default function PortalDocumentRequestsCard({
                 <CardDescription>
                     {t(
                         'Complete each item below. Submitted items are locked while they are reviewed; if changes are requested, correct and resubmit them.',
-                    )}
-                    {documentRequests.length > 0 && (
-                        <>
-                            {' '}
-                            {t(
-                                'Progress: :submitted / :total answered · :approved approved',
-                                {
-                                    submitted: submittedCount,
-                                    total: documentRequests.length,
-                                    approved: approvedCount,
-                                },
-                            )}
-                        </>
                     )}
                 </CardDescription>
             </CardHeader>
@@ -67,7 +50,13 @@ export default function PortalDocumentRequestsCard({
                         {documentRequests.map((documentRequest) => (
                             <div
                                 key={documentRequest.id}
-                                className="space-y-2 px-4 py-4"
+                                id={`request-${documentRequest.id}`}
+                                className={`scroll-mt-6 space-y-2 px-4 py-4 ${
+                                    documentRequest.id ===
+                                    nextIncompleteRequestId
+                                        ? 'bg-primary/5 ring-1 ring-primary/15 ring-inset'
+                                        : ''
+                                }`}
                             >
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div>

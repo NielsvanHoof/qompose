@@ -61,6 +61,9 @@ final class DossierTransitions
             ]);
         }
 
-        $dossier->update(['status' => DossierStatus::Completed]);
+        $dossier->forceFill([
+            'status' => DossierStatus::Completed,
+            'next_reminder_at' => null,
+        ])->save();
     }
 }

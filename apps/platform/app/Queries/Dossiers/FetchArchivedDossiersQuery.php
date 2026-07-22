@@ -9,6 +9,7 @@ use App\Models\Dossier;
 use App\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use RuntimeException;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -58,13 +59,14 @@ final class FetchArchivedDossiersQuery extends PaginatedIndexQuery
     /** @return Builder<Dossier> */
     protected function subject(): Builder
     {
-        return Dossier::onlyTrashed()
-            ->select(['id', 'client_id', 'title', 'reference', 'status', 'deleted_at'])
-            ->with([
-                'client' => fn ($query) => $query
-                    ->withTrashed()
-                    ->select(['id', 'name', 'deleted_at']),
-            ]);
+        $query = Dossier::onlyTrashed();
+        $query->getQuery()->select(['id', 'client_id', 'title', 'reference', 'status', 'deleted_at']);
+
+        return $query->with([
+            'client' => fn ($query) => $query
+                ->withTrashed()
+                ->select(['id', 'name', 'deleted_at']),
+        ]);
     }
 
     protected function allowedFilters(): array
@@ -76,14 +78,16 @@ final class FetchArchivedDossiersQuery extends PaginatedIndexQuery
                 }
 
                 $search = '%'.mb_trim($value).'%';
+                $clientIds = Client::withTrashed();
+                $clientIds->getQuery()
+                    ->select('id')
+                    ->whereLike('name', $search);
 
-                $query->where(function (Builder $query) use ($search): void {
+                $query->getQuery()->where(function (QueryBuilder $query) use ($search, $clientIds): void {
                     $query
                         ->whereLike('title', $search)
                         ->orWhereLike('reference', $search)
-                        ->orWhereHas('client', fn (Builder $clientQuery) => $clientQuery
-                            ->withTrashed()
-                            ->whereLike('name', $search));
+                        ->orWhereIn('client_id', $clientIds->getQuery());
                 });
             }),
         ];

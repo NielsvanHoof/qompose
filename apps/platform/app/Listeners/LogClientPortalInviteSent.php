@@ -7,10 +7,12 @@ namespace App\Listeners;
 use App\Actions\Audit\LogAuditActivityAction;
 use App\Enums\AuditEvent;
 use App\Models\ClientAccessGrant;
+use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Notifications\Portal\ClientPortalInviteNotification;
 use App\Tenancy\TenantContext;
 use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
 
@@ -47,15 +49,29 @@ final class LogClientPortalInviteSent
             }
 
             $this->tenantContext->runForTenant($tenant, function () use ($grant, $event): void {
-                $this->logAuditActivity->handle(
-                    AuditEvent::ClientPortalInviteSent,
-                    $grant,
-                    [
-                        'dossier_id' => $grant->dossier_id,
-                        'channel' => $event->channel,
-                    ],
-                    includeRequestContext: false,
-                );
+                DB::transaction(function () use ($grant, $event): void {
+                    $dossier = Dossier::query()->whereKey($grant->dossier_id)->firstOrFail();
+                    $sentAt = now();
+
+                    $dossier->disableLogging();
+                    $dossier->forceFill([
+                        'last_client_message_sent_at' => $sentAt,
+                        'next_reminder_at' => $dossier->reminder_interval_days === null
+                            ? null
+                            : $sentAt->copy()->addDays($dossier->reminder_interval_days),
+                    ])->save();
+
+                    $this->logAuditActivity->handle(
+                        AuditEvent::ClientPortalInviteSent,
+                        $grant,
+                        [
+                            'dossier_id' => $grant->dossier_id,
+                            'channel' => $event->channel,
+                            'sent_at' => $sentAt->toIso8601String(),
+                        ],
+                        includeRequestContext: false,
+                    );
+                });
             });
         } catch (Throwable $exception) {
             report(new RuntimeException(

@@ -9,7 +9,6 @@ use App\Enums\AuditEvent;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 final class RestoreClientAction
 {
@@ -27,10 +26,7 @@ final class RestoreClientAction
             }
 
             $lockedClient->disableLogging();
-
-            if (! $lockedClient->restore()) {
-                throw new RuntimeException('The client could not be restored.');
-            }
+            $lockedClient->forceFill(['deleted_at' => null])->saveOrFail();
 
             $this->logAuditActivity->handle(
                 AuditEvent::ClientRestored,

@@ -8,6 +8,7 @@ use App\Actions\Audit\LogAuditActivityAction;
 use App\Actions\Dossiers\CreateDossierAction;
 use App\Actions\Dossiers\DeleteDossierAction;
 use App\Actions\Dossiers\RestoreDossierAction;
+use App\Actions\Dossiers\UpdateDossierAction;
 use App\Enums\AuditEvent;
 use App\Enums\Permission;
 use App\Http\Controllers\Controller;
@@ -21,6 +22,7 @@ use App\Queries\Dossiers\FetchArchivedDossiersQuery;
 use App\Queries\Dossiers\FetchDossierCreateQuery;
 use App\Queries\Dossiers\FetchDossierIndexQuery;
 use App\Queries\Dossiers\FetchDossierShowQuery;
+use App\Queries\Tenancy\FetchResponsibleStaffOptionsQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,12 +44,16 @@ final class DossierController extends Controller
         ]);
     }
 
-    public function create(Tenant $tenant, FetchDossierCreateQuery $getDossierCreateData): Response
-    {
+    public function create(
+        Tenant $tenant,
+        FetchDossierCreateQuery $getDossierCreateData,
+        FetchResponsibleStaffOptionsQuery $fetchResponsibleStaffOptions,
+    ): Response {
         $this->authorize('create', Dossier::class);
 
         return Inertia::render('dossiers/create', [
             'clients' => $getDossierCreateData->handle(),
+            'responsible_staff' => $fetchResponsibleStaffOptions->handle($tenant),
         ]);
     }
 
@@ -100,14 +106,18 @@ final class DossierController extends Controller
             'access_grant_portal_url' => $this->flashedAccessGrantPortalUrl($request),
             'can_manage' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
             'can_edit' => $request->user()?->can('update', $dossier) ?? false,
+            'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
             'can_review' => $request->user()?->can(Permission::ReviewDocuments->value) ?? false,
             'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
             ...$data,
         ]);
     }
 
-    public function edit(Tenant $tenant, Dossier $dossier): Response
-    {
+    public function edit(
+        Tenant $tenant,
+        Dossier $dossier,
+        FetchResponsibleStaffOptionsQuery $fetchResponsibleStaffOptions,
+    ): Response {
         $this->authorize('update', $dossier);
 
         $dossier->load('client:id,name,email');
@@ -122,11 +132,15 @@ final class DossierController extends Controller
                 'id' => $dossier->id,
                 'title' => $dossier->title,
                 'reference' => $dossier->reference,
+                'due_date' => $dossier->due_date?->toDateString(),
+                'responsible_user_id' => $dossier->responsible_user_id,
+                'reminder_interval_days' => $dossier->reminder_interval_days,
                 'client' => [
                     'name' => $client->name,
                     'email' => $client->email,
                 ],
             ],
+            'responsible_staff' => $fetchResponsibleStaffOptions->handle($tenant),
         ]);
     }
 
@@ -134,8 +148,9 @@ final class DossierController extends Controller
         Tenant $tenant,
         UpdateDossierRequest $request,
         Dossier $dossier,
+        UpdateDossierAction $updateDossier,
     ): RedirectResponse {
-        $dossier->update($request->validated());
+        $updateDossier->handle($dossier, $request->validated());
 
         Inertia::flash('toast', [
             'type' => 'success',

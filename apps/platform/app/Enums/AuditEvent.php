@@ -25,6 +25,9 @@ enum AuditEvent: string
     case ClientPortalInviteQueued = 'client_portal.invite_queued';
     case ClientPortalInviteSent = 'client_portal.invite_sent';
     case ClientPortalInviteFailed = 'client_portal.invite_failed';
+    case DossierReminderQueued = 'dossier.reminder_queued';
+    case DossierReminderSent = 'dossier.reminder_sent';
+    case DossierReminderFailed = 'dossier.reminder_failed';
     case ClientChangesRequestedQueued = 'client_portal.changes_requested_queued';
     case ClientChangesRequestedSent = 'client_portal.changes_requested_sent';
     case ClientChangesRequestedFailed = 'client_portal.changes_requested_failed';
@@ -61,6 +64,9 @@ enum AuditEvent: string
             self::ClientPortalInviteQueued => __('Client portal invitation queued'),
             self::ClientPortalInviteSent => __('Client portal invitation sent'),
             self::ClientPortalInviteFailed => __('Client portal invitation failed'),
+            self::DossierReminderQueued => __('Client reminder queued'),
+            self::DossierReminderSent => __('Client reminder sent'),
+            self::DossierReminderFailed => __('Client reminder failed'),
             self::ClientChangesRequestedQueued => __('Client changes-requested notification queued'),
             self::ClientChangesRequestedSent => __('Client changes-requested notification sent'),
             self::ClientChangesRequestedFailed => __('Client changes-requested notification failed'),

@@ -6,17 +6,17 @@ namespace App\Listeners;
 
 use App\Actions\Audit\LogAuditActivityAction;
 use App\Enums\AuditEvent;
-use App\Models\DocumentRequest;
+use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use App\Models\Tenant;
-use App\Notifications\Portal\ClientChangesRequestedNotification;
+use App\Notifications\Portal\ClientPortalReminderNotification;
 use App\Tenancy\TenantContext;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
 
-final class LogClientChangesRequestedSent
+final class LogClientPortalReminderSent
 {
     public function __construct(
         private readonly LogAuditActivityAction $logAuditActivity,
@@ -26,31 +26,31 @@ final class LogClientChangesRequestedSent
     public function handle(NotificationSent $event): void
     {
         if (
-            ! $event->notification instanceof ClientChangesRequestedNotification
+            ! $event->notification instanceof ClientPortalReminderNotification
             || $event->channel !== 'mail'
         ) {
             return;
         }
 
         try {
-            $documentRequest = DocumentRequest::query()
+            $grant = ClientAccessGrant::query()
                 ->withoutGlobalScopes()
-                ->whereKey($event->notification->documentRequestId)
+                ->whereKey($event->notification->grantId)
                 ->first();
 
-            if (! $documentRequest instanceof DocumentRequest) {
+            if (! $grant instanceof ClientAccessGrant) {
                 return;
             }
 
-            $tenant = Tenant::query()->whereKey($documentRequest->tenant_id)->first();
+            $tenant = Tenant::query()->whereKey($grant->tenant_id)->first();
 
             if (! $tenant instanceof Tenant) {
                 return;
             }
 
-            $this->tenantContext->runForTenant($tenant, function () use ($documentRequest, $event): void {
-                DB::transaction(function () use ($documentRequest, $event): void {
-                    $dossier = Dossier::query()->whereKey($documentRequest->dossier_id)->firstOrFail();
+            $this->tenantContext->runForTenant($tenant, function () use ($grant, $event): void {
+                DB::transaction(function () use ($grant, $event): void {
+                    $dossier = Dossier::query()->whereKey($grant->dossier_id)->firstOrFail();
                     $sentAt = now();
 
                     $dossier->disableLogging();
@@ -62,10 +62,11 @@ final class LogClientChangesRequestedSent
                     ])->save();
 
                     $this->logAuditActivity->handle(
-                        AuditEvent::ClientChangesRequestedSent,
-                        $documentRequest,
+                        AuditEvent::DossierReminderSent,
+                        $dossier,
                         [
-                            'dossier_id' => $documentRequest->dossier_id,
+                            'grant_id' => $grant->id,
+                            'source' => $event->notification->source->value,
                             'channel' => $event->channel,
                             'sent_at' => $sentAt->toIso8601String(),
                         ],
@@ -75,7 +76,7 @@ final class LogClientChangesRequestedSent
             });
         } catch (Throwable $exception) {
             report(new RuntimeException(
-                'Failed to audit a delivered client changes-requested notification.',
+                'Failed to record a delivered client reminder.',
                 previous: $exception,
             ));
         }

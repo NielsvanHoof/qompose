@@ -26,6 +26,12 @@ final class DossierFactory extends Factory
             'title' => fake()->sentence(3),
             'reference' => mb_strtoupper(fake()->unique()->bothify('DOS-####')),
             'status' => DossierStatus::Draft,
+            'responsible_user_id' => null,
+            'due_date' => null,
+            'reminder_interval_days' => null,
+            'next_reminder_at' => null,
+            'last_client_message_sent_at' => null,
+            'last_client_opened_at' => null,
         ];
     }
 

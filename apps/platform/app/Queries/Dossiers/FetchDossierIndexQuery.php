@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Queries\Dossiers;
 
+use App\Enums\DocumentRequestStatus;
+use App\Enums\DossierStatus;
 use App\Models\Client;
 use App\Models\Dossier;
 use App\Queries\Filters\ScoutSearchFilter;
@@ -14,6 +16,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use RuntimeException;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
+
+use function in_array;
 
 /**
  * @extends PaginatedIndexQuery<Dossier>
@@ -26,12 +30,14 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
      *     client_name: string,
      *     title: string,
      *     reference: string|null,
-     *     status: string
+     *     status: string,
+     *     due_date: string|null,
+     *     responsible_name: string|null
      * }>
      */
     public function handle(): LengthAwarePaginator
     {
-        /** @var LengthAwarePaginator<int, array{id: int, client_name: string, title: string, reference: string|null, status: string}> */
+        /** @var LengthAwarePaginator<int, array{id: int, client_name: string, title: string, reference: string|null, status: string, due_date: string|null, responsible_name: string|null}> */
         return $this->paginate();
     }
 
@@ -59,6 +65,16 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
                     ],
                 ],
                 ['key' => 'client', 'type' => 'search', 'label' => __('Client')],
+                [
+                    'key' => 'queue',
+                    'type' => 'select',
+                    'label' => __('Workflow queue'),
+                    'options' => [
+                        ['value' => 'needs_review', 'label' => __('Needs review')],
+                        ['value' => 'awaiting_client', 'label' => __('Awaiting client')],
+                        ['value' => 'overdue', 'label' => __('Overdue')],
+                    ],
+                ],
             ],
             'sorts' => [
                 ['key' => '-updated_at', 'label' => __('Recently updated')],
@@ -68,6 +84,8 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
                 ['key' => 'status', 'label' => __('Status (A–Z)')],
                 ['key' => '-created_at', 'label' => __('Newest first')],
                 ['key' => 'created_at', 'label' => __('Oldest first')],
+                ['key' => 'due_date', 'label' => __('Due date (soonest)')],
+                ['key' => '-due_date', 'label' => __('Due date (latest)')],
             ],
             'defaults' => [
                 'sort' => '-updated_at',
@@ -82,8 +100,17 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
     protected function subject(): Builder
     {
         // Prefer Model::select() so phpstan-strict-rules does not flag instance->select().
-        return Dossier::select(['id', 'client_id', 'title', 'reference', 'status', 'created_at', 'updated_at'])
-            ->with('client:id,name');
+        return Dossier::select([
+            'id',
+            'client_id',
+            'responsible_user_id',
+            'title',
+            'reference',
+            'status',
+            'due_date',
+            'created_at',
+            'updated_at',
+        ])->with(['client:id,name', 'responsibleUser:id,name']);
     }
 
     protected function allowedFilters(): array
@@ -92,6 +119,13 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             ScoutSearchFilter::make(Dossier::class),
             AllowedFilter::exact('status'),
             AllowedFilter::partial('client', 'client.name'),
+            AllowedFilter::callback('queue', function (Builder $query, mixed $value): void {
+                if (! is_string($value)) {
+                    return;
+                }
+
+                $this->applyWorkflowQueue($query, $value);
+            }),
         ];
     }
 
@@ -102,6 +136,7 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             AllowedSort::field('status'),
             AllowedSort::field('created_at'),
             AllowedSort::field('updated_at'),
+            AllowedSort::field('due_date'),
         ];
     }
 
@@ -111,7 +146,7 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
     }
 
     /**
-     * @return array{id: int, client_name: string, title: string, reference: string|null, status: string}
+     * @return array{id: int, client_name: string, title: string, reference: string|null, status: string, due_date: string|null, responsible_name: string|null}
      */
     protected function mapModel(Model $model): array
     {
@@ -128,6 +163,41 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             'title' => $model->title,
             'reference' => $model->reference,
             'status' => $model->status->value,
+            'due_date' => $model->due_date?->toDateString(),
+            'responsible_name' => $model->responsibleUser?->name,
         ];
+    }
+
+    /** @param Builder<Dossier> $query */
+    private function applyWorkflowQueue(Builder $query, string $queue): void
+    {
+        if ($queue === 'needs_review') {
+            $query
+                ->whereNot('status', DossierStatus::Completed)
+                ->whereHas('documentRequests', fn ($documentRequestQuery) => $documentRequestQuery
+                    ->getQuery()
+                    ->where('status', DocumentRequestStatus::Submitted->value));
+
+            return;
+        }
+
+        if (! in_array($queue, ['awaiting_client', 'overdue'], true)) {
+            return;
+        }
+
+        $query
+            ->whereNot('status', DossierStatus::Completed)
+            ->whereHas('documentRequests', function ($documentRequestQuery): void {
+                $documentRequestQuery->getQuery()->whereIn('status', [
+                    DocumentRequestStatus::Pending->value,
+                    DocumentRequestStatus::Rejected->value,
+                ]);
+            });
+
+        if ($queue === 'overdue') {
+            $query->getQuery()
+                ->whereNotNull('due_date')
+                ->whereDate('due_date', '<', today());
+        }
     }
 }

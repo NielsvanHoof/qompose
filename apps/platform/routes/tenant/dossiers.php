@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Dossiers\DocumentRequestController;
 use App\Http\Controllers\Dossiers\DossierCompletionController;
 use App\Http\Controllers\Dossiers\DossierController;
+use App\Http\Controllers\Dossiers\DossierReminderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('dossiers', [DossierController::class, 'index'])->name('dossiers.index');
@@ -14,6 +15,8 @@ Route::post('dossiers', [DossierController::class, 'store'])->name('dossiers.sto
 Route::get('dossiers/{dossier}', [DossierController::class, 'show'])->name('dossiers.show');
 Route::get('dossiers/{dossier}/edit', [DossierController::class, 'edit'])->name('dossiers.edit');
 Route::patch('dossiers/{dossier}', [DossierController::class, 'update'])->name('dossiers.update');
+Route::post('dossiers/{dossier}/reminders', [DossierReminderController::class, 'store'])
+    ->name('dossiers.reminders.store');
 Route::delete('dossiers/{dossier}', [DossierController::class, 'destroy'])->name('dossiers.destroy');
 Route::patch('dossiers/{dossier}/restore', [DossierController::class, 'restore'])
     ->withTrashed()

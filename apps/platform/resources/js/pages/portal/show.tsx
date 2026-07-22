@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import StatusMessage from '@/components/status-message';
 import PortalDocumentRequestsCard from '@/features/document-requests/portal/portal-document-requests-card';
+import PortalProgressOverview from '@/features/portal/portal-progress-overview';
 import type { PortalDossier } from '@/features/portal/types';
 import PortalShell from '@/layouts/portal/portal-shell';
 
@@ -42,9 +43,17 @@ export default function PortalShow({
                     </StatusMessage>
                 )}
 
+                <PortalProgressOverview
+                    dossier={dossier}
+                    firmName={firm.name}
+                />
+
                 <PortalDocumentRequestsCard
                     firmName={firm.name}
                     documentRequests={dossier.document_requests}
+                    nextIncompleteRequestId={
+                        dossier.progress.next_incomplete?.id ?? null
+                    }
                 />
 
                 <p className="text-center text-xs text-muted-foreground">

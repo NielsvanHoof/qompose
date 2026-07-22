@@ -10,6 +10,13 @@ export type Dossier = {
     title: string;
     reference: string | null;
     status: DossierStatus;
+    due_date: string | null;
+    responsible_staff: ResponsibleStaffOption | null;
+    reminder_interval_days: number | null;
+    next_reminder_at: string | null;
+    last_client_message_sent_at: string | null;
+    last_client_opened_at: string | null;
+    has_outstanding_client_items: boolean;
     ready_to_complete: boolean;
     review_summary: {
         total: number;
@@ -33,6 +40,8 @@ export type DossierSummary = {
     reference: string | null;
     status: DossierStatus;
     client_name: string;
+    due_date?: string | null;
+    responsible_name?: string | null;
     updated_at?: string;
 };
 
@@ -43,11 +52,26 @@ export type ArchivedDossierSummary = DossierSummary & {
 
 export type EditableDossier = Pick<
     Dossier,
-    'id' | 'title' | 'reference' | 'client'
+    | 'id'
+    | 'title'
+    | 'reference'
+    | 'client'
+    | 'due_date'
+    | 'reminder_interval_days'
 >;
+
+export type EditableDossierWithResponsibility = EditableDossier & {
+    responsible_user_id: number | null;
+};
 
 /** Client option for the create-dossier form. */
 export type DossierClientOption = {
+    id: number;
+    name: string;
+    email: string;
+};
+
+export type ResponsibleStaffOption = {
     id: number;
     name: string;
     email: string;

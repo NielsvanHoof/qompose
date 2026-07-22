@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries\Portal;
 
+use App\Enums\DocumentRequestStatus;
 use App\Enums\SubmissionContext;
 use App\Models\Client;
 use App\Models\ClientAccessGrant;
@@ -12,6 +13,8 @@ use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Transitions\DocumentRequestTransitions;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+use function in_array;
 
 final class FetchClientPortalQuery
 {
@@ -26,8 +29,16 @@ final class FetchClientPortalQuery
      *         title: string,
      *         reference: string|null,
      *         status: string,
+     *         due_date: string|null,
      *         client: array{name: string},
      *         expires_at: string,
+     *         progress: array{
+     *             total: int,
+     *             completed: int,
+     *             approved: int,
+     *             remaining: int,
+     *             next_incomplete: array{id: int, title: string}|null
+     *         },
      *         document_requests: array<int, array{
      *             id: int,
      *             type: string,
@@ -62,6 +73,18 @@ final class FetchClientPortalQuery
 
         $tenant = $this->resolveTenant($dossier);
         $client = $this->resolveClient($dossier);
+        $totalItemCount = $dossier->documentRequests->count();
+        $remainingItems = $dossier->documentRequests->filter(
+            fn (DocumentRequest $documentRequest): bool => in_array(
+                $documentRequest->status->value,
+                ['pending', 'rejected'],
+                true,
+            ),
+        );
+        $approvedItemCount = $dossier->documentRequests
+            ->where('status', DocumentRequestStatus::Accepted)
+            ->count();
+        $nextIncompleteItem = $remainingItems->first();
 
         return [
             'firm' => [
@@ -71,10 +94,23 @@ final class FetchClientPortalQuery
                 'title' => $dossier->title,
                 'reference' => $dossier->reference,
                 'status' => $dossier->status->value,
+                'due_date' => $dossier->due_date?->toDateString(),
                 'client' => [
                     'name' => $client->name,
                 ],
                 'expires_at' => $grant->expires_at->toIso8601String(),
+                'progress' => [
+                    'total' => $totalItemCount,
+                    'completed' => $totalItemCount - $remainingItems->count(),
+                    'approved' => $approvedItemCount,
+                    'remaining' => $remainingItems->count(),
+                    'next_incomplete' => $nextIncompleteItem instanceof DocumentRequest
+                        ? [
+                            'id' => $nextIncompleteItem->id,
+                            'title' => $nextIncompleteItem->title,
+                        ]
+                        : null,
+                ],
                 'document_requests' => $dossier->documentRequests
                     ->map(function (DocumentRequest $documentRequest) use ($dossier): array {
                         $uploadedDocument = $documentRequest->uploadedDocument;

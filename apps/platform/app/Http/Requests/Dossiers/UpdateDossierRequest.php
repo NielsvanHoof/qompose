@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Dossiers;
 
+use App\Enums\TenantMembershipStatus;
 use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Models\Dossier;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -43,6 +45,15 @@ final class UpdateDossierRequest extends FormRequest
                     ->where('tenant_id', $this->tenantId())
                     ->ignore($dossier),
             ],
+            'due_date' => ['nullable', 'date'],
+            'responsible_user_id' => [
+                'nullable',
+                'integer',
+                Rule::exists((new TenantMembership)->getTable(), 'user_id')
+                    ->where('tenant_id', $this->tenantId())
+                    ->where('status', TenantMembershipStatus::Active->value),
+            ],
+            'reminder_interval_days' => ['nullable', 'integer', 'min:1', 'max:30'],
         ];
     }
 

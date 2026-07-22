@@ -26,11 +26,26 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $title
  * @property string|null $reference
  * @property DossierStatus $status
+ * @property int|null $responsible_user_id
+ * @property Carbon|null $due_date
+ * @property int|null $reminder_interval_days
+ * @property Carbon|null $next_reminder_at
+ * @property Carbon|null $last_client_message_sent_at
+ * @property Carbon|null $last_client_opened_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
  */
-#[Fillable(['tenant_id', 'client_id', 'title', 'reference', 'status'])]
+#[Fillable([
+    'tenant_id',
+    'client_id',
+    'title',
+    'reference',
+    'status',
+    'responsible_user_id',
+    'due_date',
+    'reminder_interval_days',
+])]
 final class Dossier extends Model
 {
     /** @use HasFactory<DossierFactory> */
@@ -75,6 +90,14 @@ final class Dossier extends Model
     }
 
     /**
+     * @return BelongsTo<User, $this>
+     */
+    public function responsibleUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'responsible_user_id');
+    }
+
+    /**
      * @return HasMany<DocumentRequest, $this>
      */
     public function documentRequests(): HasMany
@@ -97,6 +120,11 @@ final class Dossier extends Model
     {
         return [
             'status' => DossierStatus::class,
+            'due_date' => 'date',
+            'reminder_interval_days' => 'integer',
+            'next_reminder_at' => 'datetime',
+            'last_client_message_sent_at' => 'datetime',
+            'last_client_opened_at' => 'datetime',
         ];
     }
 }

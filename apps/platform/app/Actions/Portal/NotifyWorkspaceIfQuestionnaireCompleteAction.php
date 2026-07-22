@@ -38,6 +38,9 @@ final class NotifyWorkspaceIfQuestionnaireCompleteAction
             return;
         }
 
+        $dossier->disableLogging();
+        $dossier->forceFill(['next_reminder_at' => null])->save();
+
         $dossier->loadMissing(['client', 'tenant']);
 
         $client = $dossier->client;

@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
@@ -55,11 +56,12 @@ final class FetchArchivedClientsQuery extends PaginatedIndexQuery
     /** @return Builder<Client> */
     protected function subject(): Builder
     {
-        return Client::onlyTrashed()
-            ->select(['id', 'name', 'email', 'deleted_at'])
-            ->withCount([
-                'dossiers as dossiers_count' => fn ($query) => $query->withTrashed(),
-            ]);
+        $query = Client::onlyTrashed();
+        $query->getQuery()->select(['id', 'name', 'email', 'deleted_at']);
+
+        return $query->withCount([
+            'dossiers as dossiers_count' => fn ($query) => $query->withTrashed(),
+        ]);
     }
 
     protected function allowedFilters(): array
@@ -72,7 +74,7 @@ final class FetchArchivedClientsQuery extends PaginatedIndexQuery
 
                 $search = '%'.mb_trim($value).'%';
 
-                $query->where(function (Builder $query) use ($search): void {
+                $query->getQuery()->where(function (QueryBuilder $query) use ($search): void {
                     $query
                         ->whereLike('name', $search)
                         ->orWhereLike('email', $search);

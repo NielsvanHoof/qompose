@@ -19,6 +19,7 @@ export default function ShowDossier({
     access_grant_portal_url: accessGrantPortalUrl = null,
     can_manage: canManage,
     can_edit: canEdit,
+    can_send_reminder: canSendReminder,
     can_review: canReview,
     can_download: canDownload,
 }: {
@@ -28,6 +29,7 @@ export default function ShowDossier({
     access_grant_portal_url?: string | null;
     can_manage: boolean;
     can_edit: boolean;
+    can_send_reminder: boolean;
     can_review: boolean;
     can_download: boolean;
 }) {
@@ -60,6 +62,7 @@ export default function ShowDossier({
                 accessGrantPortalUrl={accessGrantPortalUrl}
                 canManage={canManage}
                 canEdit={canEdit}
+                canSendReminder={canSendReminder}
                 canReview={canReview}
                 canDownload={canDownload}
             />
