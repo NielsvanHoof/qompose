@@ -29,12 +29,11 @@ final class PurgeExpiredDossierAction
             ];
         }
 
-        $uploadedDocuments = UploadedDocument::query()
-            ->whereIn(
-                'document_request_id',
-                $dossier->documentRequests()->pluck('id'),
-            )
-            ->get();
+        $documentRequestIds = $dossier->documentRequests()->toBase()->pluck('id');
+
+        $uploadedDocumentsQuery = UploadedDocument::query();
+        $uploadedDocumentsQuery->getQuery()->whereIn('document_request_id', $documentRequestIds);
+        $uploadedDocuments = $uploadedDocumentsQuery->get();
 
         try {
             $this->deleteStoredDocumentFiles->handle($uploadedDocuments);

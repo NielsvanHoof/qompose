@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Retention;
 
 use App\Models\Client;
+use App\Models\Dossier;
 use Illuminate\Support\Facades\DB;
 
 final class PurgeExpiredClientAction
@@ -25,7 +26,7 @@ final class PurgeExpiredClientAction
             ];
         }
 
-        if ($client->dossiers()->withTrashed()->exists()) {
+        if (Dossier::withTrashed()->whereBelongsTo($client)->toBase()->exists()) {
             return [
                 'purged' => false,
                 'activity_rows_deleted' => 0,

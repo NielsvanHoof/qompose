@@ -36,9 +36,9 @@ final class PurgeSubjectActivityLogAction
                 ->delete();
         }
 
-        $uploadedDocumentIds = UploadedDocument::query()
-            ->whereIn('document_request_id', $documentRequestIds)
-            ->pluck('id');
+        $uploadedDocumentsQuery = UploadedDocument::query();
+        $uploadedDocumentsQuery->getQuery()->whereIn('document_request_id', $documentRequestIds);
+        $uploadedDocumentIds = $uploadedDocumentsQuery->toBase()->pluck('id');
 
         foreach ($uploadedDocumentIds as $uploadedDocumentId) {
             $deletedCount += Activity::query()

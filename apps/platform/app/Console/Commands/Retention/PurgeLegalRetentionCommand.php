@@ -60,11 +60,10 @@ final class PurgeLegalRetentionCommand extends Command
             'files_deleted' => 0,
         ];
 
-        $dossiers = Dossier::onlyTrashed()
-            ->where('deleted_at', '<=', $cutoff)
-            ->orderBy('id')
-            ->limit($limit)
-            ->get();
+        $dossiersQuery = Dossier::onlyTrashed()
+            ->where('deleted_at', '<=', $cutoff);
+        $dossiersQuery->getQuery()->orderBy('id')->limit($limit);
+        $dossiers = $dossiersQuery->get();
 
         foreach ($dossiers as $dossier) {
             $result = $purgeExpiredDossier->handle($dossier);
@@ -91,12 +90,14 @@ final class PurgeLegalRetentionCommand extends Command
             'activity_rows_deleted' => 0,
         ];
 
-        $clients = Client::onlyTrashed()
-            ->where('deleted_at', '<=', $cutoff)
-            ->whereDoesntHave('dossiers', fn ($query) => $query->withTrashed())
+        // Soft-deleted dossiers still block purge; toBase() subquery includes them.
+        $clientsQuery = Client::onlyTrashed()
+            ->where('deleted_at', '<=', $cutoff);
+        $clientsQuery->getQuery()
+            ->whereNotIn('id', Dossier::withTrashed()->toBase()->select('client_id'))
             ->orderBy('id')
-            ->limit($limit)
-            ->get();
+            ->limit($limit);
+        $clients = $clientsQuery->get();
 
         foreach ($clients as $client) {
             $result = $purgeExpiredClient->handle($client);

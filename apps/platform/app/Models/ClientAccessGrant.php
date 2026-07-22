@@ -77,11 +77,13 @@ final class ClientAccessGrant extends Model
 
         return self::query()
             ->where(function (Builder $query) use ($cutoff): void {
-                $query->whereNotNull('revoked_at')
+                $query->getQuery()
+                    ->whereNotNull('revoked_at')
                     ->where('revoked_at', '<=', $cutoff);
             })
             ->orWhere(function (Builder $query) use ($cutoff): void {
-                $query->whereNull('revoked_at')
+                $query->getQuery()
+                    ->whereNull('revoked_at')
                     ->where('expires_at', '<=', $cutoff);
             });
     }
