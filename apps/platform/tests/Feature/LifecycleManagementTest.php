@@ -9,7 +9,6 @@ use App\Enums\Role;
 use App\Models\Activity;
 use App\Models\Client;
 use App\Models\Dossier;
-use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;

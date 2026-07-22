@@ -1,4 +1,5 @@
 import { Form, Link } from '@inertiajs/react';
+import { CopyIcon } from 'lucide-react';
 import QuestionnaireTemplateController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateController';
 import EmptyState from '@/components/empty-state';
 import IndexPagination from '@/components/index-query/index-pagination';
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import type { TemplateSummary } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import { show as showTemplate } from '@/routes/workspaces/templates';
 import type { Paginated } from '@/types/pagination';
 
@@ -32,7 +34,7 @@ export default function QuestionnaireTemplatesSection({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const rows = templates.data;
-
+    const { t } = useTranslation();
     return (
         <div className="flex flex-col gap-2">
             <Card>
@@ -98,8 +100,8 @@ export default function QuestionnaireTemplatesSection({
                                                 })}
                                             >
                                                 {template.is_system
-                                                    ? 'View'
-                                                    : 'Edit'}
+                                                    ? t('View')
+                                                    : t('Edit')}
                                             </Link>
                                         </Button>
                                         {canManage && (
@@ -118,7 +120,8 @@ export default function QuestionnaireTemplatesSection({
                                                         variant="secondary"
                                                         disabled={processing}
                                                     >
-                                                        Copy to my firm
+                                                        <CopyIcon className="h-4 w-4" />
+                                                        {t('Copy to my firm')}
                                                     </Button>
                                                 )}
                                             </Form>
