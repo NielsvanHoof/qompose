@@ -130,7 +130,9 @@ export default function TemplateShowContent({
                             {({ errors, processing }) => (
                                 <>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="name">{t('Name')}</Label>
+                                        <Label htmlFor="name">
+                                            {t('Name')}
+                                        </Label>
                                         <Input
                                             id="name"
                                             name="name"
@@ -196,8 +198,12 @@ export default function TemplateShowContent({
                     <CardTitle>{t('Questionnaire items')}</CardTitle>
                     <CardDescription>
                         {template.is_system
-                            ? t('System templates are read-only. Copy to customise.')
-                            : t('Add, edit, or remove items. Drag the grip to reorder.')}
+                            ? t(
+                                  'System templates are read-only. Copy to customise.',
+                              )
+                            : t(
+                                  'Add, edit, or remove items. Drag the grip to reorder.',
+                              )}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

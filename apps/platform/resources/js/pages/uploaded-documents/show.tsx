@@ -99,7 +99,9 @@ export default function ShowUploadedDocument({
 
     return (
         <>
-            <Head title={`${t('Extraction')} · ${uploadedDocument.original_filename}`} />
+            <Head
+                title={`${t('Extraction')} · ${uploadedDocument.original_filename}`}
+            />
 
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">

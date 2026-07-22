@@ -47,7 +47,9 @@ export default function WorkspaceDashboard({
                             {t('Dossier overview')}
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            {t('Keep track of client requests and review work.')}
+                            {t(
+                                'Keep track of client requests and review work.',
+                            )}
                         </p>
                     </div>
 

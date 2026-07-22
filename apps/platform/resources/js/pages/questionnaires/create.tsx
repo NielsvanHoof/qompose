@@ -14,11 +14,11 @@ import {
 } from '@/components/ui/select';
 import type { TemplateCategoryOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     create as createTemplate,
     index as templateIndex,
 } from '@/routes/workspaces/templates';
-import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Create a blank firm-owned questionnaire template.
@@ -76,7 +76,9 @@ export default function CreateTemplate({
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="category">{t('Category')}</Label>
+                                <Label htmlFor="category">
+                                    {t('Category')}
+                                </Label>
                                 <Select
                                     required
                                     defaultValue="custom"

@@ -101,7 +101,11 @@ export default function SortableList<T extends { id: number }>({
                     <div key={item.id}>
                         {renderItem(item, {
                             DragHandle: () =>
-                                enabled ? <StaticDragHandle label={t('Drag to reorder')} /> : null,
+                                enabled ? (
+                                    <StaticDragHandle
+                                        label={t('Drag to reorder')}
+                                    />
+                                ) : null,
                         })}
                     </div>
                 ))}
