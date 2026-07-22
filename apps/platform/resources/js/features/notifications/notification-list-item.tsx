@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import type { WorkspaceNotification } from '@/features/notifications/types';
 import type { Firm } from '@/features/workspaces/types';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { read as readNotification } from '@/routes/workspaces/notifications';
 
@@ -14,7 +15,13 @@ export default function NotificationListItem({
     notification: WorkspaceNotification;
     workspace: Firm;
 }) {
+    const { t } = useTranslation();
     const isUnread = notification.read_at === null;
+
+    const message = t(':client finished the questionnaire for “:dossier”.', {
+        client: notification.client_name,
+        dossier: notification.dossier_title,
+    });
 
     const openNotification = (): void => {
         const visitDossier = (): void => {
@@ -65,7 +72,7 @@ export default function NotificationListItem({
                         isUnread ? 'font-medium' : 'text-muted-foreground',
                     )}
                 >
-                    {notification.message}
+                    {message}
                 </span>
             </div>
             {notification.created_at && (

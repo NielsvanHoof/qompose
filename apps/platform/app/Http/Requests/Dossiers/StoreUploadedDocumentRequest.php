@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Dossiers;
 
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Models\DocumentRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Validation\Rules\File;
 
 final class StoreUploadedDocumentRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
+
     /**
      * Staff who can create dossiers may upload files onto document requests.
      */

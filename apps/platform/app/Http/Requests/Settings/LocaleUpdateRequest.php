@@ -6,15 +6,15 @@ namespace App\Http\Requests\Settings;
 
 use App\Concerns\EnsuresAuthenticatedUser;
 use App\Enums\Locale;
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Validation\Rule;
 
 final class LocaleUpdateRequest extends FormRequest
 {
-    use LocalizesValidationAttributes;
     use EnsuresAuthenticatedUser;
+    use LocalizesValidationAttributes;
 
     /**
      * @return array<string, ValidationRule|array<mixed>|string>

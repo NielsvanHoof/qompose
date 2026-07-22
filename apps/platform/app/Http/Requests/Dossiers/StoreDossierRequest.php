@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Dossiers;
 
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Validation\Rule;
 use RuntimeException;
 
 final class StoreDossierRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
+
     /**
      * Authorize create via DossierPolicy so POST /dossiers cannot skip the create gate.
      */

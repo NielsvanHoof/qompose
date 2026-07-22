@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Portal;
 
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 
 final class StoreClientAccessGrantRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
+
     /**
      * Staff who can create dossiers may also issue client portal access grants.
      */

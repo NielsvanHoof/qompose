@@ -82,6 +82,22 @@ test('shared notifications prop returns tenant-scoped inbox items', function () 
                 ->where('notifications.items.0.read_at', null)));
 });
 
+test('shared notifications message uses the viewing users locale', function () {
+    $context = createWorkspaceNotificationContext();
+    $context['owner']->update(['locale' => 'nl']);
+    notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);
+
+    $this->actingAs($context['owner'])
+        ->withSession(['active_tenant_id' => $context['tenant']->id])
+        ->get(workspaceRoute('workspaces.dashboard', $context['tenant']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('workspaces/dashboard')
+            ->missing('notifications')
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('notifications.items.0.message', 'Jane Client heeft de vragenlijst voor “2025 Payroll dossier” afgerond.')));
+});
+
 test('staff can mark one workspace notification as read', function () {
     $context = createWorkspaceNotificationContext();
     notifyOwnerOfQuestionnaire($context['owner'], $context['tenant'], $context['dossier']);

@@ -80,13 +80,19 @@ final class FetchWorkspaceNotificationsForUserQuery
         /** @var array<string, mixed> $data */
         $data = $notification->data;
 
+        $clientName = (string) ($data['client_name'] ?? '');
+        $dossierTitle = (string) ($data['dossier_title'] ?? '');
+
         return [
             'id' => $notification->id,
             'type' => (string) ($data['type'] ?? 'client_questionnaire_completed'),
-            'message' => (string) ($data['message'] ?? ''),
+            'message' => __(':client finished the questionnaire for “:dossier”.', [
+                'client' => $clientName,
+                'dossier' => $dossierTitle,
+            ]),
             'dossier_id' => (int) ($data['dossier_id'] ?? 0),
-            'dossier_title' => (string) ($data['dossier_title'] ?? ''),
-            'client_name' => (string) ($data['client_name'] ?? ''),
+            'dossier_title' => $dossierTitle,
+            'client_name' => $clientName,
             'dossier_url' => (string) ($data['dossier_url'] ?? ''),
             'read_at' => $notification->read_at?->toDateTimeString(),
             'created_at' => $notification->created_at?->toDateTimeString() ?? '',

@@ -7,17 +7,18 @@ namespace App\Http\Requests\Portal;
 use App\Enums\QuestionnaireItemType;
 use App\Enums\SubmissionContext;
 use App\Http\Middleware\ResolveClientPortalGrant;
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Transitions\DocumentRequestTransitions;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 
 final class StorePortalQuestionnaireAnswerRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
+
     public function __construct(
         private readonly DocumentRequestTransitions $documentRequestTransitions,
     ) {

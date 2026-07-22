@@ -75,7 +75,7 @@ final class ClientAccessGrant extends Model
     {
         $cutoff = now()->subDays((int) config('retention.portal_grants_days'));
 
-        return static::query()
+        return self::query()
             ->where(function (Builder $query) use ($cutoff): void {
                 $query->whereNotNull('revoked_at')
                     ->where('revoked_at', '<=', $cutoff);

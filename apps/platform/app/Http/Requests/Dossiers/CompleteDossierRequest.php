@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Dossiers;
 
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Models\Dossier;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 
 final class CompleteDossierRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
+
     public function authorize(): bool
     {
         $dossier = $this->route('dossier');

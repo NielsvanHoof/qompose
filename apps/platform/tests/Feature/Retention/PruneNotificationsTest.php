@@ -18,8 +18,8 @@ beforeEach(function (): void {
 test('old database notifications are pruned while recent notifications remain', function (): void {
     $user = User::factory()->create();
 
-    $oldNotificationId = (string) \Illuminate\Support\Str::uuid();
-    $recentNotificationId = (string) \Illuminate\Support\Str::uuid();
+    $oldNotificationId = (string) Illuminate\Support\Str::uuid();
+    $recentNotificationId = (string) Illuminate\Support\Str::uuid();
 
     DB::table('notifications')->insert([
         [

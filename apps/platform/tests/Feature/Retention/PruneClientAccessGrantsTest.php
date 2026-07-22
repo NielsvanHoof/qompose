@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\ClientAccessGrant;
 use App\Models\Client;
+use App\Models\ClientAccessGrant;
 use App\Models\Dossier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

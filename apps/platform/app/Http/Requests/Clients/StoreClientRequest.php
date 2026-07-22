@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Clients;
 
+use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use App\Models\Client;
 use App\Models\Tenant;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Http\Requests\Concerns\LocalizesValidationAttributes;
 use Illuminate\Validation\Rule;
 use RuntimeException;
 
 final class StoreClientRequest extends FormRequest
 {
     use LocalizesValidationAttributes;
+
     /**
      * Authorize create via ClientPolicy so store cannot bypass the create screen check.
      */
