@@ -8,7 +8,9 @@ export type TemplateLibraryTab = (typeof TEMPLATE_LIBRARY_TABS)[number];
 
 export const DEFAULT_TEMPLATE_LIBRARY_TAB: TemplateLibraryTab = 'system';
 
-export function isTemplateLibraryTab(value: string): value is TemplateLibraryTab {
+export function isTemplateLibraryTab(
+    value: string,
+): value is TemplateLibraryTab {
     return TEMPLATE_LIBRARY_TABS.includes(value as TemplateLibraryTab);
 }
 

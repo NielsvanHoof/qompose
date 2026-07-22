@@ -3,12 +3,7 @@ import { Plus } from 'lucide-react';
 import Heading from '@/components/heading';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Button } from '@/components/ui/button';
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import QuestionnaireTemplatesSection from '@/features/questionnaires/list/questionnaire-templates-section';
 import type { TemplateLibraryTab } from '@/features/questionnaires/list/template-library-tab';
 import type { TemplateSummary } from '@/features/questionnaires/types';
