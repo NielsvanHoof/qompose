@@ -70,3 +70,17 @@ test('queue schedule and health heartbeats are scheduled every minute', function
         ->toContain('health:schedule-check-heartbeat')
         ->toContain('health:check');
 });
+
+test('retention and pruning tasks are scheduled', function (): void {
+    $commands = collect(app(Schedule::class)->events())
+        ->map(fn ($event): string => (string) $event->command)
+        ->implode(' ');
+
+    expect($commands)
+        ->toContain('queue:prune-failed')
+        ->toContain('queue:prune-batches')
+        ->toContain('model:prune')
+        ->toContain('retention:prune-notifications')
+        ->toContain('retention:purge-legal')
+        ->toContain('activitylog:clean');
+});

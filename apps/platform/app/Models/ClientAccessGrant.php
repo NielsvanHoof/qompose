@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -29,7 +30,7 @@ use Illuminate\Support\Carbon;
 final class ClientAccessGrant extends Model
 {
     /** @use HasFactory<ClientAccessGrantFactory> */
-    use BelongsToTenant, HasFactory;
+    use BelongsToTenant, HasFactory, MassPrunable;
 
     public static function hashToken(string $plainTextToken): string
     {
@@ -65,6 +66,24 @@ final class ClientAccessGrant extends Model
     public function isValid(): bool
     {
         return ! $this->isRevoked() && ! $this->isExpired();
+    }
+
+    /**
+     * @return Builder<ClientAccessGrant>
+     */
+    public function prunable(): Builder
+    {
+        $cutoff = now()->subDays((int) config('retention.portal_grants_days'));
+
+        return static::query()
+            ->where(function (Builder $query) use ($cutoff): void {
+                $query->whereNotNull('revoked_at')
+                    ->where('revoked_at', '<=', $cutoff);
+            })
+            ->orWhere(function (Builder $query) use ($cutoff): void {
+                $query->whereNull('revoked_at')
+                    ->where('expires_at', '<=', $cutoff);
+            });
     }
 
     /**
