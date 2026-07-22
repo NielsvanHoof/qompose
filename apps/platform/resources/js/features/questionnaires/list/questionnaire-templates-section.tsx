@@ -9,7 +9,6 @@ import {
     CardContent,
     CardDescription,
     CardHeader,
-    CardTitle,
 } from '@/components/ui/card';
 import type { TemplateSummary } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
@@ -18,15 +17,14 @@ import type { Paginated } from '@/types/pagination';
 
 /**
  * One paginated bucket on the template library (system or firm-owned).
+ * Title lives on the parent tab — this section only shows a short description.
  */
 export default function QuestionnaireTemplatesSection({
-    title,
     description,
     templates,
     canManage,
     empty,
 }: {
-    title: string;
     description: string;
     templates: Paginated<TemplateSummary>;
     canManage: boolean;
@@ -39,7 +37,6 @@ export default function QuestionnaireTemplatesSection({
         <div className="flex flex-col gap-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>{title}</CardTitle>
                     <CardDescription>
                         {description}
                         {templates.total > 0 && (

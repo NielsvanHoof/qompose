@@ -20,6 +20,7 @@
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
         "league/flysystem-aws-s3-v3": "^3.0",
+        "sentry/sentry-laravel": "^4.27",
         "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-health": "^1.40",
         "spatie/laravel-multitenancy": "^4.1",

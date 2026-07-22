@@ -3,9 +3,17 @@ import { Plus } from 'lucide-react';
 import Heading from '@/components/heading';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Button } from '@/components/ui/button';
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/ui/tabs';
 import QuestionnaireTemplatesSection from '@/features/questionnaires/list/questionnaire-templates-section';
+import type { TemplateLibraryTab } from '@/features/questionnaires/list/template-library-tab';
 import type { TemplateSummary } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
+import { useTemplateLibraryTab } from '@/hooks/use-template-library-tab';
 import { useTranslation } from '@/hooks/use-translation';
 import {
     create as createTemplate,
@@ -14,7 +22,7 @@ import {
 import type { IndexQueryConfig, Paginated } from '@/types/pagination';
 
 /**
- * Template library — system packs plus firm-owned copies.
+ * Template library — system packs and firm-owned copies in separate tabs.
  */
 export default function TemplateIndex({
     system_templates: systemTemplates,
@@ -32,6 +40,7 @@ export default function TemplateIndex({
 }) {
     const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
+    const [tab, setTab] = useTemplateLibraryTab();
 
     setLayoutProps({
         breadcrumbs: [
@@ -57,6 +66,7 @@ export default function TemplateIndex({
                         )}
                     />
 
+                    {/* Shared create action — visible on both System and Custom tabs. */}
                     {canManage && (
                         <Button asChild>
                             <Link href={createTemplate(currentWorkspace)}>
@@ -70,27 +80,45 @@ export default function TemplateIndex({
                 {/* Shared filters/sort apply to both system and firm buckets. */}
                 <IndexQueryToolbar config={indexQuery} />
 
-                <QuestionnaireTemplatesSection
-                    title={t('System templates')}
-                    description={t(
-                        'Read-only starter packs. Copy one to edit for your firm.',
-                    )}
-                    templates={systemTemplates}
-                    canManage={canManage}
-                    empty={t('No system templates seeded yet.')}
-                />
+                <Tabs
+                    value={tab}
+                    onValueChange={(value) =>
+                        setTab(value as TemplateLibraryTab)
+                    }
+                >
+                    <TabsList>
+                        <TabsTrigger value="system">
+                            {t('System templates')}
+                        </TabsTrigger>
+                        <TabsTrigger value="custom">
+                            {t('Custom templates')}
+                        </TabsTrigger>
+                    </TabsList>
 
-                <QuestionnaireTemplatesSection
-                    title={t('My templates')}
-                    description={t(
-                        'Firm-owned templates you can edit and apply to dossiers.',
-                    )}
-                    templates={firmTemplates}
-                    canManage={canManage}
-                    empty={t(
-                        'No firm templates yet. Copy a system template or create one.',
-                    )}
-                />
+                    <TabsContent value="system">
+                        <QuestionnaireTemplatesSection
+                            description={t(
+                                'Read-only starter packs. Copy one to edit for your firm.',
+                            )}
+                            templates={systemTemplates}
+                            canManage={canManage}
+                            empty={t('No system templates seeded yet.')}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="custom">
+                        <QuestionnaireTemplatesSection
+                            description={t(
+                                'Firm-owned templates you can edit and apply to dossiers.',
+                            )}
+                            templates={firmTemplates}
+                            canManage={canManage}
+                            empty={t(
+                                'No firm templates yet. Copy a system template or create one.',
+                            )}
+                        />
+                    </TabsContent>
+                </Tabs>
             </div>
         </>
     );
