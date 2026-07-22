@@ -1,5 +1,5 @@
-import { usePoll } from '@inertiajs/react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { Link, usePoll } from '@inertiajs/react';
+import { ArrowLeft, ArrowRight, Pencil } from 'lucide-react';
 import { useEffect } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -24,8 +24,10 @@ import type { Dossier } from '@/features/dossiers/types';
 import ClientAccessCard from '@/features/portal/client-access-card';
 import PortalLinkBanner from '@/features/portal/portal-link-banner';
 import type { ApplyTemplateOption } from '@/features/questionnaires/types';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useDossierStageTab } from '@/hooks/use-dossier-stage-tab';
 import { useTranslation } from '@/hooks/use-translation';
+import { edit as editDossier } from '@/routes/workspaces/dossiers';
 
 type DossierShowContentProps = {
     dossier: Dossier;
@@ -33,6 +35,7 @@ type DossierShowContentProps = {
     accessGrantToken?: string | null;
     accessGrantPortalUrl?: string | null;
     canManage: boolean;
+    canEdit: boolean;
     canReview: boolean;
     canDownload: boolean;
 };
@@ -46,6 +49,7 @@ export default function DossierShowContent({
     accessGrantToken = null,
     accessGrantPortalUrl = null,
     canManage,
+    canEdit,
     canReview,
     canDownload,
 }: DossierShowContentProps) {
@@ -58,6 +62,7 @@ export default function DossierShowContent({
                 templates={templates}
                 accessGrantToken={accessGrantToken}
                 accessGrantPortalUrl={accessGrantPortalUrl}
+                canEdit={canEdit}
             />
         </DossierPermissionsProvider>
     );
@@ -68,14 +73,17 @@ function DossierShowBody({
     templates,
     accessGrantToken,
     accessGrantPortalUrl,
+    canEdit,
 }: {
     dossier: Dossier;
     templates: ApplyTemplateOption[];
     accessGrantToken: string | null;
     accessGrantPortalUrl: string | null;
+    canEdit: boolean;
 }) {
     const { t } = useTranslation();
     const { canManage } = useDossierPermissions();
+    const currentWorkspace = useCurrentWorkspace();
     const [tab, setTab] = useDossierStageTab(dossier.status);
 
     // Poll while OCR is still running so extracted JSON appears without a refresh.
@@ -126,6 +134,19 @@ function DossierShowBody({
                 />
                 <div className="flex flex-wrap items-center gap-2">
                     <DossierStatusBadge status={dossier.status} />
+                    {canEdit ? (
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={editDossier({
+                                    tenant: currentWorkspace,
+                                    dossier: dossier.id,
+                                })}
+                            >
+                                <Pencil aria-hidden="true" />
+                                {t('Edit dossier')}
+                            </Link>
+                        </Button>
+                    ) : null}
                     {canManage && (
                         <ArchiveDossierButton
                             dossierId={dossier.id}

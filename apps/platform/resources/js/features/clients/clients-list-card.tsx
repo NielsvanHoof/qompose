@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import EmptyState from '@/components/empty-state';
 import {
     Card,
@@ -8,7 +9,9 @@ import {
 } from '@/components/ui/card';
 import ArchiveClientButton from '@/features/clients/archive-client-button';
 import type { ClientSummary } from '@/features/clients/types';
+import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
+import { show as showClient } from '@/routes/workspaces/clients';
 import type { Paginated } from '@/types/pagination';
 
 /**
@@ -21,6 +24,7 @@ export default function ClientsListCard({
     clients: Paginated<ClientSummary>;
     canManage?: boolean;
 }) {
+    const currentWorkspace = useCurrentWorkspace();
     const { t } = useTranslation();
     const rows = clients.data;
     const total = clients.total;
@@ -48,7 +52,15 @@ export default function ClientsListCard({
                                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
                             >
                                 <div>
-                                    <p className="font-medium">{client.name}</p>
+                                    <Link
+                                        href={showClient({
+                                            tenant: currentWorkspace,
+                                            client: client.id,
+                                        })}
+                                        className="font-medium hover:underline"
+                                    >
+                                        {client.name}
+                                    </Link>
                                     <p className="text-sm text-muted-foreground">
                                         {client.email}
                                     </p>

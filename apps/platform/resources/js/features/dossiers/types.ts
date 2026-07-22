@@ -36,6 +36,16 @@ export type DossierSummary = {
     updated_at?: string;
 };
 
+export type ArchivedDossierSummary = DossierSummary & {
+    client_archived: boolean;
+    archived_at: string;
+};
+
+export type EditableDossier = Pick<
+    Dossier,
+    'id' | 'title' | 'reference' | 'client'
+>;
+
 /** Client option for the create-dossier form. */
 export type DossierClientOption = {
     id: number;

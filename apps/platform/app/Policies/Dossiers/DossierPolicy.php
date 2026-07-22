@@ -49,4 +49,9 @@ final class DossierPolicy
     {
         return $this->userHasPermissionInTenant($user, $dossier->tenant, Permission::CreateDossiers);
     }
+
+    public function restore(User $user, Dossier $dossier): bool
+    {
+        return $this->userHasPermissionInTenant($user, $dossier->tenant, Permission::CreateDossiers);
+    }
 }

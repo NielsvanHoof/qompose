@@ -32,7 +32,25 @@ final class ClientPolicy
         return $user->can(Permission::ManageClients->value);
     }
 
+    public function update(User $user, Client $client): bool
+    {
+        return $this->userHasPermissionInTenant(
+            $user,
+            $client->tenant,
+            Permission::ManageClients,
+        );
+    }
+
     public function delete(User $user, Client $client): bool
+    {
+        return $this->userHasPermissionInTenant(
+            $user,
+            $client->tenant,
+            Permission::ManageClients,
+        );
+    }
+
+    public function restore(User $user, Client $client): bool
     {
         return $this->userHasPermissionInTenant(
             $user,

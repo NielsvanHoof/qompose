@@ -18,6 +18,7 @@ export default function ShowDossier({
     access_grant_token: accessGrantToken = null,
     access_grant_portal_url: accessGrantPortalUrl = null,
     can_manage: canManage,
+    can_edit: canEdit,
     can_review: canReview,
     can_download: canDownload,
 }: {
@@ -26,6 +27,7 @@ export default function ShowDossier({
     access_grant_token?: string | null;
     access_grant_portal_url?: string | null;
     can_manage: boolean;
+    can_edit: boolean;
     can_review: boolean;
     can_download: boolean;
 }) {
@@ -57,6 +59,7 @@ export default function ShowDossier({
                 accessGrantToken={accessGrantToken}
                 accessGrantPortalUrl={accessGrantPortalUrl}
                 canManage={canManage}
+                canEdit={canEdit}
                 canReview={canReview}
                 canDownload={canDownload}
             />

@@ -7,13 +7,17 @@ namespace App\Http\Controllers\Dossiers;
 use App\Actions\Audit\LogAuditActivityAction;
 use App\Actions\Dossiers\CreateDossierAction;
 use App\Actions\Dossiers\DeleteDossierAction;
+use App\Actions\Dossiers\RestoreDossierAction;
 use App\Enums\AuditEvent;
 use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreDossierRequest;
+use App\Http\Requests\Dossiers\UpdateDossierRequest;
+use App\Models\Client;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Queries\Dossiers\FetchArchivedDossiersQuery;
 use App\Queries\Dossiers\FetchDossierCreateQuery;
 use App\Queries\Dossiers\FetchDossierIndexQuery;
 use App\Queries\Dossiers\FetchDossierShowQuery;
@@ -21,6 +25,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 use function is_string;
@@ -43,6 +48,21 @@ final class DossierController extends Controller
 
         return Inertia::render('dossiers/create', [
             'clients' => $getDossierCreateData->handle(),
+        ]);
+    }
+
+    public function archived(
+        Tenant $tenant,
+        FetchArchivedDossiersQuery $fetchArchivedDossiers,
+        Request $request,
+    ): Response {
+        $this->authorize('viewAny', Dossier::class);
+
+        return Inertia::render('dossiers/archived', [
+            'dossiers' => $fetchArchivedDossiers->handle(),
+            ...$fetchArchivedDossiers->indexQueryProps(),
+            'can_restore' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
+            'can_restore_clients' => $request->user()?->can(Permission::ManageClients->value) ?? false,
         ]);
     }
 
@@ -79,10 +99,53 @@ final class DossierController extends Controller
             'access_grant_token' => $this->flashedAccessGrantToken($request),
             'access_grant_portal_url' => $this->flashedAccessGrantPortalUrl($request),
             'can_manage' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
+            'can_edit' => $request->user()?->can('update', $dossier) ?? false,
             'can_review' => $request->user()?->can(Permission::ReviewDocuments->value) ?? false,
             'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
             ...$data,
         ]);
+    }
+
+    public function edit(Tenant $tenant, Dossier $dossier): Response
+    {
+        $this->authorize('update', $dossier);
+
+        $dossier->load('client:id,name,email');
+        $client = $dossier->client;
+
+        if (! $client instanceof Client) {
+            throw new RuntimeException('Dossier client is missing.');
+        }
+
+        return Inertia::render('dossiers/edit', [
+            'dossier' => [
+                'id' => $dossier->id,
+                'title' => $dossier->title,
+                'reference' => $dossier->reference,
+                'client' => [
+                    'name' => $client->name,
+                    'email' => $client->email,
+                ],
+            ],
+        ]);
+    }
+
+    public function update(
+        Tenant $tenant,
+        UpdateDossierRequest $request,
+        Dossier $dossier,
+    ): RedirectResponse {
+        $dossier->update($request->validated());
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Dossier details updated.'),
+        ]);
+
+        return to_route(
+            'workspaces.dossiers.show',
+            $this->workspaceRouteParameters(['dossier' => $dossier]),
+        );
     }
 
     public function destroy(
@@ -108,6 +171,32 @@ final class DossierController extends Controller
         return to_route(
             'workspaces.dossiers.index',
             $this->workspaceRouteParameters(),
+        );
+    }
+
+    public function restore(
+        Tenant $tenant,
+        Dossier $dossier,
+        RestoreDossierAction $restoreDossier,
+    ): RedirectResponse {
+        $this->authorize('restore', $dossier);
+
+        $user = request()->user();
+
+        if (! $user instanceof User) {
+            abort(HttpResponse::HTTP_FORBIDDEN);
+        }
+
+        $restoreDossier->handle($dossier, $user);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Dossier restored. Create a new portal link before inviting the client again.'),
+        ]);
+
+        return to_route(
+            'workspaces.dossiers.show',
+            $this->workspaceRouteParameters(['dossier' => $dossier]),
         );
     }
 

@@ -32,6 +32,8 @@ enum AuditEvent: string
     case MemberRoleChanged = 'member.role_changed';
     case DossierDeleted = 'dossier.deleted';
     case ClientDeleted = 'client.deleted';
+    case DossierRestored = 'dossier.restored';
+    case ClientRestored = 'client.restored';
     case DocumentRequestDeleted = 'document_request.deleted';
     case QuestionnaireTemplateDeleted = 'questionnaire_template.deleted';
     case QuestionnaireTemplateItemDeleted = 'questionnaire_template_item.deleted';
@@ -66,6 +68,8 @@ enum AuditEvent: string
             self::MemberRoleChanged => __('Member role changed'),
             self::DossierDeleted => __('Dossier archived'),
             self::ClientDeleted => __('Client archived'),
+            self::DossierRestored => __('Dossier restored'),
+            self::ClientRestored => __('Client restored'),
             self::DocumentRequestDeleted => __('Document request deleted'),
             self::QuestionnaireTemplateDeleted => __('Questionnaire template deleted'),
             self::QuestionnaireTemplateItemDeleted => __('Questionnaire template item deleted'),

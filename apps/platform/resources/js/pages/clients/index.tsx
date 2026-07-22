@@ -1,5 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Archive, Plus } from 'lucide-react';
 import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
@@ -9,6 +9,7 @@ import type { ClientSummary } from '@/features/clients/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import {
+    archived as archivedClients,
     index as clientIndex,
     create as createClient,
 } from '@/routes/workspaces/clients';
@@ -58,6 +59,12 @@ export default function ClientIndex({
                     />
 
                     <div className="flex gap-2">
+                        <Button variant="ghost" asChild>
+                            <Link href={archivedClients(currentWorkspace)}>
+                                <Archive aria-hidden="true" />
+                                {t('Archived')}
+                            </Link>
+                        </Button>
                         <Button variant="outline" asChild>
                             <Link href={createDossier(currentWorkspace)}>
                                 {t('New dossier')}

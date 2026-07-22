@@ -31,7 +31,7 @@ function dossierPolicyContext(): array
     ];
 }
 
-test('owner can viewAny, view, create, update, and delete a draft dossier', function () {
+test('owner can viewAny, view, create, update, restore, and delete a draft dossier', function () {
     $context = dossierPolicyContext();
     $policy = $context['policy'];
     $owner = $context['owner'];
@@ -41,6 +41,7 @@ test('owner can viewAny, view, create, update, and delete a draft dossier', func
         ->and($policy->view($owner, $dossier))->toBeTrue()
         ->and($policy->create($owner))->toBeTrue()
         ->and($policy->update($owner, $dossier))->toBeTrue()
+        ->and($policy->restore($owner, $dossier))->toBeTrue()
         ->and($policy->delete($owner, $dossier))->toBeTrue();
 });
 
@@ -68,6 +69,7 @@ test('read-only members can view dossiers but cannot create or complete', functi
     expect($policy->viewAny($reader))->toBeTrue()
         ->and($policy->view($reader, $dossier))->toBeTrue()
         ->and($policy->create($reader))->toBeFalse()
+        ->and($policy->restore($reader, $dossier))->toBeFalse()
         ->and($policy->complete($reader, $dossier))->toBeFalse();
 });
 
