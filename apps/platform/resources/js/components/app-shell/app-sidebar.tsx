@@ -5,6 +5,7 @@ import {
     Images,
     LayoutGrid,
     ScrollText,
+    UserPlus,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-shell/app-logo';
@@ -27,11 +28,13 @@ import { index as activityIndex } from '@/routes/workspaces/activity';
 import { index as clientIndex } from '@/routes/workspaces/clients';
 import { index as dossierIndex } from '@/routes/workspaces/dossiers';
 import { index as mediaIndex } from '@/routes/workspaces/media';
+import { index as membersIndex } from '@/routes/workspaces/members';
 import { index as templateIndex } from '@/routes/workspaces/templates';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { current_firm: currentFirm } = usePage().props;
+    const { current_firm: currentFirm, can_manage_members: canManageMembers } =
+        usePage().props;
     const { t } = useTranslation();
     const dashboardRoute = currentFirm
         ? workspaceDashboard(currentFirm)
@@ -55,6 +58,15 @@ export function AppSidebar() {
                       href: clientIndex(currentFirm),
                       icon: Users,
                   },
+                  ...(canManageMembers
+                      ? [
+                            {
+                                title: t('Members'),
+                                href: membersIndex(currentFirm),
+                                icon: UserPlus,
+                            },
+                        ]
+                      : []),
                   {
                       title: t('Templates'),
                       href: templateIndex(currentFirm),

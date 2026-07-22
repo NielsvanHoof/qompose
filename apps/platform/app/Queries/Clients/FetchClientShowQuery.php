@@ -4,32 +4,15 @@ declare(strict_types=1);
 
 namespace App\Queries\Clients;
 
+use App\Data\Clients\ClientDossierRowData;
+use App\Data\Clients\ClientShowPageData;
+use App\Data\Clients\ClientSummaryData;
 use App\Models\Client;
 use App\Models\Dossier;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 final class FetchClientShowQuery
 {
-    /**
-     * @return array{
-     *     client: array{
-     *         id: int,
-     *         name: string,
-     *         email: string,
-     *         active_dossiers_count: int,
-     *         archived_dossiers_count: int
-     *     },
-     *     dossiers: LengthAwarePaginator<int, array{
-     *         id: int,
-     *         title: string,
-     *         reference: string|null,
-     *         status: string,
-     *         client_name: string,
-     *         updated_at: string
-     *     }>
-     * }
-     */
-    public function handle(Client $client): array
+    public function handle(Client $client): ClientShowPageData
     {
         $activeDossiersCount = $client->dossiers()->toBase()->count();
         $archivedDossiersQuery = Dossier::onlyTrashed();
@@ -41,24 +24,24 @@ final class FetchClientShowQuery
             ->latest('updated_at')
             ->paginate(perPage: 15, pageName: 'dossiers_page')
             ->withQueryString()
-            ->through(fn (Dossier $dossier): array => [
-                'id' => $dossier->id,
-                'title' => $dossier->title,
-                'reference' => $dossier->reference,
-                'status' => $dossier->status->value,
-                'client_name' => $client->name,
-                'updated_at' => $dossier->updated_at->toIso8601String(),
-            ]);
+            ->through(fn (Dossier $dossier): array => (new ClientDossierRowData(
+                id: $dossier->id,
+                title: $dossier->title,
+                reference: $dossier->reference,
+                status: $dossier->status->value,
+                clientName: $client->name,
+                updatedAt: $dossier->updated_at->toIso8601String(),
+            ))->toArray());
 
-        return [
-            'client' => [
-                'id' => $client->id,
-                'name' => $client->name,
-                'email' => $client->email,
-                'active_dossiers_count' => $activeDossiersCount,
-                'archived_dossiers_count' => $archivedDossiersCount,
-            ],
-            'dossiers' => $dossiers,
-        ];
+        return new ClientShowPageData(
+            client: new ClientSummaryData(
+                id: $client->id,
+                name: $client->name,
+                email: $client->email,
+                activeDossiersCount: $activeDossiersCount,
+                archivedDossiersCount: $archivedDossiersCount,
+            ),
+            dossiers: $dossiers,
+        );
     }
 }

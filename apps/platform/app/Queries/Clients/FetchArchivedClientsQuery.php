@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries\Clients;
 
+use App\Data\Clients\ArchivedClientRowData;
 use App\Models\Client;
 use App\Queries\PaginatedIndexQuery;
 use Illuminate\Database\Eloquent\Builder;
@@ -101,12 +102,12 @@ final class FetchArchivedClientsQuery extends PaginatedIndexQuery
     protected function mapModel(Model $model): array
     {
         /** @var Client $model */
-        return [
-            'id' => $model->id,
-            'name' => $model->name,
-            'email' => $model->email,
-            'dossiers_count' => $model->dossiers_count,
-            'archived_at' => $model->deleted_at?->toIso8601String() ?? '',
-        ];
+        return (new ArchivedClientRowData(
+            id: $model->id,
+            name: $model->name,
+            email: $model->email,
+            dossiersCount: $model->dossiers_count,
+            archivedAt: $model->deleted_at?->toIso8601String() ?? '',
+        ))->toArray();
     }
 }

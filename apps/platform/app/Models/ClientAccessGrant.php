@@ -8,6 +8,7 @@ use App\Concerns\BelongsToTenant;
 use Database\Factories\ClientAccessGrantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\MassPrunable;
@@ -92,7 +93,8 @@ final class ClientAccessGrant extends Model
      * @param  Builder<ClientAccessGrant>  $query
      * @return Builder<ClientAccessGrant>
      */
-    public function scopeValid(Builder $query): Builder
+    #[Scope]
+    public function valid(Builder $query): Builder
     {
         return $query
             ->where('revoked_at', null)

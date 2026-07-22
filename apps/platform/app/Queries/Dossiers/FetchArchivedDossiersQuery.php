@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries\Dossiers;
 
+use App\Data\Dossiers\ArchivedDossierRowData;
 use App\Models\Client;
 use App\Models\Dossier;
 use App\Queries\PaginatedIndexQuery;
@@ -126,14 +127,14 @@ final class FetchArchivedDossiersQuery extends PaginatedIndexQuery
             throw new RuntimeException('Archived dossier client is missing.');
         }
 
-        return [
-            'id' => $model->id,
-            'title' => $model->title,
-            'reference' => $model->reference,
-            'status' => $model->status->value,
-            'client_name' => $client->name,
-            'client_archived' => $client->trashed(),
-            'archived_at' => $model->deleted_at?->toIso8601String() ?? '',
-        ];
+        return (new ArchivedDossierRowData(
+            id: $model->id,
+            title: $model->title,
+            reference: $model->reference,
+            status: $model->status->value,
+            clientName: $client->name,
+            clientArchived: $client->trashed(),
+            archivedAt: $model->deleted_at?->toIso8601String() ?? '',
+        ))->toArray();
     }
 }

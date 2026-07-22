@@ -13,6 +13,33 @@ enum Role: string
     case ReadOnly = 'read-only';
 
     /**
+     * Roles that can be assigned via invite / role change forms.
+     *
+     * @return list<self>
+     */
+    public static function assignable(): array
+    {
+        return [
+            self::Administrator,
+            self::Adviser,
+            self::Reviewer,
+            self::ReadOnly,
+            self::Owner,
+        ];
+    }
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Owner => __('Owner'),
+            self::Administrator => __('Administrator'),
+            self::Adviser => __('Adviser'),
+            self::Reviewer => __('Reviewer'),
+            self::ReadOnly => __('Read-only'),
+        };
+    }
+
+    /**
      * @return list<Permission>
      */
     public function permissions(): array

@@ -47,9 +47,7 @@ final class ClientPortalController extends Controller
             );
         });
 
-        return Inertia::render('portal/show', [
-            ...$getClientPortalData->handle($grant),
-        ]);
+        return Inertia::render('portal/show', $getClientPortalData->handle($grant));
     }
 
     private function grantFromRequest(Request $request): ClientAccessGrant

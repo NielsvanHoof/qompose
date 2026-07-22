@@ -29,7 +29,7 @@ final class QuestionnaireTemplateController extends Controller
         $this->authorize('viewAny', QuestionnaireTemplate::class);
 
         return Inertia::render('questionnaires/index', [
-            ...$fetchQuestionnaireTemplates->handle(),
+            ...$fetchQuestionnaireTemplates->handle()->toArray(),
             'categories' => collect(QuestionnaireTemplateCategory::cases())
                 ->map(fn (QuestionnaireTemplateCategory $category): array => [
                     'value' => $category->value,
@@ -74,7 +74,7 @@ final class QuestionnaireTemplateController extends Controller
         $this->authorize('view', $template);
 
         return Inertia::render('questionnaires/show', [
-            'template' => $getQuestionnaireTemplateShowData->handle($template),
+            'template' => $getQuestionnaireTemplateShowData->handle($template)->toArray(),
             'categories' => collect(QuestionnaireTemplateCategory::cases())
                 ->map(fn (QuestionnaireTemplateCategory $category): array => [
                     'value' => $category->value,

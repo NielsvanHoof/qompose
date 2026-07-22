@@ -4,6 +4,7 @@ import {
 } from '@/features/document-requests/portal/portal-document-answer';
 import PortalDocumentUpload from '@/features/document-requests/portal/portal-document-upload';
 import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import { useTranslation } from '@/hooks/use-translation';
 import { formatBytes } from '@/lib/format-bytes';
 
 export type PortalDocumentRequestTypeProps = {
@@ -18,6 +19,8 @@ export function PortalFileRequestContent({
     documentRequest,
     canRespond,
 }: PortalDocumentRequestTypeProps) {
+    const { locale } = useTranslation();
+
     return (
         <>
             {documentRequest.uploaded_document && (
@@ -36,7 +39,7 @@ export function PortalFileRequestContent({
                                 {new Date(
                                     documentRequest.uploaded_document
                                         .uploaded_at,
-                                ).toLocaleString()}
+                                ).toLocaleString(locale)}
                             </>
                         )}
                     </p>

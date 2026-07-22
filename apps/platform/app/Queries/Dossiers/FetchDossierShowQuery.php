@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace App\Queries\Dossiers;
 
+use App\Data\Dossiers\DossierAccessGrantData;
+use App\Data\Dossiers\DossierClientSummaryData;
+use App\Data\Dossiers\DossierReviewSummaryData;
+use App\Data\Dossiers\DossierShowData;
+use App\Data\Dossiers\DossierShowPageData;
+use App\Data\Dossiers\QuestionnaireTemplateOptionData;
+use App\Data\Dossiers\StaffDocumentRequestData;
+use App\Data\Dossiers\StaffUploadedDocumentData;
+use App\Data\Shared\PersonOptionData;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
 use App\Models\Client;
-use App\Models\ClientAccessGrant;
-use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
 use App\Models\User;
@@ -16,69 +23,7 @@ use RuntimeException;
 
 final class FetchDossierShowQuery
 {
-    /**
-     * @return array{
-     *     templates: array<int, array{
-     *         id: int,
-     *         name: string,
-     *         category_label: string,
-     *         items_count: int,
-     *         is_system: bool
-     *     }>,
-     *     dossier: array{
-     *         id: int,
-     *         title: string,
-     *         reference: string|null,
-     *         status: string,
-     *         due_date: string|null,
-     *         responsible_staff: array{id: int, name: string, email: string}|null,
-     *         reminder_interval_days: int|null,
-     *         next_reminder_at: string|null,
-     *         last_client_message_sent_at: string|null,
-     *         last_client_opened_at: string|null,
-     *         has_outstanding_client_items: bool,
-     *         ready_to_complete: bool,
-     *         review_summary: array{
-     *             total: int,
-     *             pending: int,
-     *             submitted: int,
-     *             accepted: int,
-     *             rejected: int
-     *         },
-     *         client: array{name: string, email: string},
-     *         document_requests: array<int, array{
-     *             id: int,
-     *             type: string,
-     *             title: string,
-     *             instructions: string|null,
-     *             status: string,
-     *             answer_text: string|null,
-     *             answer_boolean: bool|null,
-     *             answered_at: string|null,
-     *             reviewed_at: string|null,
-     *             reviewed_by_name: string|null,
-     *             rejection_reason: string|null,
-     *             sort_order: int,
-     *             uploaded_document: array{
-     *                 id: int,
-     *                 original_filename: string,
-     *                 size_bytes: int,
-     *                 uploaded_at: string,
-     *                 processing_status: string,
-     *                 processing_error: string|null
-     *             }|null
-     *         }>,
-     *         access_grants: array<int, array{
-     *             id: int,
-     *             expires_at: string,
-     *             revoked_at: string|null,
-     *             last_used_at: string|null,
-     *             is_valid: bool
-     *         }>
-     *     }
-     * }
-     */
-    public function handle(Dossier $dossier): array
+    public function handle(Dossier $dossier): DossierShowPageData
     {
         $dossier->load([
             'client:id,name,email',
@@ -107,88 +52,103 @@ final class FetchDossierShowQuery
             ->oldest('name')
             ->get(['id', 'name', 'category', 'tenant_id']);
 
-        return [
-            'templates' => $templates
-                ->map(fn (QuestionnaireTemplate $template): array => [
-                    'id' => $template->id,
-                    'name' => $template->name,
-                    'category_label' => $template->category->label(),
-                    'items_count' => $template->items_count,
-                    'is_system' => $template->isSystem(),
-                ])
-                ->all(),
-            'dossier' => [
-                'id' => $dossier->id,
-                'title' => $dossier->title,
-                'reference' => $dossier->reference,
-                'status' => $dossier->status->value,
-                'due_date' => $dossier->due_date?->toDateString(),
-                'responsible_staff' => $dossier->responsibleUser instanceof User
-                    ? [
-                        'id' => $dossier->responsibleUser->id,
-                        'name' => $dossier->responsibleUser->name,
-                        'email' => $dossier->responsibleUser->email,
-                    ]
+        /** @var list<QuestionnaireTemplateOptionData> $templateOptions */
+        $templateOptions = [];
+
+        foreach ($templates as $template) {
+            $templateOptions[] = new QuestionnaireTemplateOptionData(
+                id: $template->id,
+                name: $template->name,
+                categoryLabel: $template->category->label(),
+                itemsCount: $template->items_count,
+                isSystem: $template->isSystem(),
+            );
+        }
+
+        /** @var list<StaffDocumentRequestData> $documentRequestRows */
+        $documentRequestRows = [];
+
+        foreach ($dossier->documentRequests as $documentRequest) {
+            $uploaded = $documentRequest->uploadedDocument;
+            $reviewer = $documentRequest->reviewedBy;
+
+            $documentRequestRows[] = new StaffDocumentRequestData(
+                id: $documentRequest->id,
+                type: $documentRequest->type->value,
+                title: $documentRequest->title,
+                instructions: $documentRequest->instructions,
+                status: $documentRequest->status->value,
+                answerText: $documentRequest->answer_text,
+                answerBoolean: $documentRequest->answer_boolean,
+                answeredAt: $documentRequest->answered_at?->toIso8601String(),
+                reviewedAt: $documentRequest->reviewed_at?->toIso8601String(),
+                reviewedByName: $reviewer instanceof User ? $reviewer->name : null,
+                rejectionReason: $documentRequest->rejection_reason,
+                sortOrder: $documentRequest->sort_order,
+                uploadedDocument: $uploaded === null ? null : new StaffUploadedDocumentData(
+                    id: $uploaded->id,
+                    originalFilename: $uploaded->original_filename,
+                    sizeBytes: $uploaded->size_bytes,
+                    uploadedAt: $uploaded->uploaded_at->toIso8601String(),
+                    processingStatus: $uploaded->processing_status->value,
+                    processingError: $uploaded->processing_error,
+                ),
+            );
+        }
+
+        /** @var list<DossierAccessGrantData> $accessGrants */
+        $accessGrants = [];
+
+        foreach ($dossier->clientAccessGrants as $grant) {
+            $accessGrants[] = new DossierAccessGrantData(
+                id: $grant->id,
+                expiresAt: $grant->expires_at->toIso8601String(),
+                revokedAt: $grant->revoked_at?->toIso8601String(),
+                lastUsedAt: $grant->last_used_at?->toIso8601String(),
+                isValid: $grant->isValid(),
+            );
+        }
+
+        $responsibleUser = $dossier->responsibleUser;
+
+        return new DossierShowPageData(
+            templates: $templateOptions,
+            dossier: new DossierShowData(
+                id: $dossier->id,
+                title: $dossier->title,
+                reference: $dossier->reference,
+                status: $dossier->status->value,
+                dueDate: $dossier->due_date?->toDateString(),
+                responsibleStaff: $responsibleUser instanceof User
+                    ? new PersonOptionData(
+                        id: $responsibleUser->id,
+                        name: $responsibleUser->name,
+                        email: $responsibleUser->email,
+                    )
                     : null,
-                'reminder_interval_days' => $dossier->reminder_interval_days,
-                'next_reminder_at' => $dossier->next_reminder_at?->toIso8601String(),
-                'last_client_message_sent_at' => $dossier->last_client_message_sent_at?->toIso8601String(),
-                'last_client_opened_at' => $dossier->last_client_opened_at?->toIso8601String(),
-                'has_outstanding_client_items' => $outstandingClientItemCount > 0,
-                'ready_to_complete' => $dossier->status !== DossierStatus::Completed
+                reminderIntervalDays: $dossier->reminder_interval_days,
+                nextReminderAt: $dossier->next_reminder_at?->toIso8601String(),
+                lastClientMessageSentAt: $dossier->last_client_message_sent_at?->toIso8601String(),
+                lastClientOpenedAt: $dossier->last_client_opened_at?->toIso8601String(),
+                hasOutstandingClientItems: $outstandingClientItemCount > 0,
+                readyToComplete: $dossier->status !== DossierStatus::Completed
                     && $totalRequestCount > 0
                     && $acceptedRequestCount === $totalRequestCount,
-                'review_summary' => [
-                    'total' => $totalRequestCount,
-                    'pending' => $documentRequests->where('status', DocumentRequestStatus::Pending)->count(),
-                    'submitted' => $documentRequests->where('status', DocumentRequestStatus::Submitted)->count(),
-                    'accepted' => $acceptedRequestCount,
-                    'rejected' => $documentRequests->where('status', DocumentRequestStatus::Rejected)->count(),
-                ],
-                'client' => [
-                    'name' => $client->name,
-                    'email' => $client->email,
-                ],
-                'document_requests' => $dossier->documentRequests
-                    ->map(function (DocumentRequest $documentRequest): array {
-                        $uploaded = $documentRequest->uploadedDocument;
-                        $reviewer = $documentRequest->reviewedBy;
-
-                        return [
-                            'id' => $documentRequest->id,
-                            'type' => $documentRequest->type->value,
-                            'title' => $documentRequest->title,
-                            'instructions' => $documentRequest->instructions,
-                            'status' => $documentRequest->status->value,
-                            'answer_text' => $documentRequest->answer_text,
-                            'answer_boolean' => $documentRequest->answer_boolean,
-                            'answered_at' => $documentRequest->answered_at?->toIso8601String(),
-                            'reviewed_at' => $documentRequest->reviewed_at?->toIso8601String(),
-                            'reviewed_by_name' => $reviewer instanceof User ? $reviewer->name : null,
-                            'rejection_reason' => $documentRequest->rejection_reason,
-                            'sort_order' => $documentRequest->sort_order,
-                            'uploaded_document' => $uploaded === null ? null : [
-                                'id' => $uploaded->id,
-                                'original_filename' => $uploaded->original_filename,
-                                'size_bytes' => $uploaded->size_bytes,
-                                'uploaded_at' => $uploaded->uploaded_at->toIso8601String(),
-                                'processing_status' => $uploaded->processing_status->value,
-                                'processing_error' => $uploaded->processing_error,
-                            ],
-                        ];
-                    })
-                    ->all(),
-                'access_grants' => $dossier->clientAccessGrants
-                    ->map(fn (ClientAccessGrant $grant): array => [
-                        'id' => $grant->id,
-                        'expires_at' => $grant->expires_at->toIso8601String(),
-                        'revoked_at' => $grant->revoked_at?->toIso8601String(),
-                        'last_used_at' => $grant->last_used_at?->toIso8601String(),
-                        'is_valid' => $grant->isValid(),
-                    ])
-                    ->all(),
-            ],
-        ];
+                reviewSummary: new DossierReviewSummaryData(
+                    total: $totalRequestCount,
+                    pending: $documentRequests->where('status', DocumentRequestStatus::Pending)->count(),
+                    submitted: $documentRequests->where('status', DocumentRequestStatus::Submitted)->count(),
+                    accepted: $acceptedRequestCount,
+                    rejected: $documentRequests->where('status', DocumentRequestStatus::Rejected)->count(),
+                ),
+                client: new DossierClientSummaryData(
+                    name: $client->name,
+                    email: $client->email,
+                ),
+                documentRequests: $documentRequestRows,
+                accessGrants: $accessGrants,
+            ),
+        );
     }
 
     private function resolveClient(Dossier $dossier): Client

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Actions\Localization\LoadFrontendTranslationsAction;
+use App\Data\Tenancy\WorkspaceNavItemData;
 use App\Enums\Locale;
+use App\Enums\Permission;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Queries\Notifications\FetchWorkspaceNotificationsForUserQuery;
@@ -101,7 +103,12 @@ final class HandleInertiaRequests extends Middleware
             ],
             'workspaces' => $user instanceof User
                 ? Inertia::once(
-                    fn (): array => $this->getWorkspaceNavigationForUser->handle($user),
+                    function () use ($user): array {
+                        return array_map(
+                            static fn (WorkspaceNavItemData $item): array => $item->toArray(),
+                            $this->getWorkspaceNavigationForUser->handle($user),
+                        );
+                    },
                 )->fresh($request->session()->pull('inertia.refresh.workspaces', false))
                 : [],
             'current_firm' => function (): ?array {
@@ -116,6 +123,14 @@ final class HandleInertiaRequests extends Middleware
                     'slug' => $tenant->slug,
                 ];
             },
+            'can_manage_members' => function () use ($user): bool {
+                $tenant = Tenant::current();
+
+                return $user instanceof User
+                    && $tenant instanceof Tenant
+                    && $user->belongsToTenant($tenant)
+                    && $user->can(Permission::ManageMembers->value);
+            },
             // Staff bell inbox — deferred so non-bell pages stay cheap.
             'notifications' => (function () use ($user) {
                 $tenant = Tenant::current();
@@ -125,7 +140,7 @@ final class HandleInertiaRequests extends Middleware
                 }
 
                 return Inertia::defer(
-                    fn (): array => $this->getWorkspaceNotificationsForUser->handle($user, $tenant),
+                    fn (): array => $this->getWorkspaceNotificationsForUser->handle($user, $tenant)->toArray(),
                 );
             })(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

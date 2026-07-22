@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Queries\Reporting;
 
+use App\Data\Reporting\ActivityLogAttributeChangesData;
+use App\Data\Reporting\ActivityLogPropertiesData;
+use App\Data\Reporting\ActivityLogRowData;
+use App\Data\Reporting\ActivityLogSubjectData;
 use App\Enums\AuditEvent;
 use App\Models\Activity;
 use App\Models\Client;
@@ -18,39 +22,26 @@ use function is_array;
 use function is_string;
 
 /**
- * Maps an Activity model to the Inertia activity-log row shape.
+ * Maps an Activity model to the Inertia activity-log row DTO.
  */
 final class ActivityLogRowMapper
 {
-    /**
-     * @return array{
-     *     id: int,
-     *     event: string|null,
-     *     label: string,
-     *     description: string,
-     *     causer_name: string|null,
-     *     subject: array{type: string, id: int, name: string|null}|null,
-     *     created_at: string|null,
-     *     properties: array{ip: string|null, route: string|null},
-     *     attribute_changes: array{attributes: array<string, mixed>, old: array<string, mixed>}|null
-     * }
-     */
-    public function map(Activity $activity): array
+    public function map(Activity $activity): ActivityLogRowData
     {
         $event = is_string($activity->event) ? $activity->event : null;
         $auditEvent = $event !== null ? AuditEvent::tryFrom($event) : null;
 
-        return [
-            'id' => $activity->id,
-            'event' => $event,
-            'label' => $auditEvent?->label() ?? $activity->description,
-            'description' => $activity->description,
-            'causer_name' => $this->resolveCauserName($activity),
-            'subject' => $this->resolveSubject($activity),
-            'created_at' => $activity->created_at?->toIso8601String(),
-            'properties' => $this->displayProperties($activity),
-            'attribute_changes' => $this->displayAttributeChanges($activity),
-        ];
+        return new ActivityLogRowData(
+            id: $activity->id,
+            event: $event,
+            label: $auditEvent?->label() ?? $activity->description,
+            description: $activity->description,
+            causerName: $this->resolveCauserName($activity),
+            subject: $this->resolveSubject($activity),
+            createdAt: $activity->created_at?->toIso8601String(),
+            properties: $this->displayProperties($activity),
+            attributeChanges: $this->displayAttributeChanges($activity),
+        );
     }
 
     private function resolveCauserName(Activity $activity): ?string
@@ -64,10 +55,7 @@ final class ActivityLogRowMapper
         return null;
     }
 
-    /**
-     * @return array{type: string, id: int, name: string|null}|null
-     */
-    private function resolveSubject(Activity $activity): ?array
+    private function resolveSubject(Activity $activity): ?ActivityLogSubjectData
     {
         if ($activity->subject_type === null || $activity->subject_id === null) {
             return null;
@@ -87,11 +75,11 @@ final class ActivityLogRowMapper
             $name = $this->resolveSubjectName($subject);
         }
 
-        return [
-            'type' => $type,
-            'id' => $activity->subject_id,
-            'name' => $name,
-        ];
+        return new ActivityLogSubjectData(
+            type: $type,
+            id: $activity->subject_id,
+            name: $name,
+        );
     }
 
     private function resolveSubjectName(Model $subject): ?string
@@ -113,26 +101,18 @@ final class ActivityLogRowMapper
         return null;
     }
 
-    /**
-     * Compact, safe properties for the list UI (skip bulky user_agent).
-     *
-     * @return array{ip: string|null, route: string|null}
-     */
-    private function displayProperties(Activity $activity): array
+    private function displayProperties(Activity $activity): ActivityLogPropertiesData
     {
         $ip = $activity->getProperty('ip');
         $route = $activity->getProperty('route');
 
-        return [
-            'ip' => is_string($ip) ? $ip : null,
-            'route' => is_string($route) ? $route : null,
-        ];
+        return new ActivityLogPropertiesData(
+            ip: is_string($ip) ? $ip : null,
+            route: is_string($route) ? $route : null,
+        );
     }
 
-    /**
-     * @return array{attributes: array<string, mixed>, old: array<string, mixed>}|null
-     */
-    private function displayAttributeChanges(Activity $activity): ?array
+    private function displayAttributeChanges(Activity $activity): ?ActivityLogAttributeChangesData
     {
         $changes = $activity->attribute_changes;
 
@@ -158,9 +138,9 @@ final class ActivityLogRowMapper
             return null;
         }
 
-        return [
-            'attributes' => $attributesArray,
-            'old' => $oldArray,
-        ];
+        return new ActivityLogAttributeChangesData(
+            attributes: $attributesArray,
+            old: $oldArray,
+        );
     }
 }

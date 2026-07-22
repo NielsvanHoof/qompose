@@ -3,6 +3,7 @@ import StatusMessage from '@/components/status-message';
 import PortalDocumentRequestsCard from '@/features/document-requests/portal/portal-document-requests-card';
 import PortalProgressOverview from '@/features/portal/portal-progress-overview';
 import type { PortalDossier } from '@/features/portal/types';
+import { useTranslation } from '@/hooks/use-translation';
 import PortalShell from '@/layouts/portal/portal-shell';
 
 /**
@@ -15,15 +16,21 @@ export default function PortalShow({
     firm: { name: string };
     dossier: PortalDossier;
 }) {
+    const { t, locale } = useTranslation();
+
     const subtitle = [
-        `For ${dossier.client.name}`,
-        dossier.reference ? `Ref. ${dossier.reference}` : null,
+        t('For :name', { name: dossier.client.name }),
+        dossier.reference
+            ? t('Ref. :reference', { reference: dossier.reference })
+            : null,
     ]
         .filter(Boolean)
         .join(' · ');
 
     const meta = dossier.expires_at
-        ? `Access expires ${new Date(dossier.expires_at).toLocaleString()}`
+        ? t('Access expires :date', {
+              date: new Date(dossier.expires_at).toLocaleString(locale),
+          })
         : undefined;
 
     return (
@@ -38,8 +45,9 @@ export default function PortalShow({
             >
                 {dossier.status === 'completed' && (
                     <StatusMessage>
-                        This dossier has been completed. Your submitted
-                        information is now read-only.
+                        {t(
+                            'This dossier has been completed. Your submitted information is now read-only.',
+                        )}
                     </StatusMessage>
                 )}
 
@@ -57,8 +65,10 @@ export default function PortalShow({
                 />
 
                 <p className="text-center text-xs text-muted-foreground">
-                    This is a secure upload page for {firm.name}. Do not share
-                    this link.
+                    {t(
+                        'This is a secure upload page for :firm. Do not share this link.',
+                        { firm: firm.name },
+                    )}
                 </p>
             </PortalShell>
         </>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries\Clients;
 
+use App\Data\Clients\ClientIndexRowData;
 use App\Models\Client;
 use App\Queries\Filters\ScoutSearchFilter;
 use App\Queries\PaginatedIndexQuery;
@@ -94,11 +95,11 @@ final class FetchClientIndexQuery extends PaginatedIndexQuery
     protected function mapModel(Model $model): array
     {
         /** @var Client $model */
-        return [
-            'id' => $model->id,
-            'name' => $model->name,
-            'email' => $model->email,
-            'dossiers_count' => $model->dossiers_count,
-        ];
+        return (new ClientIndexRowData(
+            id: $model->id,
+            name: $model->name,
+            email: $model->email,
+            dossiersCount: $model->dossiers_count,
+        ))->toArray();
     }
 }

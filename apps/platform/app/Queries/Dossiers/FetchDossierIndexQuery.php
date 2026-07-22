@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries\Dossiers;
 
+use App\Data\Dossiers\DossierIndexRowData;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
 use App\Models\Client;
@@ -157,15 +158,15 @@ final class FetchDossierIndexQuery extends PaginatedIndexQuery
             throw new RuntimeException('Dossier client is missing.');
         }
 
-        return [
-            'id' => $model->id,
-            'client_name' => $client->name,
-            'title' => $model->title,
-            'reference' => $model->reference,
-            'status' => $model->status->value,
-            'due_date' => $model->due_date?->toDateString(),
-            'responsible_name' => $model->responsibleUser?->name,
-        ];
+        return (new DossierIndexRowData(
+            id: $model->id,
+            clientName: $client->name,
+            title: $model->title,
+            reference: $model->reference,
+            status: $model->status->value,
+            dueDate: $model->due_date?->toDateString(),
+            responsibleName: $model->responsibleUser?->name,
+        ))->toArray();
     }
 
     /** @param Builder<Dossier> $query */

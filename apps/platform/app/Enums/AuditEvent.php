@@ -32,7 +32,12 @@ enum AuditEvent: string
     case ClientChangesRequestedSent = 'client_portal.changes_requested_sent';
     case ClientChangesRequestedFailed = 'client_portal.changes_requested_failed';
     case AccessDenied = 'access.denied';
+    case MemberInvited = 'member.invited';
+    case MemberInvitationAccepted = 'member.invitation_accepted';
+    case MemberInvitationRevoked = 'member.invitation_revoked';
     case MemberRoleChanged = 'member.role_changed';
+    case MemberSuspended = 'member.suspended';
+    case MemberRemoved = 'member.removed';
     case DossierDeleted = 'dossier.deleted';
     case ClientDeleted = 'client.deleted';
     case DossierRestored = 'dossier.restored';
@@ -71,7 +76,12 @@ enum AuditEvent: string
             self::ClientChangesRequestedSent => __('Client changes-requested notification sent'),
             self::ClientChangesRequestedFailed => __('Client changes-requested notification failed'),
             self::AccessDenied => __('Access denied'),
+            self::MemberInvited => __('Member invited'),
+            self::MemberInvitationAccepted => __('Member invitation accepted'),
+            self::MemberInvitationRevoked => __('Member invitation revoked'),
             self::MemberRoleChanged => __('Member role changed'),
+            self::MemberSuspended => __('Member suspended'),
+            self::MemberRemoved => __('Member removed'),
             self::DossierDeleted => __('Dossier archived'),
             self::ClientDeleted => __('Client archived'),
             self::DossierRestored => __('Dossier restored'),

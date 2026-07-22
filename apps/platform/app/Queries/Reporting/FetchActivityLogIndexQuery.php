@@ -145,6 +145,6 @@ final class FetchActivityLogIndexQuery extends PaginatedIndexQuery
     protected function mapModel(Model $model): array
     {
         /** @var Activity $model */
-        return $this->rowMapper->map($model);
+        return $this->rowMapper->map($model)->toArray();
     }
 }

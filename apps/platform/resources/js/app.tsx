@@ -28,6 +28,7 @@ createInertiaApp({
                 // Guest magic-link portal — no staff chrome.
                 return null;
             case name.startsWith('auth/'):
+            case name.startsWith('invitations/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];

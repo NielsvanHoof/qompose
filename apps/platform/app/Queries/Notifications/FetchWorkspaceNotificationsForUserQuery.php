@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Queries\Notifications;
 
+use App\Data\Notifications\WorkspaceNotificationItemData;
+use App\Data\Notifications\WorkspaceNotificationsData;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\Portal\ClientQuestionnaireCompletedNotification;
@@ -17,23 +19,7 @@ final class FetchWorkspaceNotificationsForUserQuery
 {
     private const int Limit = 20;
 
-    /**
-     * @return array{
-     *     unread_count: int,
-     *     items: array<int, array{
-     *         id: string,
-     *         type: string,
-     *         message: string,
-     *         dossier_id: int,
-     *         dossier_title: string,
-     *         client_name: string,
-     *         dossier_url: string,
-     *         read_at: string|null,
-     *         created_at: string
-     *     }>
-     * }
-     */
-    public function handle(User $user, Tenant $tenant): array
+    public function handle(User $user, Tenant $tenant): WorkspaceNotificationsData
     {
         $baseQuery = DatabaseNotification::query()
             ->where('notifiable_type', $user->getMorphClass())
@@ -53,29 +39,20 @@ final class FetchWorkspaceNotificationsForUserQuery
         /** @var Collection<int, DatabaseNotification> $notifications */
         $notifications = $recentQuery->get();
 
-        return [
-            'unread_count' => $unreadCount,
-            'items' => $notifications
-                ->map(fn (DatabaseNotification $notification): array => $this->mapNotification($notification))
-                ->values()
-                ->all(),
-        ];
+        /** @var list<WorkspaceNotificationItemData> $items */
+        $items = [];
+
+        foreach ($notifications as $notification) {
+            $items[] = $this->mapNotification($notification);
+        }
+
+        return new WorkspaceNotificationsData(
+            unreadCount: $unreadCount,
+            items: $items,
+        );
     }
 
-    /**
-     * @return array{
-     *     id: string,
-     *     type: string,
-     *     message: string,
-     *     dossier_id: int,
-     *     dossier_title: string,
-     *     client_name: string,
-     *     dossier_url: string,
-     *     read_at: string|null,
-     *     created_at: string
-     * }
-     */
-    private function mapNotification(DatabaseNotification $notification): array
+    private function mapNotification(DatabaseNotification $notification): WorkspaceNotificationItemData
     {
         /** @var array<string, mixed> $data */
         $data = $notification->data;
@@ -83,19 +60,19 @@ final class FetchWorkspaceNotificationsForUserQuery
         $clientName = (string) ($data['client_name'] ?? '');
         $dossierTitle = (string) ($data['dossier_title'] ?? '');
 
-        return [
-            'id' => $notification->id,
-            'type' => (string) ($data['type'] ?? 'client_questionnaire_completed'),
-            'message' => __(':client finished the questionnaire for “:dossier”.', [
+        return new WorkspaceNotificationItemData(
+            id: $notification->id,
+            type: (string) ($data['type'] ?? 'client_questionnaire_completed'),
+            message: __(':client finished the questionnaire for “:dossier”.', [
                 'client' => $clientName,
                 'dossier' => $dossierTitle,
             ]),
-            'dossier_id' => (int) ($data['dossier_id'] ?? 0),
-            'dossier_title' => $dossierTitle,
-            'client_name' => $clientName,
-            'dossier_url' => (string) ($data['dossier_url'] ?? ''),
-            'read_at' => $notification->read_at?->toDateTimeString(),
-            'created_at' => $notification->created_at?->toDateTimeString() ?? '',
-        ];
+            dossierId: (int) ($data['dossier_id'] ?? 0),
+            dossierTitle: $dossierTitle,
+            clientName: $clientName,
+            dossierUrl: (string) ($data['dossier_url'] ?? ''),
+            readAt: $notification->read_at?->toDateTimeString(),
+            createdAt: $notification->created_at?->toDateTimeString() ?? '',
+        );
     }
 }

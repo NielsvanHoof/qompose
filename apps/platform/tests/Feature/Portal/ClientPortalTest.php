@@ -600,3 +600,51 @@ test('grant issuance rolls back when its audit transaction fails', function () {
             ])
             ->exists())->toBeFalse();
 });
+
+test('portal locale follows the browser language when no cookie is set', function () {
+    $context = createPortalDossierWithGrant();
+
+    $this->get(route('portal.exchange', $context['plainTextToken']))
+        ->assertRedirect(route('portal.show'));
+
+    $this->withHeaders(['Accept-Language' => 'nl-NL,nl;q=0.9,en;q=0.8'])
+        ->get(route('portal.show'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('locale', 'nl')
+            ->where('translations.Secure client portal', 'Beveiligd klantportaal')
+            ->where('translations.Questionnaire', 'Vragenlijst')
+            ->tap(function (Assert $page): void {
+                /** @var array<string, mixed> $props */
+                $props = $page->toArray()['props'];
+                /** @var array<string, string> $translations */
+                $translations = $props['translations'];
+
+                expect($translations['For :name'])->toBe('Voor :name')
+                    ->and($translations['This is a secure upload page for :firm. Do not share this link.'])
+                    ->toBe('Dit is een beveiligde uploadpagina voor :firm. Deel deze link niet.');
+            }));
+});
+
+test('portal locale cookie overrides the browser language', function () {
+    $context = createPortalDossierWithGrant();
+
+    $this->get(route('portal.exchange', $context['plainTextToken']))
+        ->assertRedirect(route('portal.show'));
+
+    $this->withHeaders(['Accept-Language' => 'en-US,en;q=0.9'])
+        ->withUnencryptedCookie('locale', 'nl')
+        ->get(route('portal.show'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('locale', 'nl')
+            ->where('translations.Everything has been submitted', 'Alles is ingediend')
+            ->tap(function (Assert $page): void {
+                /** @var array<string, mixed> $props */
+                $props = $page->toArray()['props'];
+                /** @var array<string, string> $translations */
+                $translations = $props['translations'];
+
+                expect($translations['Access expires :date'])->toBe('Toegang verloopt :date');
+            }));
+});

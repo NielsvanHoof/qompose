@@ -4,29 +4,13 @@ declare(strict_types=1);
 
 namespace App\Queries\Questionnaires;
 
+use App\Data\Questionnaires\QuestionnaireTemplateItemData;
+use App\Data\Questionnaires\QuestionnaireTemplateShowData;
 use App\Models\QuestionnaireTemplate;
-use App\Models\QuestionnaireTemplateItem;
 
 final class FetchQuestionnaireTemplateShowQuery
 {
-    /**
-     * @return array{
-     *     id: int,
-     *     name: string,
-     *     description: string|null,
-     *     category: string,
-     *     category_label: string,
-     *     is_system: bool,
-     *     items: array<int, array{
-     *         id: int,
-     *         type: string,
-     *         title: string,
-     *         instructions: string|null,
-     *         sort_order: int
-     *     }>
-     * }
-     */
-    public function handle(QuestionnaireTemplate $template): array
+    public function handle(QuestionnaireTemplate $template): QuestionnaireTemplateShowData
     {
         $template->load([
             'items' => fn ($query) => $query
@@ -34,22 +18,27 @@ final class FetchQuestionnaireTemplateShowQuery
                 ->oldest('id'),
         ]);
 
-        return [
-            'id' => $template->id,
-            'name' => $template->name,
-            'description' => $template->description,
-            'category' => $template->category->value,
-            'category_label' => $template->category->label(),
-            'is_system' => $template->isSystem(),
-            'items' => $template->items
-                ->map(fn (QuestionnaireTemplateItem $item): array => [
-                    'id' => $item->id,
-                    'type' => $item->type->value,
-                    'title' => $item->title,
-                    'instructions' => $item->instructions,
-                    'sort_order' => $item->sort_order,
-                ])
-                ->all(),
-        ];
+        /** @var list<QuestionnaireTemplateItemData> $items */
+        $items = [];
+
+        foreach ($template->items as $item) {
+            $items[] = new QuestionnaireTemplateItemData(
+                id: $item->id,
+                type: $item->type->value,
+                title: $item->title,
+                instructions: $item->instructions,
+                sortOrder: $item->sort_order,
+            );
+        }
+
+        return new QuestionnaireTemplateShowData(
+            id: $template->id,
+            name: $template->name,
+            description: $template->description,
+            category: $template->category->value,
+            categoryLabel: $template->category->label(),
+            isSystem: $template->isSystem(),
+            items: $items,
+        );
     }
 }

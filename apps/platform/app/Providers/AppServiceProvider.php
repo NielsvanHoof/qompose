@@ -13,6 +13,8 @@ use App\Models\ClientAccessGrant;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\QuestionnaireTemplate;
+use App\Models\TenantInvitation;
+use App\Models\TenantMembership;
 use App\Models\UploadedDocument;
 use App\Policies\Audit\ActivityPolicy;
 use App\Policies\Clients\ClientPolicy;
@@ -21,6 +23,8 @@ use App\Policies\Dossiers\DossierPolicy;
 use App\Policies\Dossiers\UploadedDocumentPolicy;
 use App\Policies\Portal\ClientAccessGrantPolicy;
 use App\Policies\Questionnaires\QuestionnaireTemplatePolicy;
+use App\Policies\Tenancy\TenantInvitationPolicy;
+use App\Policies\Tenancy\TenantMembershipPolicy;
 use App\Services\Ocr\Configuration\OcrConfigurationValidator;
 use App\Services\Ocr\Drivers\OcrDriverFactory;
 use App\Services\Production\InfrastructureReadinessCheck;
@@ -155,6 +159,8 @@ final class AppServiceProvider extends ServiceProvider
         Gate::policy(DocumentRequest::class, DocumentRequestPolicy::class);
         Gate::policy(Dossier::class, DossierPolicy::class);
         Gate::policy(QuestionnaireTemplate::class, QuestionnaireTemplatePolicy::class);
+        Gate::policy(TenantInvitation::class, TenantInvitationPolicy::class);
+        Gate::policy(TenantMembership::class, TenantMembershipPolicy::class);
         Gate::policy(UploadedDocument::class, UploadedDocumentPolicy::class);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Scout\Searchable;
@@ -44,7 +45,8 @@ final class Activity extends SpatieActivity
      * @param  Builder<Activity>  $query
      * @return Builder<Activity>
      */
-    public function scopeForTenant(Builder $query, Tenant $tenant): Builder
+    #[Scope]
+    public function forTenant(Builder $query, Tenant $tenant): Builder
     {
         return $query->where('tenant_id', $tenant->id);
     }

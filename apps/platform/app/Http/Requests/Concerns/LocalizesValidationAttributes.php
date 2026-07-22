@@ -38,6 +38,8 @@ trait LocalizesValidationAttributes
             'questionnaire_template_id' => __('Template'),
             'expires_in_days' => __('Link validity (days)'),
             'send_invite' => __('Send email invite'),
+            'role' => __('Role'),
+            'status' => __('Status'),
         ];
     }
 }

@@ -11,7 +11,7 @@ export default function PortalProgressOverview({
     dossier: PortalDossier;
     firmName: string;
 }) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const progress = dossier.progress;
 
     if (progress.total === 0) {
@@ -66,7 +66,7 @@ export default function PortalProgressOverview({
                                       ? t('Please finish by :date.', {
                                             date: new Date(
                                                 `${dossier.due_date}T00:00:00`,
-                                            ).toLocaleDateString(),
+                                            ).toLocaleDateString(locale),
                                         })
                                       : t(
                                             'Complete the next item below, then continue through the list.',

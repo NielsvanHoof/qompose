@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace App\Queries\Portal;
 
+use App\Data\Portal\ClientPortalPageData;
+use App\Data\Portal\PortalDocumentRequestData;
+use App\Data\Portal\PortalDossierData;
+use App\Data\Portal\PortalFirmData;
+use App\Data\Portal\PortalNextIncompleteData;
+use App\Data\Portal\PortalProgressData;
+use App\Data\Portal\PortalUploadedDocumentData;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\SubmissionContext;
 use App\Models\Client;
@@ -22,43 +29,7 @@ final class FetchClientPortalQuery
         private readonly DocumentRequestTransitions $documentRequestTransitions,
     ) {}
 
-    /**
-     * @return array{
-     *     firm: array{name: string},
-     *     dossier: array{
-     *         title: string,
-     *         reference: string|null,
-     *         status: string,
-     *         due_date: string|null,
-     *         client: array{name: string},
-     *         expires_at: string,
-     *         progress: array{
-     *             total: int,
-     *             completed: int,
-     *             approved: int,
-     *             remaining: int,
-     *             next_incomplete: array{id: int, title: string}|null
-     *         },
-     *         document_requests: array<int, array{
-     *             id: int,
-     *             type: string,
-     *             title: string,
-     *             instructions: string|null,
-     *             status: string,
-     *             answer_text: string|null,
-     *             answer_boolean: bool|null,
-     *             rejection_reason: string|null,
-     *             can_respond: bool,
-     *             uploaded_document: array{
-     *                 original_filename: string,
-     *                 size_bytes: int,
-     *                 uploaded_at: string
-     *             }|null
-     *         }>
-     *     }
-     * }
-     */
-    public function handle(ClientAccessGrant $grant): array
+    public function handle(ClientAccessGrant $grant): ClientPortalPageData
     {
         $dossier = Dossier::query()
             ->with([
@@ -86,61 +57,60 @@ final class FetchClientPortalQuery
             ->count();
         $nextIncompleteItem = $remainingItems->first();
 
-        return [
-            'firm' => [
-                'name' => $tenant->name,
-            ],
-            'dossier' => [
-                'title' => $dossier->title,
-                'reference' => $dossier->reference,
-                'status' => $dossier->status->value,
-                'due_date' => $dossier->due_date?->toDateString(),
-                'client' => [
-                    'name' => $client->name,
-                ],
-                'expires_at' => $grant->expires_at->toIso8601String(),
-                'progress' => [
-                    'total' => $totalItemCount,
-                    'completed' => $totalItemCount - $remainingItems->count(),
-                    'approved' => $approvedItemCount,
-                    'remaining' => $remainingItems->count(),
-                    'next_incomplete' => $nextIncompleteItem instanceof DocumentRequest
-                        ? [
-                            'id' => $nextIncompleteItem->id,
-                            'title' => $nextIncompleteItem->title,
-                        ]
-                        : null,
-                ],
-                'document_requests' => $dossier->documentRequests
-                    ->map(function (DocumentRequest $documentRequest) use ($dossier): array {
-                        $uploadedDocument = $documentRequest->uploadedDocument;
+        /** @var list<PortalDocumentRequestData> $documentRequests */
+        $documentRequests = [];
 
-                        return [
-                            'id' => $documentRequest->id,
-                            'type' => $documentRequest->type->value,
-                            'title' => $documentRequest->title,
-                            'instructions' => $documentRequest->instructions,
-                            'status' => $documentRequest->status->value,
-                            'answer_text' => $documentRequest->answer_text,
-                            'answer_boolean' => $documentRequest->answer_boolean,
-                            'rejection_reason' => $documentRequest->rejection_reason,
-                            'can_respond' => $this->documentRequestTransitions->canSubmit(
-                                $documentRequest,
-                                SubmissionContext::Portal,
-                                $dossier,
-                            ),
-                            'uploaded_document' => $uploadedDocument === null
-                                ? null
-                                : [
-                                    'original_filename' => $uploadedDocument->original_filename,
-                                    'size_bytes' => $uploadedDocument->size_bytes,
-                                    'uploaded_at' => $uploadedDocument->uploaded_at->toIso8601String(),
-                                ],
-                        ];
-                    })
-                    ->all(),
-            ],
-        ];
+        foreach ($dossier->documentRequests as $documentRequest) {
+            $uploadedDocument = $documentRequest->uploadedDocument;
+
+            $documentRequests[] = new PortalDocumentRequestData(
+                id: $documentRequest->id,
+                type: $documentRequest->type->value,
+                title: $documentRequest->title,
+                instructions: $documentRequest->instructions,
+                status: $documentRequest->status->value,
+                answerText: $documentRequest->answer_text,
+                answerBoolean: $documentRequest->answer_boolean,
+                rejectionReason: $documentRequest->rejection_reason,
+                canRespond: $this->documentRequestTransitions->canSubmit(
+                    $documentRequest,
+                    SubmissionContext::Portal,
+                    $dossier,
+                ),
+                uploadedDocument: $uploadedDocument === null
+                    ? null
+                    : new PortalUploadedDocumentData(
+                        originalFilename: $uploadedDocument->original_filename,
+                        sizeBytes: $uploadedDocument->size_bytes,
+                        uploadedAt: $uploadedDocument->uploaded_at->toIso8601String(),
+                    ),
+            );
+        }
+
+        return new ClientPortalPageData(
+            firm: new PortalFirmData(name: $tenant->name),
+            dossier: new PortalDossierData(
+                title: $dossier->title,
+                reference: $dossier->reference,
+                status: $dossier->status->value,
+                dueDate: $dossier->due_date?->toDateString(),
+                clientName: $client->name,
+                expiresAt: $grant->expires_at->toIso8601String(),
+                progress: new PortalProgressData(
+                    total: $totalItemCount,
+                    completed: $totalItemCount - $remainingItems->count(),
+                    approved: $approvedItemCount,
+                    remaining: $remainingItems->count(),
+                    nextIncomplete: $nextIncompleteItem instanceof DocumentRequest
+                        ? new PortalNextIncompleteData(
+                            id: $nextIncompleteItem->id,
+                            title: $nextIncompleteItem->title,
+                        )
+                        : null,
+                ),
+                documentRequests: $documentRequests,
+            ),
+        );
     }
 
     private function resolveTenant(Dossier $dossier): Tenant

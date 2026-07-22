@@ -57,4 +57,15 @@ return [
     */
     'portal_grants_days' => (int) env('RETENTION_PORTAL_GRANTS_DAYS', 90),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Workspace member invitations
+    |--------------------------------------------------------------------------
+    |
+    | Accepted, revoked, or expired invitations older than this are removed by
+    | model:prune.
+    |
+    */
+    'member_invitations_days' => (int) env('RETENTION_MEMBER_INVITATIONS_DAYS', 90),
+
 ];

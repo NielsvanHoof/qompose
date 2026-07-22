@@ -125,6 +125,9 @@ pest()->presets()->custom('qompose', function () {
                 'download',
                 'archived',
                 'restore',
+                'resend',
+                'accept',
+                'register',
             ]),
 
         expect('App\Models\Activity')

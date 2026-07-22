@@ -3,28 +3,19 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Fortify\Features;
+use Illuminate\Support\Facades\Route;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    $this->skipUnlessFortifyHas(Features::registration());
-});
+test('public registration routes are unavailable', function () {
+    expect(Route::has('register'))->toBeFalse()
+        ->and(Route::has('register.store'))->toBeFalse();
 
-test('registration screen can be rendered', function () {
-    $response = $this->get(route('register'));
-
-    $response->assertOk();
-});
-
-test('new users can register', function () {
-    $response = $this->post(route('register.store'), [
+    $this->get('/register')->assertNotFound();
+    $this->post('/register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
-    ]);
-
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    ])->assertNotFound();
 });

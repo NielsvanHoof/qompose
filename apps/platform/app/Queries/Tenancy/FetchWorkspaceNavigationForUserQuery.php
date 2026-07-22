@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries\Tenancy;
 
+use App\Data\Tenancy\WorkspaceNavItemData;
 use App\Enums\TenantMembershipStatus;
 use App\Models\Tenant;
 use App\Models\User;
@@ -11,24 +12,28 @@ use App\Models\User;
 final class FetchWorkspaceNavigationForUserQuery
 {
     /**
-     * @return list<array{name: string, slug: string}>
+     * @return list<WorkspaceNavItemData>
      */
     public function handle(User $user): array
     {
-        $workspaces = Tenant::query()
-            ->whereHas('memberships', fn ($query) => $query
-                ->where('user_id', $user->id)
-                ->where('status', TenantMembershipStatus::Active))
-            ->get(['name', 'slug'])
-            ->sortBy('name')
-            ->values()
-            ->map(fn (Tenant $tenant): array => [
-                'name' => $tenant->name,
-                'slug' => $tenant->slug,
-            ])
-            ->values()
-            ->all();
+        /** @var list<WorkspaceNavItemData> $workspaces */
+        $workspaces = [];
 
-        return array_values($workspaces);
+        foreach (
+            Tenant::query()
+                ->whereHas('memberships', fn ($query) => $query
+                    ->where('user_id', $user->id)
+                    ->where('status', TenantMembershipStatus::Active))
+                ->get(['name', 'slug'])
+                ->sortBy('name')
+                ->values() as $tenant
+        ) {
+            $workspaces[] = new WorkspaceNavItemData(
+                name: $tenant->name,
+                slug: $tenant->slug,
+            );
+        }
+
+        return $workspaces;
     }
 }

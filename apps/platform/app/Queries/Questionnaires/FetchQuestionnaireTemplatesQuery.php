@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Queries\Questionnaires;
 
+use App\Data\Questionnaires\QuestionnaireTemplateRowData;
+use App\Data\Questionnaires\QuestionnaireTemplatesPageData;
 use App\Enums\QuestionnaireTemplateCategory;
 use App\Models\QuestionnaireTemplate;
 use App\Models\Tenant;
@@ -23,29 +25,8 @@ final class FetchQuestionnaireTemplatesQuery extends PaginatedIndexQuery
     /**
      * Dual paginated lists: system templates and firm-owned templates.
      * Shared filters/sort apply to both; each uses its own page param.
-     *
-     * @return array{
-     *     system_templates: LengthAwarePaginator<int, array{
-     *         id: int,
-     *         name: string,
-     *         description: string|null,
-     *         category: string,
-     *         category_label: string,
-     *         items_count: int,
-     *         is_system: bool
-     *     }>,
-     *     firm_templates: LengthAwarePaginator<int, array{
-     *         id: int,
-     *         name: string,
-     *         description: string|null,
-     *         category: string,
-     *         category_label: string,
-     *         items_count: int,
-     *         is_system: bool
-     *     }>
-     * }
      */
-    public function handle(): array
+    public function handle(): QuestionnaireTemplatesPageData
     {
         $tenant = Tenant::current();
         $tenantId = $tenant instanceof Tenant ? $tenant->getKey() : null;
@@ -75,10 +56,10 @@ final class FetchQuestionnaireTemplatesQuery extends PaginatedIndexQuery
             pageName: 'firm_page',
         );
 
-        return [
-            'system_templates' => $systemTemplates,
-            'firm_templates' => $firmTemplates,
-        ];
+        return new QuestionnaireTemplatesPageData(
+            systemTemplates: $systemTemplates,
+            firmTemplates: $firmTemplates,
+        );
     }
 
     /**
@@ -166,14 +147,14 @@ final class FetchQuestionnaireTemplatesQuery extends PaginatedIndexQuery
     protected function mapModel(Model $model): array
     {
         /** @var QuestionnaireTemplate $model */
-        return [
-            'id' => $model->id,
-            'name' => $model->name,
-            'description' => $model->description,
-            'category' => $model->category->value,
-            'category_label' => $model->category->label(),
-            'items_count' => $model->items_count,
-            'is_system' => $model->isSystem(),
-        ];
+        return (new QuestionnaireTemplateRowData(
+            id: $model->id,
+            name: $model->name,
+            description: $model->description,
+            category: $model->category->value,
+            categoryLabel: $model->category->label(),
+            itemsCount: $model->items_count,
+            isSystem: $model->isSystem(),
+        ))->toArray();
     }
 }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Queries\Reporting;
 
+use App\Data\Reporting\MediaLibraryDocumentRowData;
+use App\Data\Reporting\MediaLibraryDossierSummaryData;
+use App\Data\Reporting\MediaLibraryUploadedDocumentData;
 use App\Enums\QuestionnaireItemType;
 use App\Models\Client;
 use App\Models\DocumentRequest;
@@ -141,24 +144,24 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
         $client = $this->resolveClient($dossier);
         $uploaded = $model->uploadedDocument;
 
-        return [
-            'id' => $model->id,
-            'title' => $model->title,
-            'status' => $model->status->value,
-            'updated_at' => $model->updated_at?->toIso8601String(),
-            'dossier' => [
-                'id' => $dossier->id,
-                'title' => $dossier->title,
-                'reference' => $dossier->reference,
-            ],
-            'client_name' => $client->name,
-            'uploaded_document' => $uploaded === null ? null : [
-                'id' => $uploaded->id,
-                'original_filename' => $uploaded->original_filename,
-                'size_bytes' => $uploaded->size_bytes,
-                'uploaded_at' => $uploaded->uploaded_at->toIso8601String(),
-            ],
-        ];
+        return (new MediaLibraryDocumentRowData(
+            id: $model->id,
+            title: $model->title,
+            status: $model->status->value,
+            updatedAt: $model->updated_at?->toIso8601String(),
+            dossier: new MediaLibraryDossierSummaryData(
+                id: $dossier->id,
+                title: $dossier->title,
+                reference: $dossier->reference,
+            ),
+            clientName: $client->name,
+            uploadedDocument: $uploaded === null ? null : new MediaLibraryUploadedDocumentData(
+                id: $uploaded->id,
+                originalFilename: $uploaded->original_filename,
+                sizeBytes: $uploaded->size_bytes,
+                uploadedAt: $uploaded->uploaded_at->toIso8601String(),
+            ),
+        ))->toArray();
     }
 
     private function resolveDossier(DocumentRequest $documentRequest): Dossier

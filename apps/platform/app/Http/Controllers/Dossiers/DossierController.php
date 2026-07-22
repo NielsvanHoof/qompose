@@ -9,6 +9,7 @@ use App\Actions\Dossiers\CreateDossierAction;
 use App\Actions\Dossiers\DeleteDossierAction;
 use App\Actions\Dossiers\RestoreDossierAction;
 use App\Actions\Dossiers\UpdateDossierAction;
+use App\Data\Shared\PersonOptionData;
 use App\Enums\AuditEvent;
 use App\Enums\Permission;
 use App\Http\Controllers\Controller;
@@ -52,8 +53,14 @@ final class DossierController extends Controller
         $this->authorize('create', Dossier::class);
 
         return Inertia::render('dossiers/create', [
-            'clients' => $getDossierCreateData->handle(),
-            'responsible_staff' => $fetchResponsibleStaffOptions->handle($tenant),
+            'clients' => array_map(
+                static fn (PersonOptionData $client): array => $client->toArray(),
+                $getDossierCreateData->handle(),
+            ),
+            'responsible_staff' => array_map(
+                static fn (PersonOptionData $staff): array => $staff->toArray(),
+                $fetchResponsibleStaffOptions->handle($tenant),
+            ),
         ]);
     }
 
@@ -109,7 +116,7 @@ final class DossierController extends Controller
             'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
             'can_review' => $request->user()?->can(Permission::ReviewDocuments->value) ?? false,
             'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
-            ...$data,
+            ...$data->toArray(),
         ]);
     }
 
@@ -140,7 +147,10 @@ final class DossierController extends Controller
                     'email' => $client->email,
                 ],
             ],
-            'responsible_staff' => $fetchResponsibleStaffOptions->handle($tenant),
+            'responsible_staff' => array_map(
+                static fn (PersonOptionData $staff): array => $staff->toArray(),
+                $fetchResponsibleStaffOptions->handle($tenant),
+            ),
         ]);
     }
 

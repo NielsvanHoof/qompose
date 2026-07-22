@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Queries\Reporting;
 
+use App\Data\Reporting\DashboardMetricsData;
+use App\Data\Reporting\DashboardRecentDossierData;
+use App\Data\Reporting\WorkspaceDashboardPageData;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
 use App\Models\Client;
@@ -14,51 +17,15 @@ use RuntimeException;
 
 final class FetchWorkspaceDashboardQuery
 {
-    /**
-     * @return array{
-     *     metrics: array{
-     *         clients: int,
-     *         open_dossiers: int,
-     *         needs_review: int,
-     *         awaiting_client: int,
-     *         overdue: int,
-     *         in_review: int,
-     *         submitted_document_requests: int,
-     *         outstanding_document_requests: int
-     *     },
-     *     recent_dossiers: array<int, array{
-     *         id: int,
-     *         title: string,
-     *         reference: string|null,
-     *         status: string,
-     *         client_name: string,
-     *         due_date: string|null,
-     *         responsible_name: string|null,
-     *         updated_at: string
-     *     }>
-     * }
-     */
-    public function handle(Tenant $tenant): array
+    public function handle(Tenant $tenant): WorkspaceDashboardPageData
     {
-        return [
-            'metrics' => $this->getMetrics($tenant),
-            'recent_dossiers' => $this->getRecentDossiers($tenant),
-        ];
+        return new WorkspaceDashboardPageData(
+            metrics: $this->getMetrics($tenant),
+            recentDossiers: $this->getRecentDossiers($tenant),
+        );
     }
 
-    /**
-     * @return array{
-     *     clients: int,
-     *     open_dossiers: int,
-     *     needs_review: int,
-     *     awaiting_client: int,
-     *     overdue: int,
-     *     in_review: int,
-     *     submitted_document_requests: int,
-     *     outstanding_document_requests: int
-     * }
-     */
-    public function getMetrics(Tenant $tenant): array
+    public function getMetrics(Tenant $tenant): DashboardMetricsData
     {
         $outstandingDocumentRequestsQuery = DocumentRequest::query()
             ->whereBelongsTo($tenant);
@@ -95,42 +62,33 @@ final class FetchWorkspaceDashboardQuery
             ->whereNotNull('due_date')
             ->whereDate('due_date', '<', today());
 
-        return [
-            'clients' => Client::query()
+        return new DashboardMetricsData(
+            clients: Client::query()
                 ->whereBelongsTo($tenant)
                 ->toBase()
                 ->count(),
-            'open_dossiers' => Dossier::query()
+            openDossiers: Dossier::query()
                 ->whereBelongsTo($tenant)
                 ->whereNot('status', DossierStatus::Completed)
                 ->toBase()
                 ->count(),
-            'needs_review' => $needsReviewQuery->toBase()->count(),
-            'awaiting_client' => (clone $awaitingClientQuery)->toBase()->count(),
-            'overdue' => $overdueQuery->toBase()->count(),
-            'in_review' => Dossier::query()
+            needsReview: $needsReviewQuery->toBase()->count(),
+            awaitingClient: (clone $awaitingClientQuery)->toBase()->count(),
+            overdue: $overdueQuery->toBase()->count(),
+            inReview: Dossier::query()
                 ->whereBelongsTo($tenant)
                 ->where('status', DossierStatus::InReview)
                 ->toBase()
                 ->count(),
-            'submitted_document_requests' => $submittedDocumentRequests,
-            'outstanding_document_requests' => $outstandingDocumentRequestsQuery
+            submittedDocumentRequests: $submittedDocumentRequests,
+            outstandingDocumentRequests: $outstandingDocumentRequestsQuery
                 ->toBase()
                 ->count(),
-        ];
+        );
     }
 
     /**
-     * @return array<int, array{
-     *     id: int,
-     *     title: string,
-     *     reference: string|null,
-     *     status: string,
-     *     client_name: string,
-     *     due_date: string|null,
-     *     responsible_name: string|null,
-     *     updated_at: string
-     * }>
+     * @return list<DashboardRecentDossierData>
      */
     public function getRecentDossiers(Tenant $tenant): array
     {
@@ -141,35 +99,37 @@ final class FetchWorkspaceDashboardQuery
 
         $recentDossiersQuery->getQuery()->limit(5);
 
-        return $recentDossiersQuery
-            ->get([
-                'id',
-                'client_id',
-                'responsible_user_id',
-                'title',
-                'reference',
-                'status',
-                'due_date',
-                'updated_at',
-            ])
-            ->map(function (Dossier $dossier): array {
-                $client = $dossier->client;
+        /** @var list<DashboardRecentDossierData> $rows */
+        $rows = [];
 
-                if (! $client instanceof Client) {
-                    throw new RuntimeException('Dossier client is missing.');
-                }
+        foreach ($recentDossiersQuery->get([
+            'id',
+            'client_id',
+            'responsible_user_id',
+            'title',
+            'reference',
+            'status',
+            'due_date',
+            'updated_at',
+        ]) as $dossier) {
+            $client = $dossier->client;
 
-                return [
-                    'id' => $dossier->id,
-                    'title' => $dossier->title,
-                    'reference' => $dossier->reference,
-                    'status' => $dossier->status->value,
-                    'client_name' => $client->name,
-                    'due_date' => $dossier->due_date?->toDateString(),
-                    'responsible_name' => $dossier->responsibleUser?->name,
-                    'updated_at' => $dossier->updated_at->toDateTimeString(),
-                ];
-            })
-            ->all();
+            if (! $client instanceof Client) {
+                throw new RuntimeException('Dossier client is missing.');
+            }
+
+            $rows[] = new DashboardRecentDossierData(
+                id: $dossier->id,
+                title: $dossier->title,
+                reference: $dossier->reference,
+                status: $dossier->status->value,
+                clientName: $client->name,
+                dueDate: $dossier->due_date?->toDateString(),
+                responsibleName: $dossier->responsibleUser?->name,
+                updatedAt: $dossier->updated_at->toDateTimeString(),
+            );
+        }
+
+        return $rows;
     }
 }
