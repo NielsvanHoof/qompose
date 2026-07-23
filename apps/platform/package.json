@@ -54,7 +54,7 @@
         "input-otp": "^1.4.2",
         "laravel-echo": "^2.4.0",
         "laravel-vite-plugin": "^3.0.0",
-        "lucide-react": "^0.475.0",
+        "lucide-react": "^1.25.0",
         "pusher-js": "^8.5.0",
         "react": "^19.2.0",
         "react-day-picker": "^10.0.1",
