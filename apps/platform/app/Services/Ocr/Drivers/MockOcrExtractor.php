@@ -27,13 +27,29 @@ final class MockOcrExtractor implements StartsDocumentOcr
     {
         $extractedText = $this->buildExtractedText($document);
 
-        $document->forceFill([
-            'processing_status' => DocumentProcessingStatus::Completed,
-            'extracted_text' => $extractedText,
-            'processing_error' => null,
-            'processing_finished_at' => now(),
-            'textract_job_id' => null,
-        ])->save();
+        $updated = UploadedDocument::query()
+            ->whereKey($document->id)
+            ->where('path', $document->path)
+            ->where('processing_status', DocumentProcessingStatus::Processing->value)
+            ->update([
+                'processing_status' => DocumentProcessingStatus::Completed->value,
+                'extracted_text' => $extractedText,
+                'processing_error' => null,
+                'processing_finished_at' => now(),
+                'textract_job_id' => null,
+            ]);
+
+        if ($updated !== 1) {
+            Log::warning('OCR: discarded mock extraction for a stale upload revision.', [
+                'uploaded_document_id' => $document->id,
+                'tenant_id' => $document->tenant_id,
+                'expected_path' => $document->path,
+            ]);
+
+            return;
+        }
+
+        $document->refresh();
 
         Log::info('OCR: mock driver completed extraction.', [
             'uploaded_document_id' => $document->id,

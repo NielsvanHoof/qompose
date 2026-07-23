@@ -35,14 +35,28 @@ export default function TemplateItemEditor({
     });
 
     const persistOrder = useCallback(
-        (orderedIds: number[]) => {
+        async (orderedIds: number[]): Promise<boolean> => {
             setData('item_ids', orderedIds);
-            void post(
-                QuestionnaireTemplateItemController.reorder.url({
-                    tenant: currentWorkspace,
-                    template: templateId,
-                }),
-            );
+
+            let hasValidationErrors = false;
+
+            try {
+                await post(
+                    QuestionnaireTemplateItemController.reorder.url({
+                        tenant: currentWorkspace,
+                        template: templateId,
+                    }),
+                    {
+                        onError: () => {
+                            hasValidationErrors = true;
+                        },
+                    },
+                );
+
+                return !hasValidationErrors;
+            } catch {
+                return false;
+            }
         },
         [currentWorkspace, post, setData, templateId],
     );

@@ -33,6 +33,8 @@ return [
         // Long-poll wait for textract:consume (seconds, max 20).
         'sqs_wait_time_seconds' => (int) env('TEXTRACT_SQS_WAIT_TIME', 20),
         'sqs_max_messages' => (int) env('TEXTRACT_SQS_MAX_MESSAGES', 5),
+        // Must match the SQS redrive policy so the last attempt can mark the document failed.
+        'sqs_max_receive_count' => (int) env('TEXTRACT_SQS_MAX_RECEIVE_COUNT', 5),
     ],
 
     /*

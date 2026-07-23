@@ -38,14 +38,28 @@ export default function DocumentRequestsCard({
     });
 
     const persistOrder = useCallback(
-        (orderedIds: number[]) => {
+        async (orderedIds: number[]): Promise<boolean> => {
             setData('document_request_ids', orderedIds);
-            void post(
-                DocumentRequestController.reorder.url({
-                    tenant: currentWorkspace,
-                    dossier: dossierId,
-                }),
-            );
+
+            let hasValidationErrors = false;
+
+            try {
+                await post(
+                    DocumentRequestController.reorder.url({
+                        tenant: currentWorkspace,
+                        dossier: dossierId,
+                    }),
+                    {
+                        onError: () => {
+                            hasValidationErrors = true;
+                        },
+                    },
+                );
+
+                return !hasValidationErrors;
+            } catch {
+                return false;
+            }
         },
         [currentWorkspace, dossierId, post, setData],
     );

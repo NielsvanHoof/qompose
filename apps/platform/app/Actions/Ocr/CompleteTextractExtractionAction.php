@@ -17,8 +17,10 @@ use App\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Log;
 use JsonException;
 use RuntimeException;
+use Throwable;
 
 use function count;
+use function in_array;
 use function is_string;
 use function json_encode;
 
@@ -100,8 +102,10 @@ final class CompleteTextractExtractionAction
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $notification, $jobId, $status): bool {
-            // Idempotent: never overwrite a finished extraction.
-            if ($document->processing_status === DocumentProcessingStatus::Completed) {
+            if (in_array($document->processing_status, [
+                DocumentProcessingStatus::Completed,
+                DocumentProcessingStatus::Failed,
+            ], true)) {
                 Log::info('OCR: Textract completion already applied — skipping.', [
                     'uploaded_document_id' => $document->id,
                     'tenant_id' => $document->tenant_id,
@@ -124,12 +128,30 @@ final class CompleteTextractExtractionAction
                 $extractedJson = $this->fetchExtractedJson($jobId, $document);
                 $durationMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
 
-                $document->forceFill([
-                    'processing_status' => DocumentProcessingStatus::Completed,
-                    'extracted_text' => $extractedJson,
-                    'processing_error' => null,
-                    'processing_finished_at' => now(),
-                ])->save();
+                $updated = UploadedDocument::query()
+                    ->whereKey($document->id)
+                    ->where('path', $document->path)
+                    ->where('textract_job_id', $jobId)
+                    ->where('processing_status', DocumentProcessingStatus::Processing->value)
+                    ->update([
+                        'processing_status' => DocumentProcessingStatus::Completed->value,
+                        'extracted_text' => $extractedJson,
+                        'processing_error' => null,
+                        'processing_finished_at' => now(),
+                    ]);
+
+                if ($updated !== 1) {
+                    Log::warning('OCR: discarded stale Textract completion.', [
+                        'uploaded_document_id' => $document->id,
+                        'tenant_id' => $document->tenant_id,
+                        'textract_job_id' => $jobId,
+                        'expected_path' => $document->path,
+                    ]);
+
+                    return true;
+                }
+
+                $document->refresh();
 
                 $this->logAuditActivity->handle(
                     AuditEvent::DocumentProcessingCompleted,
@@ -153,40 +175,18 @@ final class CompleteTextractExtractionAction
                 return true;
             }
 
-            if ($status === 'FAILED') {
-                $message = $notification['StatusMessage'] ?? 'Textract job failed.';
+            if (in_array($status, ['FAILED', 'ERROR'], true)) {
+                $message = $notification['StatusMessage'] ?? "Textract job reported {$status}.";
                 $error = is_string($message) && $message !== ''
                     ? mb_substr($message, 0, 500)
-                    : 'Textract job failed.';
+                    : "Textract job reported {$status}.";
 
-                $document->forceFill([
-                    'processing_status' => DocumentProcessingStatus::Failed,
-                    'processing_error' => $error,
-                    'processing_finished_at' => now(),
-                ])->save();
-
-                $this->logAuditActivity->handle(
-                    AuditEvent::DocumentProcessingFailed,
-                    $document,
-                    [
-                        'original_filename' => $document->original_filename,
-                        'error' => $error,
-                        'textract_job_id' => $jobId,
-                    ],
-                    includeRequestContext: false,
-                );
-
-                Log::error('OCR: Textract job reported FAILED.', [
-                    'uploaded_document_id' => $document->id,
-                    'tenant_id' => $document->tenant_id,
-                    'textract_job_id' => $jobId,
-                    'error' => $error,
-                ]);
+                $this->markFailed($document, $jobId, $error, $status);
 
                 return true;
             }
 
-            // IN_PROGRESS / PARTIAL_SUCCESS — leave message for a later poll if needed.
+            // Unknown/non-final status — leave the message visible for another poll.
             Log::info('OCR: Textract completion deferred — non-final status.', [
                 'uploaded_document_id' => $document->id,
                 'tenant_id' => $document->tenant_id,
@@ -196,6 +196,105 @@ final class CompleteTextractExtractionAction
 
             return false;
         });
+    }
+
+    public function failPermanently(string $jobId, Throwable $exception): bool
+    {
+        $document = UploadedDocument::query()
+            ->withoutGlobalScopes()
+            ->where('textract_job_id', $jobId)
+            ->first();
+
+        if (! $document instanceof UploadedDocument) {
+            Log::warning('OCR: permanent completion failure has no matching uploaded document.', [
+                'textract_job_id' => $jobId,
+            ]);
+
+            return false;
+        }
+
+        $tenant = Tenant::query()->find($document->tenant_id);
+
+        if (! $tenant instanceof Tenant) {
+            Log::error('OCR: permanent completion failure document has missing tenant.', [
+                'uploaded_document_id' => $document->id,
+                'tenant_id' => $document->tenant_id,
+                'textract_job_id' => $jobId,
+            ]);
+
+            return false;
+        }
+
+        return $this->tenantContext->runForTenant($tenant, function () use ($document, $exception, $jobId): bool {
+            if (in_array($document->processing_status, [
+                DocumentProcessingStatus::Completed,
+                DocumentProcessingStatus::Failed,
+            ], true)) {
+                return true;
+            }
+
+            $error = mb_substr($exception->getMessage(), 0, 500);
+
+            if ($error === '') {
+                $error = 'Textract result processing failed permanently.';
+            }
+
+            $this->markFailed($document, $jobId, $error, 'RESULT_PROCESSING_FAILED');
+
+            return true;
+        });
+    }
+
+    private function markFailed(
+        UploadedDocument $document,
+        string $jobId,
+        string $error,
+        string $status,
+    ): void {
+        $updated = UploadedDocument::query()
+            ->whereKey($document->id)
+            ->where('path', $document->path)
+            ->where('textract_job_id', $jobId)
+            ->where('processing_status', DocumentProcessingStatus::Processing->value)
+            ->update([
+                'processing_status' => DocumentProcessingStatus::Failed->value,
+                'processing_error' => $error,
+                'processing_finished_at' => now(),
+            ]);
+
+        if ($updated !== 1) {
+            Log::warning('OCR: discarded stale Textract failure.', [
+                'uploaded_document_id' => $document->id,
+                'tenant_id' => $document->tenant_id,
+                'textract_job_id' => $jobId,
+                'expected_path' => $document->path,
+                'status' => $status,
+            ]);
+
+            return;
+        }
+
+        $document->refresh();
+
+        $this->logAuditActivity->handle(
+            AuditEvent::DocumentProcessingFailed,
+            $document,
+            [
+                'original_filename' => $document->original_filename,
+                'error' => $error,
+                'textract_job_id' => $jobId,
+                'textract_status' => $status,
+            ],
+            includeRequestContext: false,
+        );
+
+        Log::error('OCR: Textract processing failed.', [
+            'uploaded_document_id' => $document->id,
+            'tenant_id' => $document->tenant_id,
+            'textract_job_id' => $jobId,
+            'status' => $status,
+            'error' => $error,
+        ]);
     }
 
     private function fetchExtractedJson(string $jobId, UploadedDocument $document): string

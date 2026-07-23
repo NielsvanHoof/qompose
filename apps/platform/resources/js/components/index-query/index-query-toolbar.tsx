@@ -40,12 +40,20 @@ export default function IndexQueryToolbar({
     useEffect(() => {
         setDrafts((prev) => {
             const next = { ...prev };
+            let changed = false;
+
             for (const filter of config.filters) {
                 if (filter.type === 'search') {
-                    next[filter.key] = filters[filter.key] ?? '';
+                    const value = filters[filter.key] ?? '';
+
+                    if (next[filter.key] !== value) {
+                        next[filter.key] = value;
+                        changed = true;
+                    }
                 }
             }
-            return next;
+
+            return changed ? next : prev;
         });
     }, [filters, config.filters]);
 

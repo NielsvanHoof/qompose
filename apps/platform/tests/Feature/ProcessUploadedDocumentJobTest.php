@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Audit\LogAuditActivityAction;
+use App\Contracts\Ocr\StartsDocumentOcr;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Jobs\ProcessUploadedDocumentJob;
@@ -26,7 +27,7 @@ beforeEach(function () {
 test('processing job extracts mock text and marks the document completed', function () {
     $uploaded = createUploadedDocumentForProcessingTest();
 
-    (new ProcessUploadedDocumentJob($uploaded->id))->handle(
+    (new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path))->handle(
         app(OcrOrchestrator::class),
         app(LogAuditActivityAction::class),
     );
@@ -57,7 +58,7 @@ test('processing job is idempotent when the document is already completed', func
         'processing_finished_at' => now(),
     ]);
 
-    (new ProcessUploadedDocumentJob($uploaded->id))->handle(
+    (new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path))->handle(
         app(OcrOrchestrator::class),
         app(LogAuditActivityAction::class),
     );
@@ -73,13 +74,59 @@ test('processing job is idempotent when the document is already completed', func
         ->exists())->toBeFalse();
 });
 
+test('processing job does not restart an active external OCR job', function () {
+    $uploaded = createUploadedDocumentForProcessingTest([
+        'processing_status' => DocumentProcessingStatus::Processing,
+        'textract_job_id' => 'active-textract-job',
+        'processing_started_at' => now(),
+    ]);
+
+    $ocr = Mockery::mock(StartsDocumentOcr::class);
+    $ocr->shouldNotReceive('start');
+
+    (new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path))->handle(
+        new OcrOrchestrator($ocr, app(LogAuditActivityAction::class)),
+        app(LogAuditActivityAction::class),
+    );
+
+    $uploaded->refresh();
+
+    expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Processing)
+        ->and($uploaded->textract_job_id)->toBe('active-textract-job');
+
+    expect(Activity::query()
+        ->where('event', AuditEvent::DocumentProcessingStarted->value)
+        ->where('subject_id', $uploaded->id)
+        ->exists())->toBeFalse();
+});
+
+test('processing job ignores an upload revision that has been replaced', function () {
+    $uploaded = createUploadedDocumentForProcessingTest();
+    $staleJob = new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path);
+
+    $uploaded->forceFill(['path' => 'replacement.pdf'])->save();
+
+    $ocr = Mockery::mock(StartsDocumentOcr::class);
+    $ocr->shouldNotReceive('start');
+
+    $staleJob->handle(
+        new OcrOrchestrator($ocr, app(LogAuditActivityAction::class)),
+        app(LogAuditActivityAction::class),
+    );
+
+    $uploaded->refresh();
+
+    expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending)
+        ->and($uploaded->path)->toBe('replacement.pdf');
+});
+
 test('processing audit events stay tenant-scoped', function () {
     $tenantA = Tenant::factory()->create();
     $tenantB = Tenant::factory()->create();
 
     $uploadedA = createUploadedDocumentForProcessingTest(tenant: $tenantA);
 
-    (new ProcessUploadedDocumentJob($uploadedA->id))->handle(
+    (new ProcessUploadedDocumentJob($uploadedA->id, $uploadedA->path))->handle(
         app(OcrOrchestrator::class),
         app(LogAuditActivityAction::class),
     );

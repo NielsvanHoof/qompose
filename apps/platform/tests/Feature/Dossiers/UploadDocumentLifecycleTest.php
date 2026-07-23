@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Dossiers\DeleteDocumentRequestAction;
 use App\Actions\Dossiers\UploadDocumentForRequestAction;
 use App\Enums\DocumentRequestStatus;
+use App\Jobs\ProcessUploadedDocumentJob;
 use App\Models\Client;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
@@ -13,12 +14,14 @@ use App\Models\UploadedDocument;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('local');
+    Queue::fake();
     config()->set('filesystems.default', 'local');
 });
 
@@ -30,6 +33,8 @@ test('replacing an upload commits new metadata before deleting the old file', fu
         $documentRequest,
         UploadedFile::fake()->create('original.pdf', 100, 'application/pdf'),
     );
+    $original->forceFill(['textract_job_id' => 'obsolete-textract-job'])->save();
+
     $replacement = $upload->handle(
         $documentRequest,
         UploadedFile::fake()->create('replacement.pdf', 120, 'application/pdf'),
@@ -37,11 +42,17 @@ test('replacing an upload commits new metadata before deleting the old file', fu
 
     expect($replacement->id)->toBe($original->id)
         ->and($replacement->original_filename)->toBe('replacement.pdf')
+        ->and($replacement->textract_job_id)->toBeNull()
         ->and(UploadedDocument::query()->count())->toBe(1);
 
     Storage::disk('local')
         ->assertMissing($original->path)
         ->assertExists($replacement->path);
+
+    Queue::assertPushed(
+        ProcessUploadedDocumentJob::class,
+        fn (ProcessUploadedDocumentJob $job): bool => $job->expectedPath === $replacement->path,
+    );
 });
 
 test('a failed replacement keeps the previous database record and file', function () {

@@ -110,6 +110,12 @@ final class OcrConfigurationValidator
             $invalidKeys[] = 'ocr.textract.sqs_max_messages';
         }
 
+        $maxReceiveCount = $this->config->get('ocr.textract.sqs_max_receive_count');
+
+        if (! is_int($maxReceiveCount) || $maxReceiveCount < 1) {
+            $invalidKeys[] = 'ocr.textract.sqs_max_receive_count';
+        }
+
         if (! $this->isConfiguredString('ocr.bedrock.model_id')) {
             $invalidKeys[] = 'ocr.bedrock.model_id';
         }

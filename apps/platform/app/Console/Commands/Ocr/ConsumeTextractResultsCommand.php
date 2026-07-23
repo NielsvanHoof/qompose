@@ -16,6 +16,7 @@ use Throwable;
 
 use function count;
 use function is_array;
+use function is_int;
 use function is_string;
 use function json_decode;
 
@@ -42,6 +43,7 @@ final class ConsumeTextractResultsCommand extends Command
 
         $waitTime = max(0, min(20, (int) $config->get('ocr.textract.sqs_wait_time_seconds', 20)));
         $maxMessages = max(1, min(10, (int) $config->get('ocr.textract.sqs_max_messages', 5)));
+        $maxReceiveCount = max(1, (int) $config->get('ocr.textract.sqs_max_receive_count', 5));
         $once = $this->option('once');
 
         $this->info("Listening for Textract results on {$queueUrl}");
@@ -49,6 +51,7 @@ final class ConsumeTextractResultsCommand extends Command
             'queue_url' => $queueUrl,
             'wait_time_seconds' => $waitTime,
             'max_messages' => $maxMessages,
+            'max_receive_count' => $maxReceiveCount,
             'once' => $once,
         ]);
 
@@ -58,6 +61,7 @@ final class ConsumeTextractResultsCommand extends Command
                 'MaxNumberOfMessages' => $maxMessages,
                 'WaitTimeSeconds' => $waitTime,
                 'VisibilityTimeout' => 180,
+                'MessageSystemAttributeNames' => ['ApproximateReceiveCount'],
             ]);
 
             $messages = $result->get('Messages') ?? [];
@@ -82,6 +86,7 @@ final class ConsumeTextractResultsCommand extends Command
                 $receiptHandle = $message['ReceiptHandle'] ?? null;
                 $body = $message['Body'] ?? null;
                 $messageId = is_string($message['MessageId'] ?? null) ? $message['MessageId'] : null;
+                $receiveCount = $this->receiveCount($message);
 
                 if (! is_string($receiptHandle) || $receiptHandle === '') {
                     continue;
@@ -95,6 +100,8 @@ final class ConsumeTextractResultsCommand extends Command
 
                     continue;
                 }
+
+                $notification = null;
 
                 try {
                     $notification = $this->parseSnsEnvelope($body);
@@ -130,9 +137,28 @@ final class ConsumeTextractResultsCommand extends Command
                     $this->error('Failed to apply Textract message: '.$exception->getMessage());
                     Log::error('OCR: textract:consume failed to apply SQS message.', [
                         'sqs_message_id' => $messageId,
+                        'receive_count' => $receiveCount,
+                        'max_receive_count' => $maxReceiveCount,
                         'error' => $exception->getMessage(),
                     ]);
-                    // Do not delete — visibility timeout will retry / DLQ after max receives.
+
+                    $jobId = is_array($notification) && is_string($notification['JobId'] ?? null)
+                        ? $notification['JobId']
+                        : null;
+
+                    if (
+                        $receiveCount >= $maxReceiveCount
+                        && is_string($jobId)
+                        && $jobId !== ''
+                        && $this->failPermanently(
+                            $completeTextractExtraction,
+                            $jobId,
+                            $exception,
+                            $messageId,
+                        )
+                    ) {
+                        $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
+                    }
                 }
             }
         } while (! $once);
@@ -190,5 +216,56 @@ final class ConsumeTextractResultsCommand extends Command
             'QueueUrl' => $queueUrl,
             'ReceiptHandle' => $receiptHandle,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $message
+     */
+    private function receiveCount(array $message): int
+    {
+        $attributes = $message['Attributes'] ?? null;
+
+        if (! is_array($attributes)) {
+            return 1;
+        }
+
+        $receiveCount = $attributes['ApproximateReceiveCount'] ?? null;
+
+        if (! is_int($receiveCount) && ! is_string($receiveCount)) {
+            return 1;
+        }
+
+        return max(1, (int) $receiveCount);
+    }
+
+    private function failPermanently(
+        CompleteTextractExtractionAction $completeTextractExtraction,
+        string $jobId,
+        Throwable $exception,
+        ?string $messageId,
+    ): bool {
+        try {
+            $failed = $completeTextractExtraction->failPermanently($jobId, $exception);
+        } catch (Throwable $finalizationException) {
+            Log::critical('OCR: textract:consume could not persist the terminal failure.', [
+                'textract_job_id' => $jobId,
+                'sqs_message_id' => $messageId,
+                'error' => $finalizationException->getMessage(),
+            ]);
+
+            return false;
+        }
+
+        if (! $failed) {
+            return false;
+        }
+
+        $this->warn("Marked Textract job {$jobId} failed after its final receive attempt.");
+        Log::error('OCR: textract:consume persisted terminal failure before deleting SQS message.', [
+            'textract_job_id' => $jobId,
+            'sqs_message_id' => $messageId,
+        ]);
+
+        return true;
     }
 }

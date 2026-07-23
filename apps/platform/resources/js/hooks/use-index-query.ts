@@ -1,4 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
+import { useMemo } from 'react';
 
 type QueryValue = string | number | undefined | null;
 
@@ -13,7 +14,10 @@ type FilterBag = Record<string, QueryValue>;
  */
 export function useIndexQuery() {
     const page = usePage();
-    const filters = normalizeFilters(page.props.filters);
+    const filters = useMemo(
+        () => normalizeFilters(page.props.filters),
+        [page.props.filters],
+    );
     const sort = typeof page.props.sort === 'string' ? page.props.sort : null;
 
     // Pathname only — full query state is sent via `data`.

@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 type SortableListProps<T extends { id: number }> = {
     items: T[];
     enabled?: boolean;
-    onReorder: (orderedIds: number[]) => void;
+    onReorder: (orderedIds: number[]) => Promise<boolean>;
     className?: string;
     /** Render one row; DragHandle is only for the grip (keeps inputs editable). */
     renderItem: (
@@ -50,6 +50,7 @@ export default function SortableList<T extends { id: number }>({
 
     // Local order for snappy UI while Inertia reloads props.
     const [orderedItems, setOrderedItems] = useState(items);
+    const [isPersisting, setIsPersisting] = useState(false);
     // false on SSR + first client paint so markup matches, then enable DnD.
     const [isClient, setIsClient] = useState(false);
 
@@ -71,10 +72,10 @@ export default function SortableList<T extends { id: number }>({
         }),
     );
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = async (event: DragEndEvent): Promise<void> => {
         const { active, over } = event;
 
-        if (!over || active.id === over.id) {
+        if (isPersisting || !over || active.id === over.id) {
             return;
         }
 
@@ -89,12 +90,26 @@ export default function SortableList<T extends { id: number }>({
             return;
         }
 
-        setOrderedItems(applyIdOrder(orderedItems, nextIds));
-        onReorder(nextIds);
+        const previousItems = orderedItems;
+
+        setOrderedItems(applyIdOrder(previousItems, nextIds));
+        setIsPersisting(true);
+
+        try {
+            const persisted = await onReorder(nextIds);
+
+            if (!persisted) {
+                setOrderedItems(previousItems);
+            }
+        } catch {
+            setOrderedItems(previousItems);
+        } finally {
+            setIsPersisting(false);
+        }
     };
 
     // Static list until the client mounts (and when reordering is disabled).
-    if (!enabled || !isClient) {
+    if (!enabled || !isClient || isPersisting) {
         return (
             <div className={className}>
                 {orderedItems.map((item) => (

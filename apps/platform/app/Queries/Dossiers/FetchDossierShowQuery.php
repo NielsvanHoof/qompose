@@ -8,7 +8,6 @@ use App\Data\Dossiers\DossierAccessGrantData;
 use App\Data\Dossiers\DossierClientSummaryData;
 use App\Data\Dossiers\DossierReviewSummaryData;
 use App\Data\Dossiers\DossierShowData;
-use App\Data\Dossiers\DossierShowPageData;
 use App\Data\Dossiers\QuestionnaireTemplateOptionData;
 use App\Data\Dossiers\StaffDocumentRequestData;
 use App\Data\Dossiers\StaffUploadedDocumentData;
@@ -23,7 +22,7 @@ use RuntimeException;
 
 final class FetchDossierShowQuery
 {
-    public function handle(Dossier $dossier): DossierShowPageData
+    public function handle(Dossier $dossier): DossierShowData
     {
         $dossier->load([
             'client:id,name,email',
@@ -46,24 +45,6 @@ final class FetchDossierShowQuery
                 DocumentRequestStatus::Rejected,
             ])
             ->count();
-
-        $templates = QuestionnaireTemplate::queryVisibleToCurrentTenant()
-            ->withCount('items')
-            ->oldest('name')
-            ->get(['id', 'name', 'category', 'tenant_id']);
-
-        /** @var list<QuestionnaireTemplateOptionData> $templateOptions */
-        $templateOptions = [];
-
-        foreach ($templates as $template) {
-            $templateOptions[] = new QuestionnaireTemplateOptionData(
-                id: $template->id,
-                name: $template->name,
-                categoryLabel: $template->category->label(),
-                itemsCount: $template->items_count,
-                isSystem: $template->isSystem(),
-            );
-        }
 
         /** @var list<StaffDocumentRequestData> $documentRequestRows */
         $documentRequestRows = [];
@@ -111,44 +92,67 @@ final class FetchDossierShowQuery
 
         $responsibleUser = $dossier->responsibleUser;
 
-        return new DossierShowPageData(
-            templates: $templateOptions,
-            dossier: new DossierShowData(
-                id: $dossier->id,
-                title: $dossier->title,
-                reference: $dossier->reference,
-                status: $dossier->status->value,
-                dueDate: $dossier->due_date?->toDateString(),
-                responsibleStaff: $responsibleUser instanceof User
-                    ? new PersonOptionData(
-                        id: $responsibleUser->id,
-                        name: $responsibleUser->name,
-                        email: $responsibleUser->email,
-                    )
-                    : null,
-                reminderIntervalDays: $dossier->reminder_interval_days,
-                nextReminderAt: $dossier->next_reminder_at?->toIso8601String(),
-                lastClientMessageSentAt: $dossier->last_client_message_sent_at?->toIso8601String(),
-                lastClientOpenedAt: $dossier->last_client_opened_at?->toIso8601String(),
-                hasOutstandingClientItems: $outstandingClientItemCount > 0,
-                readyToComplete: $dossier->status !== DossierStatus::Completed
-                    && $totalRequestCount > 0
-                    && $acceptedRequestCount === $totalRequestCount,
-                reviewSummary: new DossierReviewSummaryData(
-                    total: $totalRequestCount,
-                    pending: $documentRequests->where('status', DocumentRequestStatus::Pending)->count(),
-                    submitted: $documentRequests->where('status', DocumentRequestStatus::Submitted)->count(),
-                    accepted: $acceptedRequestCount,
-                    rejected: $documentRequests->where('status', DocumentRequestStatus::Rejected)->count(),
-                ),
-                client: new DossierClientSummaryData(
-                    name: $client->name,
-                    email: $client->email,
-                ),
-                documentRequests: $documentRequestRows,
-                accessGrants: $accessGrants,
+        return new DossierShowData(
+            id: $dossier->id,
+            title: $dossier->title,
+            reference: $dossier->reference,
+            status: $dossier->status->value,
+            dueDate: $dossier->due_date?->toDateString(),
+            responsibleStaff: $responsibleUser instanceof User
+                ? new PersonOptionData(
+                    id: $responsibleUser->id,
+                    name: $responsibleUser->name,
+                    email: $responsibleUser->email,
+                )
+                : null,
+            reminderIntervalDays: $dossier->reminder_interval_days,
+            nextReminderAt: $dossier->next_reminder_at?->toIso8601String(),
+            lastClientMessageSentAt: $dossier->last_client_message_sent_at?->toIso8601String(),
+            lastClientOpenedAt: $dossier->last_client_opened_at?->toIso8601String(),
+            hasOutstandingClientItems: $outstandingClientItemCount > 0,
+            readyToComplete: $dossier->status !== DossierStatus::Completed
+                && $totalRequestCount > 0
+                && $acceptedRequestCount === $totalRequestCount,
+            reviewSummary: new DossierReviewSummaryData(
+                total: $totalRequestCount,
+                pending: $documentRequests->where('status', DocumentRequestStatus::Pending)->count(),
+                submitted: $documentRequests->where('status', DocumentRequestStatus::Submitted)->count(),
+                accepted: $acceptedRequestCount,
+                rejected: $documentRequests->where('status', DocumentRequestStatus::Rejected)->count(),
             ),
+            client: new DossierClientSummaryData(
+                name: $client->name,
+                email: $client->email,
+            ),
+            documentRequests: $documentRequestRows,
+            accessGrants: $accessGrants,
         );
+    }
+
+    /**
+     * @return list<QuestionnaireTemplateOptionData>
+     */
+    public function templates(): array
+    {
+        $templates = QuestionnaireTemplate::queryVisibleToCurrentTenant()
+            ->withCount('items')
+            ->oldest('name')
+            ->get(['id', 'name', 'category', 'tenant_id']);
+
+        /** @var list<QuestionnaireTemplateOptionData> $templateOptions */
+        $templateOptions = [];
+
+        foreach ($templates as $template) {
+            $templateOptions[] = new QuestionnaireTemplateOptionData(
+                id: $template->id,
+                name: $template->name,
+                categoryLabel: $template->category->label(),
+                itemsCount: $template->items_count,
+                isSystem: $template->isSystem(),
+            );
+        }
+
+        return $templateOptions;
     }
 
     private function resolveClient(Dossier $dossier): Client

@@ -9,6 +9,7 @@ use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\UploadedDocument;
 use App\Services\Ocr\OcrOrchestrator;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -16,14 +17,23 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
+use function hash;
+
 /**
  * Async OCR pipeline for an uploaded document.
  * Mock driver completes in-process; Textract stays processing until SNS/SQS completion.
  */
-final class ProcessUploadedDocumentJob implements ShouldQueue
+final class ProcessUploadedDocumentJob implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
     use Queueable;
+
+    /**
+     * The upload revision this job is allowed to process.
+     *
+     * Null keeps jobs queued before this field was introduced deploy-safe.
+     */
+    public ?string $expectedPath = null;
 
     /**
      * How many times the job may be attempted before failing permanently.
@@ -37,9 +47,14 @@ final class ProcessUploadedDocumentJob implements ShouldQueue
      */
     public array $backoff = [10, 30, 60];
 
-    public function __construct(public int $uploadedDocumentId)
+    public function __construct(public int $uploadedDocumentId, ?string $expectedPath = null)
     {
-        //
+        $this->expectedPath = $expectedPath;
+    }
+
+    public function uniqueId(): string
+    {
+        return $this->uploadedDocumentId.':'.hash('sha256', $this->expectedPath ?? 'legacy');
     }
 
     public function handle(
@@ -52,6 +67,8 @@ final class ProcessUploadedDocumentJob implements ShouldQueue
             return;
         }
 
+        $expectedPath = $this->expectedPath ?? $document->path;
+
         // Idempotency: a completed extraction must never re-run.
         if ($document->processing_status === DocumentProcessingStatus::Completed) {
             Log::info('OCR: skipped ProcessUploadedDocumentJob — already completed.', [
@@ -62,11 +79,12 @@ final class ProcessUploadedDocumentJob implements ShouldQueue
             return;
         }
 
-        $claimed = $this->claimForProcessing($document);
+        $claimed = $this->claimForProcessing($document, $expectedPath);
 
         if (! $claimed instanceof UploadedDocument) {
             Log::info('OCR: skipped ProcessUploadedDocumentJob — could not claim document.', [
                 'uploaded_document_id' => $this->uploadedDocumentId,
+                'expected_path' => $expectedPath,
             ]);
 
             return;
@@ -95,17 +113,34 @@ final class ProcessUploadedDocumentJob implements ShouldQueue
                 throw $exception;
             }
 
-            $claimed->forceFill([
-                'processing_status' => DocumentProcessingStatus::Failed,
-                'processing_error' => mb_substr($exception->getMessage(), 0, 500),
-                'processing_finished_at' => now(),
-            ])->save();
+            $error = mb_substr($exception->getMessage(), 0, 500);
+            $updated = UploadedDocument::query()
+                ->whereKey($claimed->id)
+                ->where('path', $expectedPath)
+                ->update([
+                    'processing_status' => DocumentProcessingStatus::Failed->value,
+                    'processing_error' => $error,
+                    'processing_finished_at' => now(),
+                ]);
+
+            if ($updated !== 1) {
+                Log::warning('OCR: discarded permanent failure for a stale upload revision.', [
+                    'uploaded_document_id' => $claimed->id,
+                    'tenant_id' => $claimed->tenant_id,
+                    'expected_path' => $expectedPath,
+                    'error' => $error,
+                ]);
+
+                throw $exception;
+            }
+
+            $claimed->refresh();
 
             Log::error('OCR: ProcessUploadedDocumentJob failed permanently.', [
                 'uploaded_document_id' => $claimed->id,
                 'tenant_id' => $claimed->tenant_id,
                 'attempt' => $this->attempts(),
-                'error' => $claimed->processing_error,
+                'error' => $error,
             ]);
 
             $logAuditActivity->handle(
@@ -126,9 +161,11 @@ final class ProcessUploadedDocumentJob implements ShouldQueue
      * Atomically move pending/failed/processing → processing.
      * Returns null when another worker already completed the document.
      */
-    private function claimForProcessing(UploadedDocument $document): ?UploadedDocument
-    {
-        return DB::transaction(function () use ($document): ?UploadedDocument {
+    private function claimForProcessing(
+        UploadedDocument $document,
+        string $expectedPath,
+    ): ?UploadedDocument {
+        return DB::transaction(function () use ($document, $expectedPath): ?UploadedDocument {
             $query = UploadedDocument::query()->whereKey($document->getKey());
             $query->getQuery()->lockForUpdate();
 
@@ -138,7 +175,17 @@ final class ProcessUploadedDocumentJob implements ShouldQueue
                 return null;
             }
 
-            if ($locked->processing_status === DocumentProcessingStatus::Completed) {
+            if ($locked->path !== $expectedPath) {
+                return null;
+            }
+
+            if (
+                $locked->processing_status === DocumentProcessingStatus::Completed
+                || (
+                    $locked->processing_status === DocumentProcessingStatus::Processing
+                    && $locked->textract_job_id !== null
+                )
+            ) {
                 return null;
             }
 

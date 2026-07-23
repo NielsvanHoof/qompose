@@ -101,6 +101,7 @@ final class UploadDocumentForRequestAction
                     'rejection_reason' => null,
                     'processing_status' => DocumentProcessingStatus::Pending,
                     'extracted_text' => null,
+                    'textract_job_id' => null,
                     'processing_error' => null,
                     'processing_started_at' => null,
                     'processing_finished_at' => null,
@@ -146,7 +147,7 @@ final class UploadDocumentForRequestAction
             );
         }
 
-        ProcessUploadedDocumentJob::dispatch($uploadedDocument->id);
+        ProcessUploadedDocumentJob::dispatch($uploadedDocument->id, $uploadedDocument->path);
 
         return $uploadedDocument;
     }

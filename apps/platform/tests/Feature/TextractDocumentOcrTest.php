@@ -10,6 +10,7 @@ use App\Models\DocumentRequest;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
+use App\Services\Ocr\Drivers\TextractDocumentOcr;
 use App\Services\Ocr\OcrOrchestrator;
 use Aws\Result;
 use Aws\Textract\TextractClient;
@@ -43,13 +44,14 @@ test('textract start persists job id and leaves document processing', function (
                 && ($args['FeatureTypes'] ?? null) === ['FORMS', 'TABLES']
                 && ($args['NotificationChannel']['SNSTopicArn'] ?? null) === 'arn:aws:sns:eu-west-1:123:textract'
                 && ($args['NotificationChannel']['RoleArn'] ?? null) === 'arn:aws:iam::123:role/textract-sns'
+                && ($args['ClientRequestToken'] ?? null) === hash('sha256', $uploaded->id.':'.$uploaded->path)
                 && ($args['JobTag'] ?? null) === (string) $uploaded->id;
         }))
         ->andReturn(new Result(['JobId' => 'textract-job-abc']));
 
     $this->app->instance(TextractClient::class, $textract);
 
-    (new ProcessUploadedDocumentJob($uploaded->id))->handle(
+    (new ProcessUploadedDocumentJob($uploaded->id, $uploaded->path))->handle(
         app(OcrOrchestrator::class),
         app(LogAuditActivityAction::class),
     );
@@ -68,6 +70,37 @@ test('textract start persists job id and leaves document processing', function (
     Event::assertDispatched(MessageLogged::class, fn (MessageLogged $log): bool => $log->level === 'info'
         && str_contains($log->message, 'OCR: orchestrator deferred')
         && ($log->context['textract_job_id'] ?? null) === 'textract-job-abc');
+});
+
+test('textract start does not attach a job id after the upload is replaced', function () {
+    $uploaded = createUploadedDocumentForTextractTest([
+        'processing_status' => DocumentProcessingStatus::Processing,
+        'processing_started_at' => now(),
+    ]);
+
+    $textract = Mockery::mock(TextractClient::class);
+    $textract->shouldReceive('startDocumentAnalysis')
+        ->once()
+        ->andReturnUsing(function () use ($uploaded): Result {
+            UploadedDocument::query()
+                ->whereKey($uploaded->id)
+                ->update([
+                    'path' => 'replacement.pdf',
+                    'processing_status' => DocumentProcessingStatus::Pending->value,
+                ]);
+
+            return new Result(['JobId' => 'obsolete-job']);
+        });
+
+    $this->app->instance(TextractClient::class, $textract);
+
+    app(TextractDocumentOcr::class)->start($uploaded);
+
+    $uploaded->refresh();
+
+    expect($uploaded->path)->toBe('replacement.pdf')
+        ->and($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending)
+        ->and($uploaded->textract_job_id)->toBeNull();
 });
 
 /**

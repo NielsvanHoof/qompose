@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Ocr\Drivers;
 
 use App\Contracts\Ocr\StartsDocumentOcr;
+use App\Enums\DocumentProcessingStatus;
 use App\Models\UploadedDocument;
 use Aws\Textract\TextractClient;
 use Illuminate\Contracts\Config\Repository;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use RuntimeException;
 
+use function hash;
 use function is_string;
 
 /**
@@ -52,6 +54,7 @@ final class TextractDocumentOcr implements StartsDocumentOcr
         ]);
 
         $result = $this->textract->startDocumentAnalysis([
+            'ClientRequestToken' => hash('sha256', $document->id.':'.$document->path),
             'DocumentLocation' => [
                 'S3Object' => [
                     'Bucket' => $bucket,
@@ -74,13 +77,30 @@ final class TextractDocumentOcr implements StartsDocumentOcr
             throw new RuntimeException('Textract did not return a JobId.');
         }
 
-        // Stay in processing until the SQS consumer applies the result.
-        $document->forceFill([
-            'textract_job_id' => $jobId,
-            'extracted_text' => null,
-            'processing_error' => null,
-            'processing_finished_at' => null,
-        ])->save();
+        // Only attach the external job to the exact upload revision that started it.
+        $updated = UploadedDocument::query()
+            ->whereKey($document->id)
+            ->where('path', $document->path)
+            ->where('processing_status', DocumentProcessingStatus::Processing->value)
+            ->update([
+                'textract_job_id' => $jobId,
+                'extracted_text' => null,
+                'processing_error' => null,
+                'processing_finished_at' => null,
+            ]);
+
+        if ($updated !== 1) {
+            Log::warning('OCR: discarded Textract job id for a stale upload revision.', [
+                'uploaded_document_id' => $document->id,
+                'tenant_id' => $document->tenant_id,
+                'textract_job_id' => $jobId,
+                'expected_path' => $document->path,
+            ]);
+
+            return;
+        }
+
+        $document->refresh();
 
         Log::info('OCR: Textract job started — awaiting SNS/SQS completion.', [
             'uploaded_document_id' => $document->id,

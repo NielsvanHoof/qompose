@@ -9,6 +9,7 @@ use App\Actions\Dossiers\CreateDossierAction;
 use App\Actions\Dossiers\DeleteDossierAction;
 use App\Actions\Dossiers\RestoreDossierAction;
 use App\Actions\Dossiers\UpdateDossierAction;
+use App\Data\Dossiers\QuestionnaireTemplateOptionData;
 use App\Data\Shared\PersonOptionData;
 use App\Enums\AuditEvent;
 use App\Enums\Permission;
@@ -28,6 +29,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Inertia\Support\Header;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
@@ -101,22 +103,26 @@ final class DossierController extends Controller
     ): Response {
         $this->authorize('view', $dossier);
 
-        $data = $getDossierShowData->handle($dossier);
-
-        $logAuditActivity->handle(
-            AuditEvent::DossierViewed,
-            $dossier,
-        );
+        if (! $this->isDossierPartialReload($request)) {
+            $logAuditActivity->handle(
+                AuditEvent::DossierViewed,
+                $dossier,
+            );
+        }
 
         return Inertia::render('dossiers/show', [
-            'access_grant_token' => $this->flashedAccessGrantToken($request),
-            'access_grant_portal_url' => $this->flashedAccessGrantPortalUrl($request),
+            'access_grant_token' => fn (): ?string => $this->flashedAccessGrantToken($request),
+            'access_grant_portal_url' => fn (): ?string => $this->flashedAccessGrantPortalUrl($request),
             'can_manage' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
             'can_edit' => $request->user()?->can('update', $dossier) ?? false,
             'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
             'can_review' => $request->user()?->can(Permission::ReviewDocuments->value) ?? false,
             'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
-            ...$data->toArray(),
+            'templates' => fn (): array => array_map(
+                static fn (QuestionnaireTemplateOptionData $template): array => $template->toArray(),
+                $getDossierShowData->templates(),
+            ),
+            'dossier' => fn (): array => $getDossierShowData->handle($dossier)->toArray(),
         ]);
     }
 
@@ -223,6 +229,12 @@ final class DossierController extends Controller
             'workspaces.dossiers.show',
             $this->workspaceRouteParameters(['dossier' => $dossier]),
         );
+    }
+
+    private function isDossierPartialReload(Request $request): bool
+    {
+        return $request->headers->has(Header::INERTIA)
+            && $request->header(Header::PARTIAL_COMPONENT) === 'dossiers/show';
     }
 
     private function flashedAccessGrantToken(Request $request): ?string

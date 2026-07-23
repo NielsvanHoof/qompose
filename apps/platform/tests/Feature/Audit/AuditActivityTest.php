@@ -11,6 +11,7 @@ use App\Models\Dossier;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Support\Header;
 use Spatie\Activitylog\Enums\ActivityEvent;
 
 uses(RefreshDatabase::class);
@@ -47,6 +48,37 @@ test('viewing a dossier writes a tenant scoped audit entry', function () {
         ->and($activity->causer_id)->toBe($owner->id)
         ->and($activity->subject_id)->toBe($dossier->id)
         ->and($activity->getProperty('route'))->toBe('workspaces.dossiers.show');
+});
+
+test('partially reloading a dossier does not write another view audit entry', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    setPermissionsTeamId($tenant->id);
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $url = workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get($url)
+        ->assertOk();
+
+    $this->withHeaders([
+        Header::INERTIA => 'true',
+        Header::PARTIAL_COMPONENT => 'dossiers/show',
+        Header::PARTIAL_ONLY => 'dossier',
+    ])->get($url)->assertOk();
+
+    expect(Activity::query()
+        ->where('event', AuditEvent::DossierViewed->value)
+        ->where('subject_id', $dossier->id)
+        ->count())->toBe(1);
 });
 
 test('creating a dossier logs attribute changes for the tenant', function () {
