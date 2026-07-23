@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Audit\LogAuditActivityAction;
 use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Activity;
 use App\Models\Client;
 use App\Models\Dossier;
@@ -71,6 +72,8 @@ test('partially reloading a dossier does not write another view audit entry', fu
 
     $this->withHeaders([
         Header::INERTIA => 'true',
+        // Inertia returns 409 when the asset version header is missing/mismatched.
+        Header::VERSION => app(HandleInertiaRequests::class)->version(request()) ?? '',
         Header::PARTIAL_COMPONENT => 'dossiers/show',
         Header::PARTIAL_ONLY => 'dossier',
     ])->get($url)->assertOk();
