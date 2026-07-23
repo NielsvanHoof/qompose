@@ -49,7 +49,7 @@ final class ConsumeTextractResultsCommand extends Command
                 'QueueUrl' => $queueUrl,
                 'MaxNumberOfMessages' => $maxMessages,
                 'WaitTimeSeconds' => $waitTime,
-                'VisibilityTimeout' => 60,
+                'VisibilityTimeout' => 180,
             ]);
 
             $messages = $result->get('Messages') ?? [];

@@ -2,35 +2,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import * as pulumi from "@pulumi/pulumi";
 
-test("the stack provisions production services without long-lived IAM users", async () => {
+test("the OCR stack provisions documents plumbing and a local IAM user", async () => {
   const resources: Array<{ type: string; name: string; inputs: Record<string, unknown> }> = [];
 
   pulumi.runtime.setAllConfig({
-    "qompose-platform:domainName": "staging.example.com",
-    "qompose-platform:certificateArn": "arn:aws:acm:eu-west-1:123456789012:certificate/test",
-    "qompose-platform:imageUri": "123456789012.dkr.ecr.eu-west-1.amazonaws.com/qompose:test",
-    "qompose-platform:mailFromAddress": "support@example.com",
-    "qompose-platform:deployApplication": "true",
-    "qompose-platform:appKey": "base64:test",
-    "qompose-platform:redisPassword": "a-production-grade-redis-password",
-    "qompose-platform:reverbAppId": "test-app",
-    "qompose-platform:reverbAppKey": "test-key",
-    "qompose-platform:reverbAppSecret": "test-secret",
     "aws:region": "eu-west-1",
-  }, [
-    "qompose-platform:appKey",
-    "qompose-platform:redisPassword",
-    "qompose-platform:reverbAppId",
-    "qompose-platform:reverbAppKey",
-    "qompose-platform:reverbAppSecret",
-  ]);
+  }, []);
 
   await pulumi.runtime.setMocks({
     call: (args) => {
-      if (args.token.includes("getAvailabilityZones")) {
-        return { names: ["eu-west-1a", "eu-west-1b", "eu-west-1c"] };
-      }
-
       if (args.token.includes("getCallerIdentity")) {
         return { accountId: "123456789012", arn: "arn:aws:iam::123456789012:root", userId: "root" };
       }
@@ -46,17 +26,9 @@ test("the stack provisions production services without long-lived IAM users", as
         ...args.inputs,
         arn: `arn:aws:test:eu-west-1:123456789012:${args.name}`,
         name: args.inputs.name ?? args.name,
+        id: args.inputs.name ?? args.name,
+        secret: "test-secret-access-key",
       };
-
-      if (args.type === "aws:rds/instance:Instance") {
-        state.address = "database.internal";
-        state.masterUserSecrets = [{ secretArn: "arn:aws:secretsmanager:eu-west-1:123456789012:secret:database" }];
-      }
-
-      if (args.type === "aws:elasticache/replicationGroup:ReplicationGroup") {
-        state.primaryEndpointAddress = "redis.internal";
-        state.replicationGroupId = args.inputs.replicationGroupId;
-      }
 
       if (args.type === "aws:s3/bucketV2:BucketV2") {
         state.bucket = `${args.name}-bucket`;
@@ -66,33 +38,38 @@ test("the stack provisions production services without long-lived IAM users", as
         state.url = `https://sqs.eu-west-1.amazonaws.com/123456789012/${args.name}`;
       }
 
-      if (args.type === "aws:lb/loadBalancer:LoadBalancer") {
-        state.arnSuffix = `app/${args.name}/test`;
-        state.dnsName = `${args.name}.elb.amazonaws.com`;
-        state.zoneId = "Z123";
-      }
-
-      if (args.type === "aws:ecr/repository:Repository") {
-        state.repositoryUrl = `123456789012.dkr.ecr.eu-west-1.amazonaws.com/${args.name}`;
+      if (args.type === "aws:iam/accessKey:AccessKey") {
+        state.id = "AKIATESTACCESSKEY1";
+        state.secret = "test-secret-access-key";
       }
 
       resources.push({ type: args.type, name: args.name, inputs: args.inputs });
 
       return { id: `${args.name}-id`, state };
     },
-  }, "qompose-platform", "staging");
+  }, "qompose-platform", "production");
 
   await import("./index.js");
   await pulumi.runtime.disconnect();
 
   const resourceTypes = resources.map((resource) => resource.type);
 
-  assert.equal(resourceTypes.includes("aws:iam/user:User"), false);
-  assert.equal(resourceTypes.includes("aws:iam/accessKey:AccessKey"), false);
-  assert.equal(resourceTypes.includes("aws:rds/instance:Instance"), true);
-  assert.equal(resourceTypes.includes("aws:elasticache/replicationGroup:ReplicationGroup"), true);
-  assert.equal(resourceTypes.includes("aws:ecs/cluster:Cluster"), true);
-  assert.equal(resourceTypes.filter((type) => type === "aws:ecs/service:Service").length, 5);
-  assert.equal(resourceTypes.filter((type) => type === "aws:appautoscaling/target:Target").length, 4);
-  assert.equal(resourceTypes.filter((type) => type === "aws:cloudwatch/metricAlarm:MetricAlarm").length, 5);
+  assert.equal(resourceTypes.includes("aws:ecs/cluster:Cluster"), false);
+  assert.equal(resourceTypes.includes("aws:ecs/service:Service"), false);
+  assert.equal(resourceTypes.includes("aws:rds/instance:Instance"), false);
+  assert.equal(resourceTypes.includes("aws:ec2/vpc:Vpc"), false);
+
+  assert.equal(resourceTypes.includes("aws:s3/bucketV2:BucketV2"), true);
+  assert.equal(resourceTypes.includes("aws:sns/topic:Topic"), true);
+  assert.equal(resourceTypes.filter((type) => type === "aws:sqs/queue:Queue").length, 2);
+  assert.equal(resourceTypes.includes("aws:iam/user:User"), true);
+  assert.equal(resourceTypes.includes("aws:iam/accessKey:AccessKey"), true);
+  assert.equal(
+    resources.some((resource) => resource.name.includes("textract-publish-role")),
+    true,
+  );
+  assert.equal(
+    resources.some((resource) => resource.name.includes("ocr-local-user")),
+    true,
+  );
 });

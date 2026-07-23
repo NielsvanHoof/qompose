@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Actions\Ocr;
 
 use App\Actions\Audit\LogAuditActivityAction;
+use App\Contracts\Ocr\StructuresDocumentText;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
-use App\Services\Ocr\Normalization\TextractAnalyzeDocumentNormalizer;
+use App\Services\Ocr\Normalization\TextractLineTextExtractor;
 use App\Tenancy\TenantContext;
 use Aws\Textract\TextractClient;
 use JsonException;
@@ -20,14 +21,15 @@ use function is_string;
 use function json_encode;
 
 /**
- * Applies a Textract AnalyzeDocument SNS completion to an UploadedDocument row.
- * Stores normalized FORMS/TABLES JSON in extracted_text.
+ * Applies a Textract DetectDocumentText SNS completion to an UploadedDocument.
+ * Fetches LINE text, structures it with Bedrock, stores JSON in extracted_text.
  */
 final class CompleteTextractExtractionAction
 {
     public function __construct(
         private readonly TextractClient $textract,
-        private readonly TextractAnalyzeDocumentNormalizer $normalizer,
+        private readonly TextractLineTextExtractor $lineTextExtractor,
+        private readonly StructuresDocumentText $structuresDocumentText,
         private readonly LogAuditActivityAction $logAuditActivity,
         private readonly TenantContext $tenantContext,
     ) {}
@@ -48,9 +50,9 @@ final class CompleteTextractExtractionAction
             return false;
         }
 
-        // Ignore other Textract APIs if the SNS topic is shared later.
+        // Ignore AnalyzeDocument (or other APIs) if the SNS topic is shared later.
         $api = $notification['API'] ?? null;
-        if (is_string($api) && $api !== '' && $api !== 'StartDocumentAnalysis') {
+        if (is_string($api) && $api !== '' && $api !== 'StartDocumentTextDetection') {
             return false;
         }
 
@@ -143,7 +145,7 @@ final class CompleteTextractExtractionAction
                 $params['NextToken'] = $nextToken;
             }
 
-            $result = $this->textract->getDocumentAnalysis($params);
+            $result = $this->textract->getDocumentTextDetection($params);
             $jobStatus = $result->get('JobStatus');
 
             if ($jobStatus === 'FAILED') {
@@ -152,7 +154,7 @@ final class CompleteTextractExtractionAction
                 throw new RuntimeException(
                     is_string($statusMessage) && $statusMessage !== ''
                         ? $statusMessage
-                        : 'Textract GetDocumentAnalysis failed.',
+                        : 'Textract GetDocumentTextDetection failed.',
                 );
             }
 
@@ -172,13 +174,16 @@ final class CompleteTextractExtractionAction
             $nextToken = is_string($token) && $token !== '' ? $token : null;
         } while ($nextToken !== null);
 
+        $plainText = $this->lineTextExtractor->extract($blocks);
+        $structured = $this->structuresDocumentText->structure($plainText);
+
         try {
             return json_encode(
-                $this->normalizer->normalize($blocks),
+                $structured,
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT,
             );
         } catch (JsonException $exception) {
-            throw new RuntimeException('Failed to encode Textract analysis JSON.', 0, $exception);
+            throw new RuntimeException('Failed to encode structured OCR JSON.', 0, $exception);
         }
     }
 }

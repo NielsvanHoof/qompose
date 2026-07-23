@@ -110,6 +110,20 @@ final class OcrConfigurationValidator
             $invalidKeys[] = 'ocr.textract.sqs_max_messages';
         }
 
+        if (! $this->isConfiguredString('ocr.bedrock.model_id')) {
+            $invalidKeys[] = 'ocr.bedrock.model_id';
+        }
+
+        if (! $this->isValidRegion($this->config->get('ocr.bedrock.region'))) {
+            $invalidKeys[] = 'ocr.bedrock.region';
+        }
+
+        $maxTokens = $this->config->get('ocr.bedrock.max_tokens');
+
+        if (! is_int($maxTokens) || $maxTokens < 256) {
+            $invalidKeys[] = 'ocr.bedrock.max_tokens';
+        }
+
         $hasKey = $this->isConfiguredString('ocr.textract.key');
         $hasSecret = $this->isConfiguredString('ocr.textract.secret');
 

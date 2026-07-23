@@ -7,7 +7,7 @@ namespace App\Actions\Dossiers;
 use App\Enums\DocumentProcessingStatus;
 use App\Enums\QuestionnaireItemType;
 use App\Enums\SubmissionContext;
-use App\Jobs\ProcessUploadedDocument;
+use App\Jobs\ProcessUploadedDocumentJob;
 use App\Models\DocumentRequest;
 use App\Models\UploadedDocument;
 use App\Transitions\DocumentRequestTransitions;
@@ -146,7 +146,7 @@ final class UploadDocumentForRequestAction
             );
         }
 
-        ProcessUploadedDocument::dispatch($uploadedDocument->id);
+        ProcessUploadedDocumentJob::dispatch($uploadedDocument->id);
 
         return $uploadedDocument;
     }

@@ -1,37 +1,24 @@
-name: Deploy
+name: Deploy OCR infra
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: Environment to deploy
-        required: true
-        type: choice
-        options:
-          - staging
-          - production
-      image_tag:
-        description: Existing immutable image tag to redeploy (leave empty to build this commit)
-        required: false
-        type: string
 
 permissions:
   contents: read
   id-token: write
 
 concurrency:
-  group: deploy-${{ inputs.environment }}
+  group: deploy-ocr-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy ${{ inputs.environment }}
+    name: Deploy production OCR stack
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    environment: ${{ inputs.environment }}
+    timeout-minutes: 30
+    environment: production
     env:
       AWS_REGION: ${{ vars.AWS_REGION || 'eu-west-1' }}
-      DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
       PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL || 'https://api.pulumi.com' }}
 
@@ -53,163 +40,27 @@ jobs:
         working-directory: apps/platform/infra
         run: |
           npx pulumi login "$PULUMI_BACKEND_URL"
-          if ! npx pulumi stack select "$DEPLOY_ENVIRONMENT" --non-interactive; then
-            npx pulumi stack init "$DEPLOY_ENVIRONMENT" --non-interactive
+          if ! npx pulumi stack select production --non-interactive; then
+            npx pulumi stack init production --non-interactive
           fi
 
-      - name: Configure deployment
+      - name: Configure and deploy
         working-directory: apps/platform/infra
-        env:
-          APP_KEY: ${{ secrets.APP_KEY }}
-          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
-          REVERB_APP_ID: ${{ secrets.REVERB_APP_ID }}
-          REVERB_APP_KEY: ${{ secrets.REVERB_APP_KEY }}
-          REVERB_APP_SECRET: ${{ secrets.REVERB_APP_SECRET }}
         run: |
-          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-          REPOSITORY_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/qompose-${DEPLOY_ENVIRONMENT}-application"
-          IMAGE_TAG="${{ inputs.image_tag }}"
-          if [ -z "$IMAGE_TAG" ]; then
-            IMAGE_TAG="${GITHUB_SHA}"
-          fi
-          IMAGE_URI="${REPOSITORY_URI}:${IMAGE_TAG}"
           npx pulumi config set aws:region "$AWS_REGION"
-          npx pulumi config set domainName "${{ vars.APP_DOMAIN }}"
-          npx pulumi config set certificateArn "${{ vars.ACM_CERTIFICATE_ARN }}"
-          npx pulumi config set mailFromAddress "${{ vars.MAIL_FROM_ADDRESS }}"
-          npx pulumi config set imageUri "$IMAGE_URI"
-          npx pulumi config set --secret appKey "$APP_KEY"
-          npx pulumi config set --secret redisPassword "$REDIS_PASSWORD"
-          npx pulumi config set --secret reverbAppId "$REVERB_APP_ID"
-          npx pulumi config set --secret reverbAppKey "$REVERB_APP_KEY"
-          npx pulumi config set --secret reverbAppSecret "$REVERB_APP_SECRET"
-          if [ -n "${{ vars.ROUTE53_HOSTED_ZONE_ID }}" ]; then
-            npx pulumi config set hostedZoneId "${{ vars.ROUTE53_HOSTED_ZONE_ID }}"
-          else
-            npx pulumi config rm hostedZoneId || true
-          fi
           if [ -n "${{ vars.ALARM_EMAIL_ADDRESS }}" ]; then
             npx pulumi config set alarmEmailAddress "${{ vars.ALARM_EMAIL_ADDRESS }}"
           else
             npx pulumi config rm alarmEmailAddress || true
           fi
-          echo "REPOSITORY_URI=${REPOSITORY_URI}" >> "$GITHUB_ENV"
-          echo "IMAGE_URI=${IMAGE_URI}" >> "$GITHUB_ENV"
-
-      - name: Bootstrap infrastructure
+          npm run up -- --yes --non-interactive
+      - name: Report outputs
         working-directory: apps/platform/infra
         run: |
-          if ! aws ecr describe-repositories --repository-names "qompose-${DEPLOY_ENVIRONMENT}-application" >/dev/null 2>&1; then
-            npx pulumi config set deployApplication false
-            npx pulumi up --yes --non-interactive
-          fi
-
-      - name: Log in to Amazon ECR
-        if: inputs.image_tag == ''
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and publish immutable image
-        if: inputs.image_tag == ''
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-          REVERB_APP_KEY: ${{ secrets.REVERB_APP_KEY }}
-        run: |
-          if aws ecr describe-images \
-            --repository-name "qompose-${DEPLOY_ENVIRONMENT}-application" \
-            --image-ids imageTag="$IMAGE_TAG" >/dev/null 2>&1; then
-            echo "Reusing immutable image ${IMAGE_URI}."
-          else
-            docker build \
-              --file apps/platform/Dockerfile.production \
-              --build-arg REVERB_PUBLIC_KEY="$REVERB_APP_KEY" \
-              --build-arg VITE_REVERB_HOST="${{ vars.APP_DOMAIN }}" \
-              --tag "$IMAGE_URI" \
-              apps/platform
-            docker push "$IMAGE_URI"
-          fi
-
-      - name: Select existing image for rollback
-        if: inputs.image_tag != ''
-        run: |
-          aws ecr describe-images \
-            --repository-name "qompose-${DEPLOY_ENVIRONMENT}-application" \
-            --image-ids imageTag="${{ inputs.image_tag }}" >/dev/null
-
-      - name: Create production recovery snapshot
-        if: inputs.environment == 'production' && inputs.image_tag == ''
-        working-directory: apps/platform/infra
-        run: |
-          DATABASE_IDENTIFIER="$(npx pulumi stack output databaseIdentifier)"
-          SNAPSHOT_IDENTIFIER="qompose-production-pre-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          aws rds create-db-snapshot \
-            --db-instance-identifier "$DATABASE_IDENTIFIER" \
-            --db-snapshot-identifier "$SNAPSHOT_IDENTIFIER"
-          aws rds wait db-snapshot-available \
-            --db-snapshot-identifier "$SNAPSHOT_IDENTIFIER"
-          echo "Database recovery snapshot: ${SNAPSHOT_IDENTIFIER}" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Run migrations before rollout
-        working-directory: apps/platform/infra
-        run: |
-          CLUSTER_NAME="$(npx pulumi stack output clusterName)"
-          WEB_SERVICE="qompose-${DEPLOY_ENVIRONMENT}-web"
-          CURRENT_TASK_DEFINITION="$(aws ecs describe-services \
-            --cluster "$CLUSTER_NAME" \
-            --services "$WEB_SERVICE" \
-            --query 'services[0].taskDefinition' \
-            --output text)"
-          aws ecs describe-task-definition \
-            --task-definition "$CURRENT_TASK_DEFINITION" \
-            --query taskDefinition > /tmp/qompose-task-definition.json
-          jq --arg image "$IMAGE_URI" '
-            .containerDefinitions[0].image = $image
-            | .containerDefinitions[0].command = ["php", "artisan", "migrate", "--force", "--no-interaction"]
-            | .containerDefinitions[0].portMappings = []
-            | del(.containerDefinitions[0].healthCheck)
-            | del(
-                .taskDefinitionArn,
-                .revision,
-                .status,
-                .requiresAttributes,
-                .compatibilities,
-                .registeredAt,
-                .registeredBy
-              )
-          ' /tmp/qompose-task-definition.json > /tmp/qompose-migration-task.json
-          MIGRATION_TASK_DEFINITION="$(aws ecs register-task-definition \
-            --cli-input-json file:///tmp/qompose-migration-task.json \
-            --query taskDefinition.taskDefinitionArn \
-            --output text)"
-          SUBNETS="$(npx pulumi stack output --json privateSubnetIds | jq -r 'join(",")')"
-          SECURITY_GROUP="$(npx pulumi stack output applicationSecurityGroupId)"
-          MIGRATION_TASK="$(aws ecs run-task \
-            --cluster "$CLUSTER_NAME" \
-            --task-definition "$MIGRATION_TASK_DEFINITION" \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECURITY_GROUP}],assignPublicIp=DISABLED}" \
-            --query 'tasks[0].taskArn' \
-            --output text)"
-          test "$MIGRATION_TASK" != "None"
-          aws ecs wait tasks-stopped --cluster "$CLUSTER_NAME" --tasks "$MIGRATION_TASK"
-          EXIT_CODE="$(aws ecs describe-tasks \
-            --cluster "$CLUSTER_NAME" \
-            --tasks "$MIGRATION_TASK" \
-            --query 'tasks[0].containers[0].exitCode' \
-            --output text)"
-          if [ "$EXIT_CODE" != "0" ]; then
-            aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$MIGRATION_TASK"
-            exit 1
-          fi
-
-      - name: Roll out application
-        working-directory: apps/platform/infra
-        run: |
-          npx pulumi config set imageUri "$IMAGE_URI"
-          npx pulumi config set deployApplication true
-          npx pulumi up --yes --non-interactive
-
-      - name: Report deployment
-        working-directory: apps/platform/infra
-        run: |
-          APPLICATION_URL="$(npx pulumi stack output applicationUrl)"
-          echo "Deployed ${IMAGE_URI} to ${APPLICATION_URL}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### OCR stack outputs"
+            echo ""
+            echo "- Bucket: \`$(npx pulumi stack output documentsBucketName)\`"
+            echo "- Results queue: \`$(npx pulumi stack output textractResultsQueueUrl)\`"
+            echo "- OCR user: \`$(npx pulumi stack output ocrLocalUserName)\`"
+          } >> "$GITHUB_STEP_SUMMARY"

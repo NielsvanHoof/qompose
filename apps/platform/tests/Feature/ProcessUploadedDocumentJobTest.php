@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Actions\Audit\LogAuditActivityAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
-use App\Jobs\ProcessUploadedDocument;
+use App\Jobs\ProcessUploadedDocumentJob;
 use App\Models\Activity;
 use App\Models\Client;
 use App\Models\DocumentRequest;
@@ -26,7 +26,7 @@ beforeEach(function () {
 test('processing job extracts mock text and marks the document completed', function () {
     $uploaded = createUploadedDocumentForProcessingTest();
 
-    (new ProcessUploadedDocument($uploaded->id))->handle(
+    (new ProcessUploadedDocumentJob($uploaded->id))->handle(
         app(OcrOrchestrator::class),
         app(LogAuditActivityAction::class),
     );
@@ -34,7 +34,7 @@ test('processing job extracts mock text and marks the document completed', funct
     $uploaded->refresh();
 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Completed)
-        ->and($uploaded->extracted_text)->toContain('key_values')
+        ->and($uploaded->extracted_text)->toContain('fields')
         ->and($uploaded->extracted_text)->toContain($uploaded->original_filename)
         ->and($uploaded->processing_error)->toBeNull()
         ->and($uploaded->processing_finished_at)->not->toBeNull();
@@ -57,7 +57,7 @@ test('processing job is idempotent when the document is already completed', func
         'processing_finished_at' => now(),
     ]);
 
-    (new ProcessUploadedDocument($uploaded->id))->handle(
+    (new ProcessUploadedDocumentJob($uploaded->id))->handle(
         app(OcrOrchestrator::class),
         app(LogAuditActivityAction::class),
     );
@@ -79,7 +79,7 @@ test('processing audit events stay tenant-scoped', function () {
 
     $uploadedA = createUploadedDocumentForProcessingTest(tenant: $tenantA);
 
-    (new ProcessUploadedDocument($uploadedA->id))->handle(
+    (new ProcessUploadedDocumentJob($uploadedA->id))->handle(
         app(OcrOrchestrator::class),
         app(LogAuditActivityAction::class),
     );

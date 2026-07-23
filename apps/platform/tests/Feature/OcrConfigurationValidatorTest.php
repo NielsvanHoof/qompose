@@ -16,6 +16,9 @@ beforeEach(function () {
         'ocr.textract.results_queue_url' => 'https://sqs.eu-west-1.amazonaws.com/123456789012/textract-results',
         'ocr.textract.sqs_wait_time_seconds' => 20,
         'ocr.textract.sqs_max_messages' => 5,
+        'ocr.bedrock.model_id' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0',
+        'ocr.bedrock.region' => 'eu-west-1',
+        'ocr.bedrock.max_tokens' => 4096,
     ]);
 });
 
@@ -83,6 +86,9 @@ test('production rejects invalid textract settings', function (string $key, mixe
     'wait time above range' => ['ocr.textract.sqs_wait_time_seconds', 21],
     'max messages below range' => ['ocr.textract.sqs_max_messages', 0],
     'max messages above range' => ['ocr.textract.sqs_max_messages', 11],
+    'missing bedrock model' => ['ocr.bedrock.model_id', null],
+    'invalid bedrock region' => ['ocr.bedrock.region', 'invalid'],
+    'bedrock max tokens too low' => ['ocr.bedrock.max_tokens', 128],
 ]);
 
 test('production requires static AWS credentials to be configured as a pair', function (string $key, mixed $value) {

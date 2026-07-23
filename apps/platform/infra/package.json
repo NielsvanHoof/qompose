@@ -1,13 +1,13 @@
 {
   "name": "qompose-platform-infra",
   "private": true,
-  "main": "src/index.ts",
+  "main": "bin/index.js",
   "scripts": {
     "build": "tsc",
     "test": "npm run build && node --test bin/*.test.js",
-    "preview": "pulumi preview",
-    "up": "pulumi up",
-    "destroy": "pulumi destroy"
+    "preview": "npm run build && pulumi preview",
+    "up": "npm run build && pulumi up",
+    "destroy": "npm run build && pulumi destroy"
   },
   "dependencies": {
     "@pulumi/aws": "^6.76.0",

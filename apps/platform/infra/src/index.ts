@@ -1,35 +1,27 @@
-import * as pulumi from "@pulumi/pulumi";
-import { createApplicationCompute } from "./compute.js";
+import { createOcrAlarms } from "./alarms.js";
 import { loadPlatformConfig } from "./config.js";
-import { createDataStores } from "./data.js";
 import { createDocumentInfrastructure } from "./documents.js";
-import { createNetwork } from "./network.js";
-import { createApplicationSecrets } from "./secrets.js";
+import { createOcrEncryption } from "./encryption.js";
+import {
+  createOcrOperatorAccess,
+  exportOcrOperatorCredentials,
+} from "./operator.js";
 
 const config = loadPlatformConfig();
-const network = createNetwork(config);
-const dataStores = createDataStores(config, network);
-const documents = createDocumentInfrastructure(config, dataStores);
-const secrets = createApplicationSecrets(config, dataStores);
-const compute = createApplicationCompute({
-  config,
-  network,
-  dataStores,
-  documents,
-  secrets,
-});
+const encryption = createOcrEncryption(config);
+const documents = createDocumentInfrastructure(config, encryption.encryptionKey);
+const operator = createOcrOperatorAccess(config, documents, encryption.encryptionKey);
+createOcrAlarms(config, documents);
+
+const credentials = exportOcrOperatorCredentials(operator);
 
 export const environment = config.environment.name;
-export const applicationUrl = pulumi.interpolate`https://${config.domainName}`;
-export const loadBalancerDnsName = compute.loadBalancer.dnsName;
-export const clusterName = compute.cluster.name;
-export const repositoryUrl = compute.repository.repositoryUrl;
-export const databaseIdentifier = dataStores.database.identifier;
 export const documentsBucketName = documents.bucket.bucket;
+export const textractSnsTopicArn = documents.textractTopic.arn;
+export const textractPublishRoleArn = documents.textractPublishRole.arn;
 export const textractResultsQueueUrl = documents.resultsQueue.url;
-export const webTaskDefinitionArn = compute.taskDefinitions.web.arn;
-export const privateSubnetIds = network.privateSubnets.map((subnet) => subnet.id);
-export const applicationSecurityGroupId = network.applicationSecurityGroup.id;
-export const serviceNames = Object.fromEntries(
-  Object.entries(compute.services).map(([name, service]) => [name, service.name]),
-);
+export const textractResultsDeadLetterQueueUrl = documents.resultsDeadLetterQueue.url;
+export const ocrEncryptionKeyArn = encryption.encryptionKey.arn;
+export const ocrLocalUserName = credentials.ocrLocalUserName;
+export const ocrAccessKeyId = credentials.ocrAccessKeyId;
+export const ocrSecretAccessKey = credentials.ocrSecretAccessKey;

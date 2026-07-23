@@ -1,6 +1,5 @@
 import * as aws from "@pulumi/aws";
 import { PlatformConfig } from "./config.js";
-import { PlatformDataStores } from "./data.js";
 
 export interface DocumentInfrastructure {
   bucket: aws.s3.BucketV2;
@@ -10,14 +9,19 @@ export interface DocumentInfrastructure {
   textractPublishRole: aws.iam.Role;
 }
 
+/**
+ * Async Textract DetectDocumentText plumbing: S3 documents + SNS → SQS.
+ * App processes (Sail / local) poll the results queue — no ECS consumer.
+ */
 export function createDocumentInfrastructure(
   config: PlatformConfig,
-  dataStores: PlatformDataStores,
+  encryptionKey: aws.kms.Key,
 ): DocumentInfrastructure {
   const { environment } = config;
   const bucket = new aws.s3.BucketV2(environment.resourceName("documents"), {
     bucketPrefix: `${environment.resourceName("documents")}-`,
-    forceDestroy: environment.name === "staging",
+    // Production keeps objects even if the stack is destroyed.
+    forceDestroy: false,
   });
   new aws.s3.BucketPublicAccessBlock(environment.resourceName("documents-public-access"), {
     bucket: bucket.id,
@@ -41,7 +45,7 @@ export function createDocumentInfrastructure(
       rules: [{
         applyServerSideEncryptionByDefault: {
           sseAlgorithm: "aws:kms",
-          kmsMasterKeyId: dataStores.encryptionKey.arn,
+          kmsMasterKeyId: encryptionKey.arn,
         },
         bucketKeyEnabled: true,
       }],
@@ -56,7 +60,7 @@ export function createDocumentInfrastructure(
         status: "Enabled",
         filter: {},
         noncurrentVersionExpiration: {
-          noncurrentDays: environment.name === "production" ? 90 : 14,
+          noncurrentDays: environment.documentNoncurrentVersionDays,
         },
         abortIncompleteMultipartUpload: { daysAfterInitiation: 7 },
       }],
@@ -80,21 +84,21 @@ export function createDocumentInfrastructure(
 
   const textractTopic = new aws.sns.Topic(environment.resourceName("textract-complete"), {
     name: environment.resourceName("textract-complete"),
-    kmsMasterKeyId: dataStores.encryptionKey.arn,
+    kmsMasterKeyId: encryptionKey.arn,
   });
   const resultsDeadLetterQueue = new aws.sqs.Queue(
     environment.resourceName("textract-results-dlq"),
     {
       name: environment.resourceName("textract-results-dlq"),
       messageRetentionSeconds: 1_209_600,
-      kmsMasterKeyId: dataStores.encryptionKey.arn,
+      kmsMasterKeyId: encryptionKey.arn,
     },
   );
   const resultsQueue = new aws.sqs.Queue(environment.resourceName("textract-results"), {
     name: environment.resourceName("textract-results"),
     visibilityTimeoutSeconds: 300,
     messageRetentionSeconds: 345_600,
-    kmsMasterKeyId: dataStores.encryptionKey.arn,
+    kmsMasterKeyId: encryptionKey.arn,
     redrivePolicy: resultsDeadLetterQueue.arn.apply((deadLetterTargetArn) => JSON.stringify({
       deadLetterTargetArn,
       maxReceiveCount: 5,
@@ -146,7 +150,7 @@ export function createDocumentInfrastructure(
       }, {
         effect: "Allow",
         actions: ["kms:Decrypt", "kms:GenerateDataKey"],
-        resources: [dataStores.encryptionKey.arn],
+        resources: [encryptionKey.arn],
       }],
     }).json,
   });

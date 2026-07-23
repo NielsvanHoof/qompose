@@ -5,33 +5,29 @@ import {
   deploymentEnvironmentFromStack,
 } from "./environment.js";
 
-test("the staging stack uses staging safety and capacity defaults", () => {
-  const environment = deploymentEnvironmentFromStack("staging");
-
-  assert.equal(environment.name, "staging");
-  assert.equal(environment.deletionProtection, false);
-  assert.equal(environment.webDesiredCount, 1);
-  assert.equal(environment.databaseBackupRetentionDays, 7);
-});
-
-test("the production stack enables deletion protection and high availability", () => {
+test("the production stack keeps deletion protection and long retention", () => {
   const environment = deploymentEnvironmentFromStack("production");
 
   assert.equal(environment.name, "production");
   assert.equal(environment.deletionProtection, true);
-  assert.equal(environment.webDesiredCount, 2);
-  assert.equal(environment.databaseBackupRetentionDays, 35);
+  assert.equal(environment.documentNoncurrentVersionDays, 90);
+  assert.equal(environment.kmsDeletionWindowInDays, 30);
 });
 
-test("unknown stacks cannot silently receive production resources", () => {
+test("non-production stacks are rejected", () => {
+  assert.throws(
+    () => deploymentEnvironmentFromStack("staging"),
+    /Only the production stack is supported/,
+  );
   assert.throws(
     () => deploymentEnvironmentFromStack("developer"),
-    /Only staging and production stacks are supported/,
+    /Only the production stack is supported/,
   );
 });
 
 test("resource names are stable and environment scoped", () => {
   const environment = new DeploymentEnvironment("production");
 
-  assert.equal(environment.resourceName("web"), "qompose-production-web");
+  assert.equal(environment.resourceName("documents"), "qompose-production-documents");
+  assert.equal(environment.resourceName("ocr-operator"), "qompose-production-ocr-operator");
 });

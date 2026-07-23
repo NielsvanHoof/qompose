@@ -14,8 +14,9 @@ use RuntimeException;
 use function is_string;
 
 /**
- * Starts async Textract AnalyzeDocument (FORMS + TABLES) for a PDF in S3.
- * Completion arrives later via SNS → SQS → CompleteTextractExtractionAction.
+ * Starts async Textract DetectDocumentText for a PDF in S3.
+ * Completion arrives later via SNS → SQS → CompleteTextractExtractionAction,
+ * which then structures LINE text with Bedrock.
  */
 final class TextractDocumentOcr implements StartsDocumentOcr
 {
@@ -42,14 +43,13 @@ final class TextractDocumentOcr implements StartsDocumentOcr
             throw new InvalidArgumentException('OCR Textract SNS role ARN is not configured.');
         }
 
-        $result = $this->textract->startDocumentAnalysis([
+        $result = $this->textract->startDocumentTextDetection([
             'DocumentLocation' => [
                 'S3Object' => [
                     'Bucket' => $bucket,
                     'Name' => $document->path,
                 ],
             ],
-            'FeatureTypes' => ['FORMS', 'TABLES'],
             'NotificationChannel' => [
                 'SNSTopicArn' => $snsTopicArn,
                 'RoleArn' => $snsRoleArn,

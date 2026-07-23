@@ -6,7 +6,7 @@ use App\Actions\Dossiers\UploadDocumentForRequestAction;
 use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\DocumentProcessingStatus;
 use App\Enums\DocumentRequestStatus;
-use App\Jobs\ProcessUploadedDocument;
+use App\Jobs\ProcessUploadedDocumentJob;
 use App\Models\Client;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
@@ -51,7 +51,7 @@ test('uploading a document dispatches the mock OCR processing job', function () 
 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Pending);
 
-    Queue::assertPushed(ProcessUploadedDocument::class, function (ProcessUploadedDocument $job) use ($uploaded): bool {
+    Queue::assertPushed(ProcessUploadedDocumentJob::class, function (ProcessUploadedDocumentJob $job) use ($uploaded): bool {
         return $job->uploadedDocumentId === $uploaded->id;
     });
 });

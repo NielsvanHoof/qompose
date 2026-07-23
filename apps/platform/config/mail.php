@@ -117,4 +117,27 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Markdown Mail Settings
+    |--------------------------------------------------------------------------
+    |
+    | Theme and component paths for Markdown-based email rendering. Published
+    | views live under resources/views/vendor/mail and use the "default" theme
+    | (restyled for Qompose branding: coral CTAs, shield header).
+    |
+    */
+
+    'markdown' => [
+        'theme' => env('MAIL_MARKDOWN_THEME', 'default'),
+
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+
+        'extensions' => [
+            // \League\CommonMark\Extension\Strikethrough\StrikethroughExtension::class,
+        ],
+    ],
+
 ];

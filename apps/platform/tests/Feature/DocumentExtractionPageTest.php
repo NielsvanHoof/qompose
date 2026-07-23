@@ -38,8 +38,19 @@ test('staff can open the OCR extraction page for an uploaded document', function
     ]);
     $uploaded = UploadedDocument::factory()->processed(
         json_encode([
-            'key_values' => ['BSN' => '123456789'],
-            'tables' => [[['Code', 'Amount'], ['1000', '2500']]],
+            'document_type' => 'payslip',
+            'summary' => 'January payslip',
+            'fields' => [
+                ['label' => 'BSN', 'value' => '123456789'],
+            ],
+            'tables' => [
+                [
+                    'title' => 'Earnings',
+                    'headers' => ['Code', 'Amount'],
+                    'rows' => [['1000', '2500']],
+                ],
+            ],
+            'notes' => [],
         ], JSON_THROW_ON_ERROR),
     )->create([
         'tenant_id' => $tenant->id,
@@ -61,7 +72,9 @@ test('staff can open the OCR extraction page for an uploaded document', function
             ->component('uploaded-documents/show')
             ->where('uploaded_document.original_filename', 'payslip.pdf')
             ->where('uploaded_document.processing_status', DocumentProcessingStatus::Completed->value)
-            ->where('uploaded_document.extraction.key_values.BSN', '123456789')
+            ->where('uploaded_document.extraction.document_type', 'payslip')
+            ->where('uploaded_document.extraction.fields.0.label', 'BSN')
+            ->where('uploaded_document.extraction.fields.0.value', '123456789')
             ->where('dossier.id', $dossier->id)
             ->where('document_request.title', 'Payslip')
         );

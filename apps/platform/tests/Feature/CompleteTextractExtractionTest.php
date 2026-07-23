@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Ocr\CompleteTextractExtractionAction;
+use App\Contracts\Ocr\StructuresDocumentText;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\Activity;
@@ -17,37 +18,67 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('complete textract extraction stores forms and tables json on success', function () {
+test('complete textract extraction structures line text via bedrock on success', function () {
     $uploaded = createProcessingDocumentWithTextractJob('job-success-1');
 
     $textract = Mockery::mock(TextractClient::class);
-    $textract->shouldReceive('getDocumentAnalysis')
+    $textract->shouldReceive('getDocumentTextDetection')
         ->once()
         ->with(['JobId' => 'job-success-1'])
         ->andReturn(new Result([
             'JobStatus' => 'SUCCEEDED',
-            'Blocks' => sampleAnalyzeDocumentBlocks(),
+            'Blocks' => sampleDetectDocumentTextBlocks(),
         ]));
 
+    $structures = Mockery::mock(StructuresDocumentText::class);
+    $structures->shouldReceive('structure')
+        ->once()
+        ->with(Mockery::on(fn (string $text): bool => str_contains($text, 'BSN')
+            && str_contains($text, '287505030')
+            && str_contains($text, 'Code')
+            && str_contains($text, 'Salaris')))
+        ->andReturn([
+            'document_type' => 'payslip',
+            'summary' => 'Monthly payslip',
+            'fields' => [
+                ['label' => 'BSN', 'value' => '287505030'],
+            ],
+            'tables' => [
+                [
+                    'title' => 'Earnings',
+                    'headers' => ['Code', 'Omschrijving'],
+                    'rows' => [['1000', 'Salaris']],
+                ],
+            ],
+            'notes' => [],
+        ]);
+
     $this->app->instance(TextractClient::class, $textract);
+    $this->app->instance(StructuresDocumentText::class, $structures);
 
     $applied = app(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-success-1',
         'Status' => 'SUCCEEDED',
-        'API' => 'StartDocumentAnalysis',
+        'API' => 'StartDocumentTextDetection',
     ]);
 
     expect($applied)->toBeTrue();
 
     $uploaded->refresh();
 
-    /** @var array{key_values: array<string, string>, tables: list<list<list<string>>>} $payload */
+    /** @var array{
+     *     document_type: string,
+     *     fields: list<array{label: string, value: string}>,
+     *     tables: list<array{title: string, headers: list<string>, rows: list<list<string>}>>
+     * } $payload
+     */
     $payload = json_decode((string) $uploaded->extracted_text, true, 512, JSON_THROW_ON_ERROR);
 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Completed)
-        ->and($payload['key_values']['BSN'])->toBe('287505030')
-        ->and($payload['tables'][0][0])->toBe(['Code', 'Omschrijving'])
-        ->and($payload['tables'][0][1])->toBe(['1000', 'Salaris'])
+        ->and($payload['document_type'])->toBe('payslip')
+        ->and($payload['fields'][0])->toBe(['label' => 'BSN', 'value' => '287505030'])
+        ->and($payload['tables'][0]['headers'])->toBe(['Code', 'Omschrijving'])
+        ->and($payload['tables'][0]['rows'][0])->toBe(['1000', 'Salaris'])
         ->and($uploaded->processing_error)->toBeNull()
         ->and($uploaded->processing_finished_at)->not->toBeNull();
 
@@ -57,18 +88,39 @@ test('complete textract extraction stores forms and tables json on success', fun
         ->exists())->toBeTrue();
 });
 
+test('complete textract extraction ignores analyze document notifications', function () {
+    $uploaded = createProcessingDocumentWithTextractJob('job-analyze-1');
+
+    $textract = Mockery::mock(TextractClient::class);
+    $textract->shouldNotReceive('getDocumentTextDetection');
+    $this->app->instance(TextractClient::class, $textract);
+
+    $applied = app(CompleteTextractExtractionAction::class)->handle([
+        'JobId' => 'job-analyze-1',
+        'Status' => 'SUCCEEDED',
+        'API' => 'StartDocumentAnalysis',
+    ]);
+
+    expect($applied)->toBeFalse();
+
+    $uploaded->refresh();
+
+    expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Processing)
+        ->and($uploaded->extracted_text)->toBeNull();
+});
+
 test('complete textract extraction marks failed status', function () {
     $uploaded = createProcessingDocumentWithTextractJob('job-fail-1');
 
     $textract = Mockery::mock(TextractClient::class);
-    $textract->shouldNotReceive('getDocumentAnalysis');
+    $textract->shouldNotReceive('getDocumentTextDetection');
     $this->app->instance(TextractClient::class, $textract);
 
     $applied = app(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-fail-1',
         'Status' => 'FAILED',
         'StatusMessage' => 'Unsupported document format',
-        'API' => 'StartDocumentAnalysis',
+        'API' => 'StartDocumentTextDetection',
     ]);
 
     expect($applied)->toBeTrue();
@@ -88,93 +140,39 @@ test('complete textract extraction marks failed status', function () {
 test('complete textract extraction is idempotent when already completed', function () {
     $uploaded = createProcessingDocumentWithTextractJob('job-done-1', [
         'processing_status' => DocumentProcessingStatus::Completed,
-        'extracted_text' => '{"key_values":{},"tables":[]}',
+        'extracted_text' => '{"document_type":null,"summary":null,"fields":[],"tables":[],"notes":[]}',
         'processing_finished_at' => now(),
     ]);
 
     $textract = Mockery::mock(TextractClient::class);
-    $textract->shouldNotReceive('getDocumentAnalysis');
+    $textract->shouldNotReceive('getDocumentTextDetection');
     $this->app->instance(TextractClient::class, $textract);
 
     $applied = app(CompleteTextractExtractionAction::class)->handle([
         'JobId' => 'job-done-1',
         'Status' => 'SUCCEEDED',
-        'API' => 'StartDocumentAnalysis',
+        'API' => 'StartDocumentTextDetection',
     ]);
 
     expect($applied)->toBeTrue();
 
     $uploaded->refresh();
 
-    expect($uploaded->extracted_text)->toBe('{"key_values":{},"tables":[]}');
+    expect($uploaded->extracted_text)->toBe('{"document_type":null,"summary":null,"fields":[],"tables":[],"notes":[]}');
 });
 
 /**
- * Minimal AnalyzeDocument block graph: one KEY/VALUE pair and a 2x2 table.
+ * Minimal DetectDocumentText LINE blocks for a tiny payslip fragment.
  *
  * @return list<array<string, mixed>>
  */
-function sampleAnalyzeDocumentBlocks(): array
+function sampleDetectDocumentTextBlocks(): array
 {
     return [
-        [
-            'Id' => 'key-1',
-            'BlockType' => 'KEY_VALUE_SET',
-            'EntityTypes' => ['KEY'],
-            'Relationships' => [
-                ['Type' => 'CHILD', 'Ids' => ['word-bsn']],
-                ['Type' => 'VALUE', 'Ids' => ['value-1']],
-            ],
-        ],
-        [
-            'Id' => 'value-1',
-            'BlockType' => 'KEY_VALUE_SET',
-            'EntityTypes' => ['VALUE'],
-            'Relationships' => [
-                ['Type' => 'CHILD', 'Ids' => ['word-bsn-value']],
-            ],
-        ],
-        ['Id' => 'word-bsn', 'BlockType' => 'WORD', 'Text' => 'BSN'],
-        ['Id' => 'word-bsn-value', 'BlockType' => 'WORD', 'Text' => '287505030'],
-        [
-            'Id' => 'table-1',
-            'BlockType' => 'TABLE',
-            'Relationships' => [
-                ['Type' => 'CHILD', 'Ids' => ['cell-1-1', 'cell-1-2', 'cell-2-1', 'cell-2-2']],
-            ],
-        ],
-        [
-            'Id' => 'cell-1-1',
-            'BlockType' => 'CELL',
-            'RowIndex' => 1,
-            'ColumnIndex' => 1,
-            'Relationships' => [['Type' => 'CHILD', 'Ids' => ['word-code']]],
-        ],
-        [
-            'Id' => 'cell-1-2',
-            'BlockType' => 'CELL',
-            'RowIndex' => 1,
-            'ColumnIndex' => 2,
-            'Relationships' => [['Type' => 'CHILD', 'Ids' => ['word-omschrijving']]],
-        ],
-        [
-            'Id' => 'cell-2-1',
-            'BlockType' => 'CELL',
-            'RowIndex' => 2,
-            'ColumnIndex' => 1,
-            'Relationships' => [['Type' => 'CHILD', 'Ids' => ['word-1000']]],
-        ],
-        [
-            'Id' => 'cell-2-2',
-            'BlockType' => 'CELL',
-            'RowIndex' => 2,
-            'ColumnIndex' => 2,
-            'Relationships' => [['Type' => 'CHILD', 'Ids' => ['word-salaris']]],
-        ],
-        ['Id' => 'word-code', 'BlockType' => 'WORD', 'Text' => 'Code'],
-        ['Id' => 'word-omschrijving', 'BlockType' => 'WORD', 'Text' => 'Omschrijving'],
-        ['Id' => 'word-1000', 'BlockType' => 'WORD', 'Text' => '1000'],
-        ['Id' => 'word-salaris', 'BlockType' => 'WORD', 'Text' => 'Salaris'],
+        ['Id' => 'line-1', 'BlockType' => 'LINE', 'Page' => 1, 'Text' => 'BSN 287505030'],
+        ['Id' => 'line-2', 'BlockType' => 'LINE', 'Page' => 1, 'Text' => 'Code Omschrijving'],
+        ['Id' => 'line-3', 'BlockType' => 'LINE', 'Page' => 1, 'Text' => '1000 Salaris'],
+        ['Id' => 'word-ignored', 'BlockType' => 'WORD', 'Page' => 1, 'Text' => 'ignored'],
     ];
 }
 

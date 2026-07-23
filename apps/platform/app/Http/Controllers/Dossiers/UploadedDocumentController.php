@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Dossiers;
 use App\Actions\Audit\LogAuditActivityAction;
 use App\Actions\Dossiers\ResolveDocumentTemporaryUrlAction;
 use App\Actions\Dossiers\UploadStaffDocumentAction;
+use App\Contracts\Ocr\StructuresDocumentText;
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreUploadedDocumentRequest;
@@ -25,6 +26,9 @@ use function is_array;
 use function is_string;
 use function json_decode;
 
+/**
+ * @phpstan-import-type DocumentExtractionPayload from StructuresDocumentText
+ */
 final class UploadedDocumentController extends Controller
 {
     public function store(
@@ -112,7 +116,6 @@ final class UploadedDocumentController extends Controller
             ['original_filename' => $uploadedDocument->original_filename],
         );
 
-        // POC: private MinIO/S3 objects are served via short-lived signed URLs.
         if ($resolveDocumentTemporaryUrl->supportsTemporaryUrl($uploadedDocument)) {
             $url = $resolveDocumentTemporaryUrl->handle(
                 $uploadedDocument,
@@ -130,11 +133,11 @@ final class UploadedDocumentController extends Controller
     }
 
     /**
-     * Decode stored AnalyzeDocument JSON into a typed extraction payload for Inertia.
+     * Decode stored Bedrock-structured OCR JSON into a typed extraction payload for Inertia.
      *
      * Trusts our own OCR-written shape; only guards against missing/invalid JSON.
      *
-     * @return array{key_values: array<string, string|list<string>>, tables: list<list<list<string>>>}|null
+     * @return DocumentExtractionPayload|null
      */
     private function parseExtraction(?string $raw): ?array
     {
@@ -153,17 +156,24 @@ final class UploadedDocumentController extends Controller
             return null;
         }
 
-        $keyValues = $decoded['key_values'] ?? [];
+        $fields = $decoded['fields'] ?? [];
         $tables = $decoded['tables'] ?? [];
+        $notes = $decoded['notes'] ?? [];
 
-        if (! is_array($keyValues) || ! is_array($tables)) {
+        if (! is_array($fields) || ! is_array($tables) || ! is_array($notes)) {
             return null;
         }
 
-        /** @var array{key_values: array<string, string|list<string>>, tables: list<list<list<string>>>} $payload */
+        $documentType = $decoded['document_type'] ?? null;
+        $summary = $decoded['summary'] ?? null;
+
+        /** @var DocumentExtractionPayload $payload */
         $payload = [
-            'key_values' => $keyValues,
+            'document_type' => is_string($documentType) ? $documentType : null,
+            'summary' => is_string($summary) ? $summary : null,
+            'fields' => array_values($fields),
             'tables' => array_values($tables),
+            'notes' => array_values($notes),
         ];
 
         return $payload;

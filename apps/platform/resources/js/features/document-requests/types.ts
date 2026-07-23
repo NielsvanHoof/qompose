@@ -21,10 +21,24 @@ export type UploadedDocument = {
     processing_error: string | null;
 };
 
-/** Parsed AnalyzeDocument payload on the extraction page. */
+/** Parsed Bedrock-structured OCR payload on the extraction page. */
+export type DocumentExtractionField = {
+    label: string;
+    value: string | string[];
+};
+
+export type DocumentExtractionTable = {
+    title: string | null;
+    headers: string[];
+    rows: string[][];
+};
+
 export type DocumentExtraction = {
-    key_values: Record<string, string | string[]>;
-    tables: string[][][];
+    document_type: string | null;
+    summary: string | null;
+    fields: DocumentExtractionField[];
+    tables: DocumentExtractionTable[];
+    notes: string[];
 };
 
 /** Document request as shown on the staff dossier page. */

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Audit\LogAuditActivityAction;
 use App\Enums\DocumentProcessingStatus;
-use App\Jobs\ProcessUploadedDocument;
+use App\Jobs\ProcessUploadedDocumentJob;
 use App\Models\Client;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
@@ -31,12 +31,12 @@ test('textract start persists job id and leaves document processing', function (
     $uploaded = createUploadedDocumentForTextractTest();
 
     $textract = Mockery::mock(TextractClient::class);
-    $textract->shouldReceive('startDocumentAnalysis')
+    $textract->shouldReceive('startDocumentTextDetection')
         ->once()
         ->with(Mockery::on(function (array $args) use ($uploaded): bool {
             return ($args['DocumentLocation']['S3Object']['Bucket'] ?? null) === 'test-documents'
                 && ($args['DocumentLocation']['S3Object']['Name'] ?? null) === $uploaded->path
-                && ($args['FeatureTypes'] ?? null) === ['FORMS', 'TABLES']
+                && ! array_key_exists('FeatureTypes', $args)
                 && ($args['NotificationChannel']['SNSTopicArn'] ?? null) === 'arn:aws:sns:eu-west-1:123:textract'
                 && ($args['NotificationChannel']['RoleArn'] ?? null) === 'arn:aws:iam::123:role/textract-sns'
                 && ($args['JobTag'] ?? null) === (string) $uploaded->id;
@@ -45,7 +45,7 @@ test('textract start persists job id and leaves document processing', function (
 
     $this->app->instance(TextractClient::class, $textract);
 
-    (new ProcessUploadedDocument($uploaded->id))->handle(
+    (new ProcessUploadedDocumentJob($uploaded->id))->handle(
         app(OcrOrchestrator::class),
         app(LogAuditActivityAction::class),
     );

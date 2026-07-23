@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\Ocr\StartsDocumentOcr;
+use App\Contracts\Ocr\StructuresDocumentText;
 use App\Contracts\Production\ChecksReadiness;
 use App\Enums\OcrDriver;
 use App\Models\Activity;
@@ -27,8 +28,10 @@ use App\Policies\Tenancy\TenantInvitationPolicy;
 use App\Policies\Tenancy\TenantMembershipPolicy;
 use App\Services\Ocr\Configuration\OcrConfigurationValidator;
 use App\Services\Ocr\Drivers\OcrDriverFactory;
+use App\Services\Ocr\Normalization\BedrockDocumentStructureNormalizer;
 use App\Services\Production\InfrastructureReadinessCheck;
 use App\Services\Production\ProductionConfigurationValidator;
+use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Aws\Sqs\SqsClient;
 use Aws\Textract\TextractClient;
 use Carbon\CarbonImmutable;
@@ -106,17 +109,24 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Bind OCR driver + AWS clients used by Textract start/consume.
+     * Bind OCR driver + AWS clients used by Textract start/consume and Bedrock structuring.
      */
     private function registerOcrBindings(): void
     {
         $this->app->singleton(TextractClient::class, function (): TextractClient {
-            return new TextractClient($this->awsClientConfig());
+            return new TextractClient($this->awsClientConfig('ocr.textract.region'));
         });
 
         $this->app->singleton(SqsClient::class, function (): SqsClient {
-            return new SqsClient($this->awsClientConfig());
+            return new SqsClient($this->awsClientConfig('ocr.textract.region'));
         });
+
+        // Bedrock may use a different region than Textract (inference profiles).
+        $this->app->singleton(BedrockRuntimeClient::class, function (): BedrockRuntimeClient {
+            return new BedrockRuntimeClient($this->awsClientConfig('ocr.bedrock.region'));
+        });
+
+        $this->app->bind(StructuresDocumentText::class, BedrockDocumentStructureNormalizer::class);
 
         $this->app->bind(
             StartsDocumentOcr::class,
@@ -127,25 +137,39 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * @return array{version: string, region: string, credentials?: array{key: string, secret: string}}
+     * Shared AWS SDK client options. Credentials come from ocr.textract.* (IAM role in prod).
+     *
+     * @return array{
+     *     version: string,
+     *     region: string,
+     *     credentials?: array{key: string, secret: string, token?: string}
+     * }
      */
-    private function awsClientConfig(): array
+    private function awsClientConfig(string $regionConfigKey): array
     {
         $key = config('ocr.textract.key');
         $secret = config('ocr.textract.secret');
-        $region = config('ocr.textract.region', 'eu-west-1');
+        $token = config('ocr.textract.token');
+        $region = config($regionConfigKey, 'eu-west-1');
 
-        /** @var array{version: string, region: string, credentials?: array{key: string, secret: string}} $clientConfig */
+        /** @var array{version: string, region: string, credentials?: array{key: string, secret: string, token?: string}} $clientConfig */
         $clientConfig = [
             'version' => 'latest',
             'region' => is_string($region) && $region !== '' ? $region : 'eu-west-1',
         ];
 
         if (is_string($key) && $key !== '' && is_string($secret) && $secret !== '') {
-            $clientConfig['credentials'] = [
+            $credentials = [
                 'key' => $key,
                 'secret' => $secret,
             ];
+
+            // Temporary STS credentials (assumed OCR operator role) include a session token.
+            if (is_string($token) && $token !== '') {
+                $credentials['token'] = $token;
+            }
+
+            $clientConfig['credentials'] = $credentials;
         }
 
         return $clientConfig;

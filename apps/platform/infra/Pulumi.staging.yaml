@@ -1,4 +1,0 @@
-config:
-  aws:region: eu-west-1
-  qompose-platform:deployApplication: true
-  qompose-platform:postgresEngineVersion: "17"

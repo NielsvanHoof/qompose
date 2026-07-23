@@ -31,7 +31,7 @@ test('ocr orchestrator returns immediate outcome for synchronous drivers', funct
 
     expect($outcome)->toBe(OcrProcessingOutcome::Immediate)
         ->and($uploaded->processing_status)->toBe(DocumentProcessingStatus::Completed)
-        ->and($uploaded->extracted_text)->toContain('key_values');
+        ->and($uploaded->extracted_text)->toContain('fields');
 
     expect(Activity::query()
         ->where('event', AuditEvent::DocumentProcessingStarted->value)

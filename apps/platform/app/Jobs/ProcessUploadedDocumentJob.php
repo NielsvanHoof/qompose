@@ -19,7 +19,7 @@ use Throwable;
  * Async OCR pipeline for an uploaded document.
  * Mock driver completes in-process; Textract stays processing until SNS/SQS completion.
  */
-final class ProcessUploadedDocument implements ShouldQueue
+final class ProcessUploadedDocumentJob implements ShouldQueue
 {
     use InteractsWithQueue;
     use Queueable;
