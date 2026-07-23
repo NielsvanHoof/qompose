@@ -12,11 +12,11 @@ use Illuminate\Support\Facades\Log;
 use JsonException;
 use RuntimeException;
 
+use function count;
 use function is_array;
 use function is_string;
 use function json_decode;
 use function mb_strlen;
-use function count;
 
 /**
  * Asks Bedrock for document_type / summary / notes only.
