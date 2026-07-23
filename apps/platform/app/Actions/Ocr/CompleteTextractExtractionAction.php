@@ -19,7 +19,6 @@ use JsonException;
 use RuntimeException;
 
 use function count;
-use function is_array;
 use function is_string;
 use function json_encode;
 
@@ -205,16 +204,13 @@ final class CompleteTextractExtractionAction
         $structured = $this->formsTablesMapper->map($blocks);
 
         // Counts only — never log field values (may contain BSN / account numbers).
-        $fieldCount = is_array($structured['fields'] ?? null) ? count($structured['fields']) : 0;
-        $tableCount = is_array($structured['tables'] ?? null) ? count($structured['tables']) : 0;
-
         Log::info('OCR: mapped Textract FORMS/TABLES — calling Bedrock overview.', [
             'uploaded_document_id' => $document->id,
             'tenant_id' => $document->tenant_id,
             'textract_job_id' => $jobId,
             'block_count' => count($blocks),
-            'field_count' => $fieldCount,
-            'table_count' => $tableCount,
+            'field_count' => count($structured['fields']),
+            'table_count' => count($structured['tables']),
         ]);
 
         $overview = $this->describesDocumentOverview->describe($structured);
