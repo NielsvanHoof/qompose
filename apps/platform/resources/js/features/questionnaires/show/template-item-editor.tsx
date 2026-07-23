@@ -2,6 +2,7 @@ import { Form, useHttp } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useCallback } from 'react';
 import QuestionnaireTemplateItemController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateItemController';
+import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import EmptyState from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import SortableList from '@/components/sortable/sortable-list';
@@ -88,26 +89,33 @@ export default function TemplateItemEditor({
                                     </Badge>
                                 </div>
                                 {canManage && (
-                                    <Form
-                                        {...QuestionnaireTemplateItemController.destroy.form(
+                                    <ConfirmDestroyDialog
+                                        title={t('Delete item?')}
+                                        description={t(
+                                            'Remove “:title” from this template. This cannot be undone.',
+                                            { title: item.title },
+                                        )}
+                                        confirmLabel={t('Delete')}
+                                        form={QuestionnaireTemplateItemController.destroy.form(
                                             {
                                                 tenant: currentWorkspace,
                                                 template: templateId,
                                                 item: item.id,
                                             },
                                         )}
-                                    >
-                                        {({ processing }) => (
+                                        trigger={
                                             <Button
-                                                type="submit"
+                                                type="button"
                                                 size="icon"
                                                 variant="ghost"
-                                                disabled={processing}
+                                                aria-label={t('Delete :title', {
+                                                    title: item.title,
+                                                })}
                                             >
-                                                <Trash2 />
+                                                <Trash2 aria-hidden="true" />
                                             </Button>
-                                        )}
-                                    </Form>
+                                        }
+                                    />
                                 )}
                             </div>
 

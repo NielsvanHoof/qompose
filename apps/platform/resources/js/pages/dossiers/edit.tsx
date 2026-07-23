@@ -49,6 +49,7 @@ export default function EditDossier({
 
             <div className="mx-auto w-full max-w-xl p-4 md:p-8">
                 <Heading
+                    level={1}
                     title={t('Edit dossier')}
                     description={t(
                         'Update the working title or reference without changing the client relationship.',

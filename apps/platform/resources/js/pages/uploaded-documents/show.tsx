@@ -45,7 +45,7 @@ export default function ShowUploadedDocument({
     can_download: canDownload,
 }: ExtractionPageProps) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
 
     const isProcessing =
         uploadedDocument.processing_status === 'pending' ||
@@ -106,6 +106,7 @@ export default function ShowUploadedDocument({
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
+                        level={1}
                         title={uploadedDocument.original_filename}
                         description={
                             documentRequest
@@ -153,9 +154,9 @@ export default function ShowUploadedDocument({
                     </div>
                 </div>
 
-                <p className="text-sm text-muted-foreground">
+                <p className="font-data text-sm text-muted-foreground">
                     {formatBytes(uploadedDocument.size_bytes)} · {t('uploaded')}{' '}
-                    {formatDateTime(uploadedDocument.uploaded_at)}
+                    {formatDateTime(uploadedDocument.uploaded_at, locale)}
                 </p>
 
                 {uploadedDocument.processing_status === 'failed' &&

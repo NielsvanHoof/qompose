@@ -1,7 +1,7 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { useMemo, useState } from 'react';
-import InputError from '@/components/input-error';
+import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -9,6 +9,7 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/use-translation';
 import { OTP_MAX_LENGTH, OTP_SLOTS } from '@/hooks/use-two-factor-auth';
 import { store } from '@/routes/two-factor/login';
@@ -67,22 +68,39 @@ export default function TwoFactorChallenge() {
                     {({ errors, processing, clearErrors }) => (
                         <>
                             {showRecoveryInput ? (
-                                <>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="recovery_code">
+                                        {t('Recovery code')}
+                                    </Label>
                                     <Input
+                                        id="recovery_code"
                                         name="recovery_code"
                                         type="text"
                                         placeholder={t('Enter recovery code')}
                                         autoFocus={showRecoveryInput}
+                                        autoComplete="one-time-code"
                                         required
+                                        {...fieldErrorAriaProps(
+                                            'recovery_code-error',
+                                            errors.recovery_code,
+                                        )}
                                     />
                                     <InputError
+                                        id="recovery_code-error"
                                         message={errors.recovery_code}
                                     />
-                                </>
+                                </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center space-y-3 text-center">
+                                    <Label
+                                        htmlFor="two-factor-code"
+                                        className="sr-only"
+                                    >
+                                        {t('Authentication code')}
+                                    </Label>
                                     <div className="flex w-full items-center justify-center">
                                         <InputOTP
+                                            id="two-factor-code"
                                             name="code"
                                             maxLength={OTP_MAX_LENGTH}
                                             value={code}
@@ -90,6 +108,13 @@ export default function TwoFactorChallenge() {
                                             disabled={processing}
                                             pattern={REGEXP_ONLY_DIGITS}
                                             autoFocus
+                                            aria-label={t(
+                                                'Authentication code',
+                                            )}
+                                            {...fieldErrorAriaProps(
+                                                'code-error',
+                                                errors.code,
+                                            )}
                                         >
                                             <InputOTPGroup>
                                                 {OTP_SLOTS.map((slot) => (
@@ -101,7 +126,10 @@ export default function TwoFactorChallenge() {
                                             </InputOTPGroup>
                                         </InputOTP>
                                     </div>
-                                    <InputError message={errors.code} />
+                                    <InputError
+                                        id="code-error"
+                                        message={errors.code}
+                                    />
                                 </div>
                             )}
 

@@ -1,5 +1,5 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import StatusMessage from '@/components/status-message';
 import TextLink from '@/components/text-link';
@@ -53,8 +53,15 @@ export default function Login({ status, canResetPassword }: Props) {
                                     tabIndex={0}
                                     autoComplete="email"
                                     placeholder={t('email@example.com')}
+                                    {...fieldErrorAriaProps(
+                                        'email-error',
+                                        errors.email,
+                                    )}
                                 />
-                                <InputError message={errors.email} />
+                                <InputError
+                                    id="email-error"
+                                    message={errors.email}
+                                />
                             </div>
 
                             <div className="grid gap-2">
@@ -79,8 +86,15 @@ export default function Login({ status, canResetPassword }: Props) {
                                     tabIndex={0}
                                     autoComplete="current-password"
                                     placeholder={t('Password')}
+                                    {...fieldErrorAriaProps(
+                                        'password-error',
+                                        errors.password,
+                                    )}
                                 />
-                                <InputError message={errors.password} />
+                                <InputError
+                                    id="password-error"
+                                    message={errors.password}
+                                />
                             </div>
 
                             <div className="flex items-center space-x-3">

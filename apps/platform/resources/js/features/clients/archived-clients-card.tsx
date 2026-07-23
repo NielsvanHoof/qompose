@@ -19,7 +19,7 @@ export default function ArchivedClientsCard({
     clients: Paginated<ArchivedClientSummary>;
     canRestore: boolean;
 }) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
 
     return (
         <Card>
@@ -57,6 +57,7 @@ export default function ArchivedClientsCard({
                                         {t('Archived :datetime', {
                                             datetime: formatDateTime(
                                                 client.archived_at,
+                                                locale,
                                             ),
                                         })}
                                         {' · '}

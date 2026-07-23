@@ -1,5 +1,6 @@
 import { Form } from '@inertiajs/react';
 import WorkspaceMemberController from '@/actions/App/Http/Controllers/Tenancy/WorkspaceMemberController';
+import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import EmptyState from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import {
@@ -195,26 +196,30 @@ export default function MembersListCard({
                                                 </Form>
                                             )}
 
-                                        <Form
-                                            {...WorkspaceMemberController.destroy.form(
+                                        <ConfirmDestroyDialog
+                                            title={t('Remove member?')}
+                                            description={t(
+                                                'Remove :name from this firm. They will lose access immediately.',
+                                                { name: member.name },
+                                            )}
+                                            confirmLabel={t('Remove')}
+                                            form={WorkspaceMemberController.destroy.form(
                                                 {
                                                     tenant: currentWorkspace,
                                                     membership: member.id,
                                                 },
                                             )}
                                             options={{ preserveScroll: true }}
-                                        >
-                                            {({ processing }) => (
+                                            trigger={
                                                 <Button
-                                                    type="submit"
+                                                    type="button"
                                                     variant="ghost"
                                                     size="sm"
-                                                    disabled={processing}
                                                 >
                                                     {t('Remove')}
                                                 </Button>
-                                            )}
-                                        </Form>
+                                            }
+                                        />
                                     </div>
                                 </div>
                             );

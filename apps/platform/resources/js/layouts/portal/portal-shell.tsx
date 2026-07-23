@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import BrandShieldWatermark from '@/components/brand-shield-watermark';
+import SkipToContent from '@/components/skip-to-content';
 import PortalLocaleSwitcher from '@/features/portal/portal-locale-switcher';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -26,6 +27,7 @@ export default function PortalShell({
 
     return (
         <div className="min-h-svh bg-secondary">
+            <SkipToContent />
             <header className="relative isolate overflow-hidden border-b border-primary/10 bg-primary text-primary-foreground">
                 <BrandShieldWatermark
                     variant="light"
@@ -71,7 +73,11 @@ export default function PortalShell({
                 </div>
             </header>
 
-            <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 md:px-8">
+            <main
+                id="main-content"
+                tabIndex={-1}
+                className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 md:px-8"
+            >
                 {children}
             </main>
         </div>

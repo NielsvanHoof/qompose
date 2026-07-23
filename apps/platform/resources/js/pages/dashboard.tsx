@@ -29,6 +29,7 @@ export default function Dashboard({ firms }: PageProps) {
 
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-4 md:p-8">
                 <Heading
+                    level={1}
                     title={t('Choose a firm')}
                     description={t(
                         'Choose the firm whose client dossiers you want to manage.',

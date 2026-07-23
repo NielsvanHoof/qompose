@@ -30,6 +30,7 @@ export default function FirmOnboardingCard() {
             </CardHeader>
             <CardContent>
                 <Heading
+                    level={1}
                     title={t('What is your firm called?')}
                     description={t(
                         'Next, you will add your first client and create a dossier.',

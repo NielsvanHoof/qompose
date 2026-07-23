@@ -50,6 +50,7 @@ export default function CreateTemplate({
 
             <div className="mx-auto w-full max-w-xl p-4 md:p-8">
                 <Heading
+                    level={1}
                     title={t('New template')}
                     description={t(
                         'Create a reusable questionnaire for your firm.',

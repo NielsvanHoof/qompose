@@ -26,6 +26,7 @@ export default function CreateFirm() {
 
             <div className="mx-auto w-full max-w-xl p-4 md:p-8">
                 <Heading
+                    level={1}
                     title={t('New firm')}
                     description={t(
                         'Add another accounting firm. You can switch between your firms at any time.',

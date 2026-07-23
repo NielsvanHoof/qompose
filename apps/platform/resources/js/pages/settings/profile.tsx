@@ -50,6 +50,7 @@ export default function Profile({
 
             <div className="space-y-6">
                 <Heading
+                    level={2}
                     variant="small"
                     title={t('Profile')}
                     description={t('Update your name and email address')}

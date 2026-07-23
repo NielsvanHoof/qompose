@@ -24,6 +24,7 @@ export default function Language() {
 
             <div className="space-y-6">
                 <Heading
+                    level={2}
                     variant="small"
                     title={t('Language settings')}
                     description={t(

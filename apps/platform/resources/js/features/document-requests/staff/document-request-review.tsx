@@ -30,7 +30,7 @@ export default function DocumentRequestReview({
     canReview: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
 
     if (documentRequest.status === 'rejected') {
         return (
@@ -47,11 +47,13 @@ export default function DocumentRequestReview({
                                       name: documentRequest.reviewed_by_name,
                                       date: formatDateTime(
                                           documentRequest.reviewed_at,
+                                          locale,
                                       ),
                                   })
                                 : t('Reviewed on :date.', {
                                       date: formatDateTime(
                                           documentRequest.reviewed_at,
+                                          locale,
                                       ),
                                   })}
                         </p>
@@ -71,7 +73,7 @@ export default function DocumentRequestReview({
                         {documentRequest.reviewed_by_name
                             ? `${documentRequest.reviewed_by_name} · `
                             : ''}
-                        {formatDateTime(documentRequest.reviewed_at)}
+                        {formatDateTime(documentRequest.reviewed_at, locale)}
                     </AlertDescription>
                 )}
             </Alert>

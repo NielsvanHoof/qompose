@@ -45,7 +45,7 @@ export default function ClientAccessCard({
     canCreate: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const [sendInvite, setSendInvite] = useState(true);
 
     return (
@@ -74,6 +74,7 @@ export default function ClientAccessCard({
                                         {t('Expires :datetime', {
                                             datetime: formatDateTime(
                                                 grant.expires_at,
+                                                locale,
                                             ),
                                         })}
                                     </p>
@@ -87,6 +88,7 @@ export default function ClientAccessCard({
                                             ` · ${t('Last used :datetime', {
                                                 datetime: formatDateTime(
                                                     grant.last_used_at,
+                                                    locale,
                                                 ),
                                             })}`}
                                     </p>

@@ -1,6 +1,6 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import InputError from '@/components/input-error';
+import InputError, { fieldErrorAriaProps } from '@/components/input-error';
 import StatusMessage from '@/components/status-message';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -40,12 +40,20 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     id="email"
                                     type="email"
                                     name="email"
-                                    autoComplete="off"
+                                    autoComplete="email"
+                                    spellCheck={false}
                                     autoFocus
                                     placeholder={t('email@example.com')}
+                                    {...fieldErrorAriaProps(
+                                        'email-error',
+                                        errors.email,
+                                    )}
                                 />
 
-                                <InputError message={errors.email} />
+                                <InputError
+                                    id="email-error"
+                                    message={errors.email}
+                                />
                             </div>
 
                             <div className="my-6 flex items-center justify-start">

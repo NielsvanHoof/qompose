@@ -26,7 +26,7 @@ export default function ArchivedDossiersCard({
     canRestore: boolean;
     canRestoreClients: boolean;
 }) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
 
     return (
         <Card>
@@ -81,6 +81,7 @@ export default function ArchivedDossiersCard({
                                         {t('Archived :datetime', {
                                             datetime: formatDateTime(
                                                 dossier.archived_at,
+                                                locale,
                                             ),
                                         })}
                                     </p>

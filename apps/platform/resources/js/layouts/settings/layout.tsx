@@ -42,6 +42,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     return (
         <div className="px-4 py-6">
             <Heading
+                level={1}
                 title={t('Settings')}
                 description={t('Manage your profile and account settings')}
             />

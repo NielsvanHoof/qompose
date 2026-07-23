@@ -34,6 +34,7 @@ export default function CreateClient() {
 
             <div className="mx-auto w-full max-w-xl p-4 md:p-8">
                 <Heading
+                    level={1}
                     title={t('New client')}
                     description={t(
                         'Add the person or organisation that will provide documents.',

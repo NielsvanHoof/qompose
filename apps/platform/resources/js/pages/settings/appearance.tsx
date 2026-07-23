@@ -24,6 +24,7 @@ export default function Appearance() {
 
             <div className="space-y-6">
                 <Heading
+                    level={2}
                     variant="small"
                     title={t('Appearance settings')}
                     description={t(

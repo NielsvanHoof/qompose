@@ -36,6 +36,7 @@ export default function ManagePasskeys(props: Props) {
     return (
         <div className="space-y-6">
             <Heading
+                level={2}
                 variant="small"
                 title={t('Passkeys')}
                 description={t('Manage your passkeys for passwordless sign-in')}

@@ -24,7 +24,7 @@ export default function DocumentProcessingPanel({
     canDownload: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const isComplete = uploadedDocument.processing_status === 'completed';
 
     return (
@@ -50,7 +50,7 @@ export default function DocumentProcessingPanel({
                     </div>
                     <p className="text-muted-foreground">
                         {formatBytes(uploadedDocument.size_bytes)} ·{' '}
-                        {formatDateTime(uploadedDocument.uploaded_at)}
+                        {formatDateTime(uploadedDocument.uploaded_at, locale)}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

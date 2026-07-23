@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { ArrowRight, Building2, Plus } from 'lucide-react';
 import {
     Card,
@@ -21,10 +21,9 @@ export default function FirmPickerGrid({ firms }: { firms: Firm[] }) {
     return (
         <div className="grid gap-4 sm:grid-cols-2">
             {firms.map((firm) => (
-                <button
+                <Link
                     key={firm.slug}
-                    type="button"
-                    onClick={() => router.visit(workspaceDashboard.url(firm))}
+                    href={workspaceDashboard.url(firm)}
                     className="group rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     <Card className="h-full transition-colors group-hover:bg-muted/50">
@@ -42,13 +41,12 @@ export default function FirmPickerGrid({ firms }: { firms: Firm[] }) {
                             </span>
                         </CardContent>
                     </Card>
-                </button>
+                </Link>
             ))}
 
             {/* Entry point for creating an additional firm. */}
-            <button
-                type="button"
-                onClick={() => router.visit(createFirm.url())}
+            <Link
+                href={createFirm.url()}
                 className="group rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
                 <Card className="h-full border-dashed transition-colors group-hover:bg-muted/50">
@@ -68,7 +66,7 @@ export default function FirmPickerGrid({ firms }: { firms: Firm[] }) {
                         </span>
                     </CardContent>
                 </Card>
-            </button>
+            </Link>
         </div>
     );
 }

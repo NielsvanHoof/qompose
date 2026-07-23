@@ -44,6 +44,7 @@ export default function CreateDossier({
 
             <div className="mx-auto w-full max-w-xl p-4 md:p-8">
                 <Heading
+                    level={1}
                     title={t('New dossier')}
                     description={t(
                         'Create a document collection for an existing client.',

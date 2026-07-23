@@ -22,7 +22,7 @@ export default function DossierFollowUpCard({
     canSendReminder: boolean;
 }) {
     const currentWorkspace = useCurrentWorkspace();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
 
     return (
         <Card className="overflow-hidden border-primary/15">
@@ -46,6 +46,7 @@ export default function DossierFollowUpCard({
                         dossier.last_client_message_sent_at
                             ? formatDateTime(
                                   dossier.last_client_message_sent_at,
+                                  locale,
                               )
                             : t('Not sent yet')
                     }
@@ -54,6 +55,7 @@ export default function DossierFollowUpCard({
                             ? t('Next reminder :datetime', {
                                   datetime: formatDateTime(
                                       dossier.next_reminder_at,
+                                      locale,
                                   ),
                               })
                             : t('No reminder scheduled')
@@ -64,7 +66,10 @@ export default function DossierFollowUpCard({
                     label={t('Last opened')}
                     value={
                         dossier.last_client_opened_at
-                            ? formatDateTime(dossier.last_client_opened_at)
+                            ? formatDateTime(
+                                  dossier.last_client_opened_at,
+                                  locale,
+                              )
                             : t('Not opened yet')
                     }
                     detail={

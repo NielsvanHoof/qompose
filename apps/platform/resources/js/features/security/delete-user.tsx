@@ -24,6 +24,7 @@ export default function DeleteUser() {
     return (
         <div className="space-y-6">
             <Heading
+                level={2}
                 variant="small"
                 title={t('Delete account')}
                 description={t('Delete your account and all of its resources')}

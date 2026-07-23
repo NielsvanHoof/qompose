@@ -1,5 +1,6 @@
 import { Form } from '@inertiajs/react';
 import TenantInvitationController from '@/actions/App/Http/Controllers/Tenancy/TenantInvitationController';
+import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -79,26 +80,30 @@ export default function PendingInvitationsCard({
                                     )}
                                 </Form>
 
-                                <Form
-                                    {...TenantInvitationController.destroy.form(
+                                <ConfirmDestroyDialog
+                                    title={t('Revoke invitation?')}
+                                    description={t(
+                                        'The invite link for :email will stop working. You can send a new invitation later.',
+                                        { email: invitation.email },
+                                    )}
+                                    confirmLabel={t('Revoke')}
+                                    form={TenantInvitationController.destroy.form(
                                         {
                                             tenant: currentWorkspace,
                                             invitation: invitation.id,
                                         },
                                     )}
                                     options={{ preserveScroll: true }}
-                                >
-                                    {({ processing }) => (
+                                    trigger={
                                         <Button
-                                            type="submit"
+                                            type="button"
                                             variant="ghost"
                                             size="sm"
-                                            disabled={processing}
                                         >
                                             {t('Revoke')}
                                         </Button>
-                                    )}
-                                </Form>
+                                    }
+                                />
                             </div>
                         </div>
                     ))}

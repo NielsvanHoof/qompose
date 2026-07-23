@@ -1,5 +1,6 @@
 import { Form, Link } from '@inertiajs/react';
 import QuestionnaireTemplateController from '@/actions/App/Http/Controllers/Questionnaires/QuestionnaireTemplateController';
+import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -51,7 +52,7 @@ export default function TemplateShowContent({
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <div className="flex flex-wrap items-center gap-2">
-                        <Heading title={template.name} />
+                        <Heading level={1} title={template.name} />
                         <Badge variant="secondary">
                             {template.category_label}
                         </Badge>
@@ -86,22 +87,22 @@ export default function TemplateShowContent({
                         </Form>
                     )}
                     {canManage && (
-                        <Form
-                            {...QuestionnaireTemplateController.destroy.form({
+                        <ConfirmDestroyDialog
+                            title={t('Delete template?')}
+                            description={t(
+                                'This permanently deletes the template and its items. Existing dossiers that used it are not changed.',
+                            )}
+                            confirmLabel={t('Delete')}
+                            form={QuestionnaireTemplateController.destroy.form({
                                 tenant: currentWorkspace,
                                 template: template.id,
                             })}
-                        >
-                            {({ processing }) => (
-                                <Button
-                                    type="submit"
-                                    variant="destructive"
-                                    disabled={processing}
-                                >
+                            trigger={
+                                <Button type="button" variant="destructive">
                                     {t('Delete')}
                                 </Button>
-                            )}
-                        </Form>
+                            }
+                        />
                     )}
                     <Button variant="outline" asChild>
                         <Link href={templateIndex(currentWorkspace)}>

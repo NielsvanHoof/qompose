@@ -44,6 +44,7 @@ export default function EditClient({
 
             <div className="mx-auto w-full max-w-xl p-4 md:p-8">
                 <Heading
+                    level={1}
                     title={t('Edit client')}
                     description={t(
                         'Keep contact details accurate before sending new portal invitations.',

@@ -4,13 +4,14 @@ export default function Heading({
     title,
     description,
     variant = 'default',
-    level = 2,
+    level,
     className,
 }: {
     title: string;
     description?: string;
     variant?: 'default' | 'small';
-    level?: 1 | 2;
+    /** Explicit heading level — page titles use 1, section titles use 2. */
+    level: 1 | 2;
     className?: string;
 }) {
     const TitleTag = level === 1 ? 'h1' : 'h2';

@@ -2,6 +2,7 @@ import { Form } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
+import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,28 +58,32 @@ export default function DocumentRequestListItem({
                     </Badge>
                 </div>
                 {canEdit && (
-                    <Form
-                        {...DocumentRequestController.destroy.form({
+                    <ConfirmDestroyDialog
+                        title={t('Delete request?')}
+                        description={t(
+                            'Remove “:title” from this dossier. Uploaded files for this item are kept for audit purposes.',
+                            { title: documentRequest.title },
+                        )}
+                        confirmLabel={t('Delete')}
+                        form={DocumentRequestController.destroy.form({
                             tenant: currentWorkspace,
                             dossier: dossierId,
                             documentRequest: documentRequest.id,
                         })}
                         options={inlineDossierActionOptions}
-                    >
-                        {({ processing }) => (
+                        trigger={
                             <Button
-                                type="submit"
+                                type="button"
                                 size="icon"
                                 variant="ghost"
-                                disabled={processing}
                                 aria-label={t('Delete :title', {
                                     title: documentRequest.title,
                                 })}
                             >
                                 <Trash2 aria-hidden="true" />
                             </Button>
-                        )}
-                    </Form>
+                        }
+                    />
                 )}
             </div>
 

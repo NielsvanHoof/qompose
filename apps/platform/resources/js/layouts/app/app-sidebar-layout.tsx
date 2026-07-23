@@ -4,6 +4,7 @@ import { AppContent } from '@/components/app-shell/app-content';
 import { AppShell } from '@/components/app-shell/app-shell';
 import { AppSidebar } from '@/components/app-shell/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-shell/app-sidebar-header';
+import SkipToContent from '@/components/skip-to-content';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/features/notifications/notification-bell';
 import { useTranslation } from '@/hooks/use-translation';
@@ -18,10 +19,15 @@ export default function AppSidebarLayout({
 
     return (
         <AppShell variant="sidebar">
-            {/* Real-time inbox refresh when a client finishes a questionnaire. */}
+            <SkipToContent />
             <WorkspaceNotifications />
             <AppSidebar />
-            <AppContent variant="sidebar" className="overflow-x-hidden">
+            <AppContent
+                id="main-content"
+                variant="sidebar"
+                className="overflow-x-hidden"
+                tabIndex={-1}
+            >
                 <AppSidebarHeader
                     breadcrumbs={breadcrumbs}
                     actions={

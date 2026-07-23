@@ -49,6 +49,7 @@ export default function ManageTwoFactor(props: Props) {
     return (
         <div className="space-y-6">
             <Heading
+                level={2}
                 variant="small"
                 title={t('Two-factor authentication')}
                 description={t(

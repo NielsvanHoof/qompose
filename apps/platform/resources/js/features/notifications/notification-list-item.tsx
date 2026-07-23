@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import type { WorkspaceNotification } from '@/features/notifications/types';
 import type { Firm } from '@/features/workspaces/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { formatDateTime } from '@/lib/format-date-time';
 import { cn } from '@/lib/utils';
 import { read as readNotification } from '@/routes/workspaces/notifications';
 
@@ -15,7 +16,7 @@ export default function NotificationListItem({
     notification: WorkspaceNotification;
     workspace: Firm;
 }) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const isUnread = notification.read_at === null;
 
     const message = t(':client finished the questionnaire for “:dossier”.', {
@@ -76,8 +77,8 @@ export default function NotificationListItem({
                 </span>
             </div>
             {notification.created_at && (
-                <span className="pl-3.5 text-xs text-muted-foreground">
-                    {new Date(notification.created_at).toLocaleString()}
+                <span className="pl-3.5 font-data text-xs text-muted-foreground">
+                    {formatDateTime(notification.created_at, locale)}
                 </span>
             )}
         </button>

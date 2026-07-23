@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import AppLogoIcon from '@/components/app-shell/app-logo-icon';
 import BrandHeroPanel from '@/components/brand-hero-panel';
+import SkipToContent from '@/components/skip-to-content';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
@@ -15,6 +16,7 @@ export default function AuthSplitLayout({
 
     return (
         <div className="relative grid min-h-svh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
+            <SkipToContent />
             <BrandHeroPanel className="relative hidden h-full p-10 lg:flex dark:border-r">
                 <Link
                     href={dashboard()}
@@ -43,19 +45,26 @@ export default function AuthSplitLayout({
                 <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
                     <Link
                         href={dashboard()}
+                        aria-label={name}
                         className="relative z-20 flex items-center justify-center lg:hidden"
                     >
                         <div className="flex size-12 items-center justify-center rounded-md bg-primary text-primary-foreground sm:size-14">
                             <AppLogoIcon className="size-7 text-primary-foreground sm:size-8" />
                         </div>
                     </Link>
-                    <div className="flex flex-col items-start gap-2 text-left sm:items-center sm:text-center">
-                        <h1 className="text-xl font-medium">{title}</h1>
-                        <p className="text-sm text-balance text-muted-foreground">
-                            {description}
-                        </p>
+                    <div
+                        id="main-content"
+                        tabIndex={-1}
+                        className="flex flex-col justify-center space-y-6"
+                    >
+                        <div className="flex flex-col items-start gap-2 text-left sm:items-center sm:text-center">
+                            <h1 className="text-xl font-medium">{title}</h1>
+                            <p className="text-sm text-balance text-muted-foreground">
+                                {description}
+                            </p>
+                        </div>
+                        {children}
                     </div>
-                    {children}
                 </div>
             </div>
         </div>

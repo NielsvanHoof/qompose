@@ -16,6 +16,11 @@ export default defineConfig({
                     weights: [400, 500, 600],
                     optimizedFallbacks: false,
                 }),
+                // Data/meta face for timestamps, counters, and dense document metadata.
+                bunny('IBM Plex Mono', {
+                    weights: [400, 500],
+                    optimizedFallbacks: false,
+                }),
             ],
         }),
         inertia(),

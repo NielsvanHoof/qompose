@@ -32,7 +32,7 @@ export default function ConfirmPassword() {
                     submit: confirmStore(),
                 }}
                 label={t('Confirm with passkey')}
-                loadingLabel={t('Confirming...')}
+                loadingLabel={t('Confirming…')}
                 separator={t('Or confirm with password')}
             />
 
