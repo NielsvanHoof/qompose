@@ -10,9 +10,11 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Support\Facades\Log;
 use JsonException;
 use Throwable;
 
+use function count;
 use function is_array;
 use function is_string;
 use function json_decode;
@@ -43,6 +45,12 @@ final class ConsumeTextractResultsCommand extends Command
         $once = $this->option('once');
 
         $this->info("Listening for Textract results on {$queueUrl}");
+        Log::info('OCR: textract:consume listening for results.', [
+            'queue_url' => $queueUrl,
+            'wait_time_seconds' => $waitTime,
+            'max_messages' => $maxMessages,
+            'once' => $once,
+        ]);
 
         do {
             $result = $sqs->receiveMessage([
@@ -62,6 +70,10 @@ final class ConsumeTextractResultsCommand extends Command
                 continue;
             }
 
+            Log::info('OCR: textract:consume received SQS batch.', [
+                'message_count' => count($messages),
+            ]);
+
             foreach ($messages as $message) {
                 if (! is_array($message)) {
                     continue;
@@ -69,12 +81,16 @@ final class ConsumeTextractResultsCommand extends Command
 
                 $receiptHandle = $message['ReceiptHandle'] ?? null;
                 $body = $message['Body'] ?? null;
+                $messageId = is_string($message['MessageId'] ?? null) ? $message['MessageId'] : null;
 
                 if (! is_string($receiptHandle) || $receiptHandle === '') {
                     continue;
                 }
 
                 if (! is_string($body) || $body === '') {
+                    Log::warning('OCR: textract:consume deleted empty SQS body.', [
+                        'sqs_message_id' => $messageId,
+                    ]);
                     $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
 
                     continue;
@@ -89,13 +105,33 @@ final class ConsumeTextractResultsCommand extends Command
                             ? $notification['JobId']
                             : 'unknown';
                         $this->info("Applied Textract result for job {$jobId}");
+                        Log::info('OCR: textract:consume applied and deleted SQS message.', [
+                            'textract_job_id' => $jobId,
+                            'sqs_message_id' => $messageId,
+                            'status' => is_string($notification['Status'] ?? null)
+                                ? $notification['Status']
+                                : null,
+                        ]);
                         $this->deleteMessage($sqs, $queueUrl, $receiptHandle);
                     } else {
                         // Leave non-final statuses visible so another poll can retry.
                         $this->warn('Skipped or deferred Textract SQS message.');
+                        Log::warning('OCR: textract:consume skipped or deferred SQS message.', [
+                            'textract_job_id' => is_string($notification['JobId'] ?? null)
+                                ? $notification['JobId']
+                                : null,
+                            'sqs_message_id' => $messageId,
+                            'status' => is_string($notification['Status'] ?? null)
+                                ? $notification['Status']
+                                : null,
+                        ]);
                     }
                 } catch (Throwable $exception) {
                     $this->error('Failed to apply Textract message: '.$exception->getMessage());
+                    Log::error('OCR: textract:consume failed to apply SQS message.', [
+                        'sqs_message_id' => $messageId,
+                        'error' => $exception->getMessage(),
+                    ]);
                     // Do not delete — visibility timeout will retry / DLQ after max receives.
                 }
             }

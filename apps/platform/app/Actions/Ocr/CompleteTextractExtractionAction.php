@@ -5,31 +5,35 @@ declare(strict_types=1);
 namespace App\Actions\Ocr;
 
 use App\Actions\Audit\LogAuditActivityAction;
-use App\Contracts\Ocr\StructuresDocumentText;
+use App\Contracts\Ocr\DescribesDocumentOverview;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\Tenant;
 use App\Models\UploadedDocument;
-use App\Services\Ocr\Normalization\TextractLineTextExtractor;
+use App\Services\Ocr\Normalization\FieldSensitivityClassifier;
+use App\Services\Ocr\Normalization\TextractFormsTablesMapper;
+use App\Services\Ocr\Textract\TextractJobBlockFetcher;
 use App\Tenancy\TenantContext;
-use Aws\Textract\TextractClient;
+use Illuminate\Support\Facades\Log;
 use JsonException;
 use RuntimeException;
 
+use function count;
 use function is_array;
 use function is_string;
 use function json_encode;
 
 /**
- * Applies a Textract DetectDocumentText SNS completion to an UploadedDocument.
- * Fetches LINE text, structures it with Bedrock, stores JSON in extracted_text.
+ * Applies a Textract AnalyzeDocument SNS completion to an UploadedDocument.
+ * Maps FORMS/TABLES, asks Bedrock for overview metadata, tags PII, stores JSON.
  */
 final class CompleteTextractExtractionAction
 {
     public function __construct(
-        private readonly TextractClient $textract,
-        private readonly TextractLineTextExtractor $lineTextExtractor,
-        private readonly StructuresDocumentText $structuresDocumentText,
+        private readonly TextractJobBlockFetcher $blockFetcher,
+        private readonly TextractFormsTablesMapper $formsTablesMapper,
+        private readonly DescribesDocumentOverview $describesDocumentOverview,
+        private readonly FieldSensitivityClassifier $fieldSensitivityClassifier,
         private readonly LogAuditActivityAction $logAuditActivity,
         private readonly TenantContext $tenantContext,
     ) {}
@@ -43,16 +47,28 @@ final class CompleteTextractExtractionAction
         $status = $notification['Status'] ?? null;
 
         if (! is_string($jobId) || $jobId === '') {
+            Log::warning('OCR: Textract completion ignored — missing JobId.');
+
             return false;
         }
 
         if (! is_string($status) || $status === '') {
+            Log::warning('OCR: Textract completion ignored — missing Status.', [
+                'textract_job_id' => $jobId,
+            ]);
+
             return false;
         }
 
-        // Ignore AnalyzeDocument (or other APIs) if the SNS topic is shared later.
+        // Only AnalyzeDocument completions — ignore legacy DetectDocumentText jobs.
         $api = $notification['API'] ?? null;
-        if (is_string($api) && $api !== '' && $api !== 'StartDocumentTextDetection') {
+        if (is_string($api) && $api !== '' && $api !== 'StartDocumentAnalysis') {
+            Log::info('OCR: Textract completion ignored — unexpected API.', [
+                'textract_job_id' => $jobId,
+                'status' => $status,
+                'api' => $api,
+            ]);
+
             return false;
         }
 
@@ -62,23 +78,52 @@ final class CompleteTextractExtractionAction
             ->first();
 
         if (! $document instanceof UploadedDocument) {
+            // Common when SQS still has old messages or a job was re-started with a new id.
+            Log::warning('OCR: Textract completion has no matching uploaded document.', [
+                'textract_job_id' => $jobId,
+                'status' => $status,
+                'api' => is_string($api) ? $api : null,
+            ]);
+
             return false;
         }
 
         // SQS consumer has no HTTP tenant context — switch for audits and scoped queries.
         $tenant = Tenant::query()->find($document->tenant_id);
         if (! $tenant instanceof Tenant) {
+            Log::error('OCR: Textract completion document has missing tenant.', [
+                'uploaded_document_id' => $document->id,
+                'tenant_id' => $document->tenant_id,
+                'textract_job_id' => $jobId,
+            ]);
+
             return false;
         }
 
         return $this->tenantContext->runForTenant($tenant, function () use ($document, $notification, $jobId, $status): bool {
             // Idempotent: never overwrite a finished extraction.
             if ($document->processing_status === DocumentProcessingStatus::Completed) {
+                Log::info('OCR: Textract completion already applied — skipping.', [
+                    'uploaded_document_id' => $document->id,
+                    'tenant_id' => $document->tenant_id,
+                    'textract_job_id' => $jobId,
+                ]);
+
                 return true;
             }
 
+            Log::info('OCR: applying Textract completion notification.', [
+                'uploaded_document_id' => $document->id,
+                'tenant_id' => $document->tenant_id,
+                'textract_job_id' => $jobId,
+                'status' => $status,
+                'original_filename' => $document->original_filename,
+            ]);
+
             if ($status === 'SUCCEEDED') {
-                $extractedJson = $this->fetchExtractedJson($jobId);
+                $startedAt = hrtime(true);
+                $extractedJson = $this->fetchExtractedJson($jobId, $document);
+                $durationMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
 
                 $document->forceFill([
                     'processing_status' => DocumentProcessingStatus::Completed,
@@ -97,6 +142,14 @@ final class CompleteTextractExtractionAction
                     ],
                     includeRequestContext: false,
                 );
+
+                Log::info('OCR: Textract extraction completed successfully.', [
+                    'uploaded_document_id' => $document->id,
+                    'tenant_id' => $document->tenant_id,
+                    'textract_job_id' => $jobId,
+                    'extracted_length' => mb_strlen($extractedJson),
+                    'duration_ms' => $durationMs,
+                ]);
 
                 return true;
             }
@@ -124,58 +177,52 @@ final class CompleteTextractExtractionAction
                     includeRequestContext: false,
                 );
 
+                Log::error('OCR: Textract job reported FAILED.', [
+                    'uploaded_document_id' => $document->id,
+                    'tenant_id' => $document->tenant_id,
+                    'textract_job_id' => $jobId,
+                    'error' => $error,
+                ]);
+
                 return true;
             }
 
             // IN_PROGRESS / PARTIAL_SUCCESS — leave message for a later poll if needed.
+            Log::info('OCR: Textract completion deferred — non-final status.', [
+                'uploaded_document_id' => $document->id,
+                'tenant_id' => $document->tenant_id,
+                'textract_job_id' => $jobId,
+                'status' => $status,
+            ]);
+
             return false;
         });
     }
 
-    private function fetchExtractedJson(string $jobId): string
+    private function fetchExtractedJson(string $jobId, UploadedDocument $document): string
     {
-        $blocks = [];
-        $nextToken = null;
+        $blocks = $this->blockFetcher->fetch($jobId);
+        $structured = $this->formsTablesMapper->map($blocks);
 
-        do {
-            $params = ['JobId' => $jobId];
+        // Counts only — never log field values (may contain BSN / account numbers).
+        $fieldCount = is_array($structured['fields'] ?? null) ? count($structured['fields']) : 0;
+        $tableCount = is_array($structured['tables'] ?? null) ? count($structured['tables']) : 0;
 
-            // Pagination token is only set after the first page.
-            if ($nextToken !== null) {
-                $params['NextToken'] = $nextToken;
-            }
+        Log::info('OCR: mapped Textract FORMS/TABLES — calling Bedrock overview.', [
+            'uploaded_document_id' => $document->id,
+            'tenant_id' => $document->tenant_id,
+            'textract_job_id' => $jobId,
+            'block_count' => count($blocks),
+            'field_count' => $fieldCount,
+            'table_count' => $tableCount,
+        ]);
 
-            $result = $this->textract->getDocumentTextDetection($params);
-            $jobStatus = $result->get('JobStatus');
+        $overview = $this->describesDocumentOverview->describe($structured);
 
-            if ($jobStatus === 'FAILED') {
-                $statusMessage = $result->get('StatusMessage');
-
-                throw new RuntimeException(
-                    is_string($statusMessage) && $statusMessage !== ''
-                        ? $statusMessage
-                        : 'Textract GetDocumentTextDetection failed.',
-                );
-            }
-
-            $pageBlocks = $result->get('Blocks');
-
-            if (is_array($pageBlocks)) {
-                foreach ($pageBlocks as $block) {
-                    if (is_array($block)) {
-                        /** @var array<string, mixed> $block */
-                        $blocks[] = $block;
-                    }
-                }
-            }
-
-            // Normalize AWS NextToken to null when missing/empty so the loop type stays ?string.
-            $token = $result->get('NextToken');
-            $nextToken = is_string($token) && $token !== '' ? $token : null;
-        } while ($nextToken !== null);
-
-        $plainText = $this->lineTextExtractor->extract($blocks);
-        $structured = $this->structuresDocumentText->structure($plainText);
+        $structured['document_type'] = $overview['document_type'];
+        $structured['summary'] = $overview['summary'];
+        $structured['notes'] = $overview['notes'];
+        $structured = $this->fieldSensitivityClassifier->classify($structured);
 
         try {
             return json_encode(

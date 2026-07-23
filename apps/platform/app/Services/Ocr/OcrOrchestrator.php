@@ -10,6 +10,7 @@ use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
 use App\Enums\OcrProcessingOutcome;
 use App\Models\UploadedDocument;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Orchestrates OCR start and immediate completion audit logging.
@@ -24,6 +25,13 @@ final class OcrOrchestrator
 
     public function startProcessing(UploadedDocument $document): OcrProcessingOutcome
     {
+        Log::info('OCR: orchestrator starting document processing.', [
+            'uploaded_document_id' => $document->id,
+            'tenant_id' => $document->tenant_id,
+            'original_filename' => $document->original_filename,
+            'processing_status' => $document->processing_status->value,
+        ]);
+
         $this->logAuditActivity->handle(
             AuditEvent::DocumentProcessingStarted,
             $document,
@@ -45,8 +53,23 @@ final class OcrOrchestrator
                 includeRequestContext: false,
             );
 
+            Log::info('OCR: orchestrator completed immediately (sync driver).', [
+                'uploaded_document_id' => $document->id,
+                'tenant_id' => $document->tenant_id,
+                'outcome' => OcrProcessingOutcome::Immediate->value,
+                'extracted_length' => mb_strlen((string) $document->extracted_text),
+            ]);
+
             return OcrProcessingOutcome::Immediate;
         }
+
+        Log::info('OCR: orchestrator deferred — waiting for async provider completion.', [
+            'uploaded_document_id' => $document->id,
+            'tenant_id' => $document->tenant_id,
+            'outcome' => OcrProcessingOutcome::Deferred->value,
+            'textract_job_id' => $document->textract_job_id,
+            'processing_status' => $document->processing_status->value,
+        ]);
 
         return OcrProcessingOutcome::Deferred;
     }

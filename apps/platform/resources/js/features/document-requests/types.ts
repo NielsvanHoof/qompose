@@ -22,9 +22,22 @@ export type UploadedDocument = {
 };
 
 /** Parsed Bedrock-structured OCR payload on the extraction page. */
+export type ExtractionFieldSensitivity =
+    | 'bsn'
+    | 'iban'
+    | 'id_number'
+    | 'account_number'
+    | 'date_of_birth'
+    | 'email'
+    | 'phone';
+
 export type DocumentExtractionField = {
     label: string;
     value: string | string[];
+    /** Textract LINE match score 0–1, or null when unmatched / legacy. */
+    confidence: number | null;
+    /** PII category for UI masking, or null when not sensitive. */
+    sensitivity: ExtractionFieldSensitivity | null;
 };
 
 export type DocumentExtractionTable = {
@@ -39,6 +52,8 @@ export type DocumentExtraction = {
     fields: DocumentExtractionField[];
     tables: DocumentExtractionTable[];
     notes: string[];
+    /** Average Textract LINE confidence 0–1, or null when unknown. */
+    confidence: number | null;
 };
 
 /** Document request as shown on the staff dossier page. */

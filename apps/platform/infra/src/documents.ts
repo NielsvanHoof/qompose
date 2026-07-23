@@ -10,7 +10,7 @@ export interface DocumentInfrastructure {
 }
 
 /**
- * Async Textract DetectDocumentText plumbing: S3 documents + SNS → SQS.
+ * Async Textract AnalyzeDocument (FORMS + TABLES) plumbing: S3 documents + SNS → SQS.
  * App processes (Sail / local) poll the results queue — no ECS consumer.
  */
 export function createDocumentInfrastructure(

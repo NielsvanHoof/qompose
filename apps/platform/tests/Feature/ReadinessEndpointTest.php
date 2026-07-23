@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use App\Contracts\Production\ChecksReadiness;
+use App\Models\Tenant;
 use Illuminate\Console\Scheduling\Schedule;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
 use Spatie\Health\Checks\Checks\QueueCheck;
 use Spatie\Health\Checks\Checks\RedisCheck;
 use Spatie\Health\Checks\Checks\ScheduleCheck;
 use Spatie\Health\Facades\Health;
+use Spatie\Health\Jobs\HealthQueueJob;
 
 test('readiness succeeds when production dependencies are available', function (): void {
     app()->bind(ChecksReadiness::class, fn (): ChecksReadiness => new class implements ChecksReadiness
@@ -83,4 +85,17 @@ test('retention and pruning tasks are scheduled', function (): void {
         ->toContain('retention:prune-notifications')
         ->toContain('retention:purge-legal')
         ->toContain('activitylog:clean');
+});
+
+// Scheduler-dispatched queue heartbeats have no tenant; they must not be tenant-aware.
+test('health queue heartbeat job is not tenant aware', function (): void {
+    expect(config('multitenancy.not_tenant_aware_jobs'))
+        ->toContain(HealthQueueJob::class);
+});
+
+// Sync queue processes HealthQueueJob immediately; this used to throw CurrentTenantCouldNotBeDeterminedInTenantAwareJob.
+test('health queue heartbeat succeeds without a current tenant', function (): void {
+    Tenant::forgetCurrent();
+
+    $this->artisan('health:queue-check-heartbeat')->assertSuccessful();
 });

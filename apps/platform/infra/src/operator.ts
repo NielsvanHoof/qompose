@@ -40,8 +40,8 @@ export function createOcrOperatorAccess(
         resources: [bucketObjects],
       }, {
         actions: [
-          "textract:StartDocumentTextDetection",
-          "textract:GetDocumentTextDetection",
+          "textract:StartDocumentAnalysis",
+          "textract:GetDocumentAnalysis",
         ],
         resources: ["*"],
       }, {

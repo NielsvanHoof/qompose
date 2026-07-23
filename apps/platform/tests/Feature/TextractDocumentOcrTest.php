@@ -14,6 +14,8 @@ use App\Services\Ocr\OcrOrchestrator;
 use Aws\Result;
 use Aws\Textract\TextractClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Event;
 
 uses(RefreshDatabase::class);
 
@@ -28,15 +30,17 @@ beforeEach(function () {
 });
 
 test('textract start persists job id and leaves document processing', function () {
+    Event::fake([MessageLogged::class]);
+
     $uploaded = createUploadedDocumentForTextractTest();
 
     $textract = Mockery::mock(TextractClient::class);
-    $textract->shouldReceive('startDocumentTextDetection')
+    $textract->shouldReceive('startDocumentAnalysis')
         ->once()
         ->with(Mockery::on(function (array $args) use ($uploaded): bool {
             return ($args['DocumentLocation']['S3Object']['Bucket'] ?? null) === 'test-documents'
                 && ($args['DocumentLocation']['S3Object']['Name'] ?? null) === $uploaded->path
-                && ! array_key_exists('FeatureTypes', $args)
+                && ($args['FeatureTypes'] ?? null) === ['FORMS', 'TABLES']
                 && ($args['NotificationChannel']['SNSTopicArn'] ?? null) === 'arn:aws:sns:eu-west-1:123:textract'
                 && ($args['NotificationChannel']['RoleArn'] ?? null) === 'arn:aws:iam::123:role/textract-sns'
                 && ($args['JobTag'] ?? null) === (string) $uploaded->id;
@@ -56,6 +60,14 @@ test('textract start persists job id and leaves document processing', function (
         ->and($uploaded->textract_job_id)->toBe('textract-job-abc')
         ->and($uploaded->extracted_text)->toBeNull()
         ->and($uploaded->processing_finished_at)->toBeNull();
+
+    Event::assertDispatched(MessageLogged::class, fn (MessageLogged $log): bool => $log->level === 'info'
+        && str_contains($log->message, 'OCR: Textract job started — awaiting SNS/SQS completion.')
+        && ($log->context['textract_job_id'] ?? null) === 'textract-job-abc');
+
+    Event::assertDispatched(MessageLogged::class, fn (MessageLogged $log): bool => $log->level === 'info'
+        && str_contains($log->message, 'OCR: orchestrator deferred')
+        && ($log->context['textract_job_id'] ?? null) === 'textract-job-abc');
 });
 
 /**

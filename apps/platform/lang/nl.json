@@ -630,5 +630,6 @@
     "You have been invited": "Je bent uitgenodigd",
     "You have been invited as :role.": "Je bent uitgenodigd als :role.",
     "with :email, then return to this page.": "met :email, en keer daarna terug naar deze pagina.",
-    "you": "jij"
+    "you": "jij",
+    "OCR confidence": "OCR-betrouwbaarheid"
 }

@@ -1,4 +1,7 @@
+import { Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 import EmptyState from '@/components/empty-state';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Collapsible,
@@ -9,11 +12,13 @@ import type {
     DocumentExtraction,
     DocumentExtractionField,
     DocumentExtractionTable,
+    ExtractionFieldSensitivity,
 } from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 
 /**
  * Renders Bedrock-structured OCR fields, tables, and notes, with raw JSON collapsed.
+ * Sensitive fields start masked; confidence badges use Textract LINE match scores.
  */
 export default function DocumentExtractionView({
     extraction,
@@ -23,6 +28,10 @@ export default function DocumentExtractionView({
     rawJson: string | null;
 }) {
     const { t } = useTranslation();
+    // Per-field reveal toggles — keys are stable field fingerprints.
+    const [revealedFields, setRevealedFields] = useState<
+        Record<string, boolean>
+    >({});
 
     if (extraction === null && (rawJson === null || rawJson === '')) {
         return (
@@ -37,6 +46,7 @@ export default function DocumentExtractionView({
     const notes = extraction?.notes ?? [];
     const documentType = extraction?.document_type ?? null;
     const summary = extraction?.summary ?? null;
+    const documentConfidence = extraction?.confidence ?? null;
     // Build stable keys once so list keys are not bare map indexes.
     const keyedFields = keyedFieldsList(fields);
     const keyedTables = keyedTablesList(tables);
@@ -44,7 +54,9 @@ export default function DocumentExtractionView({
 
     return (
         <div className="space-y-8">
-            {(documentType !== null || summary !== null) && (
+            {(documentType !== null ||
+                summary !== null ||
+                documentConfidence !== null) && (
                 <section className="space-y-2">
                     <h2 className="text-lg font-semibold tracking-tight">
                         {t('Overview')}
@@ -56,6 +68,14 @@ export default function DocumentExtractionView({
                                 {t('Type')}:
                             </span>{' '}
                             {documentType}
+                        </p>
+                    )}
+                    {documentConfidence !== null && (
+                        <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                            <span className="font-medium text-foreground">
+                                {t('OCR confidence')}:
+                            </span>
+                            <ConfidenceBadge confidence={documentConfidence} />
                         </p>
                     )}
                     {summary !== null && (
@@ -72,20 +92,78 @@ export default function DocumentExtractionView({
                     <EmptyState title={t('No form fields detected.')} />
                 ) : (
                     <dl className="divide-y rounded-md border">
-                        {keyedFields.map(({ field, key }) => (
-                            <div
-                                key={key}
-                                className="grid gap-1 px-3 py-2 sm:grid-cols-[minmax(8rem,14rem)_1fr] sm:gap-4"
-                            >
-                                {/* OCR field labels are document content — do not translate. */}
-                                <dt className="text-sm font-medium text-muted-foreground">
-                                    {field.label}
-                                </dt>
-                                <dd className="text-sm whitespace-pre-wrap">
-                                    {formatFieldValue(field.value)}
-                                </dd>
-                            </div>
-                        ))}
+                        {keyedFields.map(({ field, key }) => {
+                            const isSensitive = field.sensitivity !== null;
+                            const isRevealed = revealedFields[key] === true;
+                            const showValue = !isSensitive || isRevealed;
+
+                            return (
+                                <div
+                                    key={key}
+                                    className="grid gap-1 px-3 py-2 sm:grid-cols-[minmax(8rem,14rem)_1fr] sm:gap-4"
+                                >
+                                    {/* OCR field labels are document content — do not translate. */}
+                                    <dt className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted-foreground">
+                                        <span>{field.label}</span>
+                                        {isSensitive && (
+                                            <Badge variant="outline">
+                                                {sensitivityLabel(
+                                                    field.sensitivity,
+                                                    t,
+                                                )}
+                                            </Badge>
+                                        )}
+                                    </dt>
+                                    <dd className="flex flex-wrap items-start gap-2 text-sm">
+                                        <span className="min-w-0 flex-1 whitespace-pre-wrap">
+                                            {showValue
+                                                ? formatFieldValue(field.value)
+                                                : maskFieldValue(field.value)}
+                                        </span>
+                                        <span className="flex shrink-0 items-center gap-1">
+                                            {field.confidence !== null && (
+                                                <ConfidenceBadge
+                                                    confidence={
+                                                        field.confidence
+                                                    }
+                                                />
+                                            )}
+                                            {isSensitive && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 px-2"
+                                                    onClick={() =>
+                                                        setRevealedFields(
+                                                            (current) => ({
+                                                                ...current,
+                                                                [key]: !isRevealed,
+                                                            }),
+                                                        )
+                                                    }
+                                                    aria-label={
+                                                        isRevealed
+                                                            ? t(
+                                                                  'Hide sensitive value',
+                                                              )
+                                                            : t(
+                                                                  'Reveal sensitive value',
+                                                              )
+                                                    }
+                                                >
+                                                    {isRevealed ? (
+                                                        <EyeOff className="size-3.5" />
+                                                    ) : (
+                                                        <Eye className="size-3.5" />
+                                                    )}
+                                                </Button>
+                                            )}
+                                        </span>
+                                    </dd>
+                                </div>
+                            );
+                        })}
                     </dl>
                 )}
             </section>
@@ -208,8 +286,61 @@ export default function DocumentExtractionView({
     );
 }
 
+function ConfidenceBadge({ confidence }: { confidence: number }) {
+    const { t } = useTranslation();
+    const percent = Math.round(confidence * 100);
+    // Soft visual cue: low OCR scores need human review.
+    const variant =
+        confidence < 0.8
+            ? 'destructive'
+            : confidence < 0.9
+              ? 'outline'
+              : 'secondary';
+
+    return (
+        <Badge variant={variant} title={t('OCR confidence from Textract')}>
+            {percent}%
+        </Badge>
+    );
+}
+
+function sensitivityLabel(
+    sensitivity: ExtractionFieldSensitivity | null,
+    t: (key: string) => string,
+): string {
+    switch (sensitivity) {
+        case 'bsn':
+            return t('BSN');
+        case 'iban':
+            return t('IBAN');
+        case 'id_number':
+            return t('ID number');
+        case 'account_number':
+            return t('Account number');
+        case 'date_of_birth':
+            return t('Date of birth');
+        case 'email':
+            return t('Email');
+        case 'phone':
+            return t('Phone');
+        default:
+            return t('Sensitive');
+    }
+}
+
 function formatFieldValue(value: string | string[]): string {
     return Array.isArray(value) ? value.join(', ') : value;
+}
+
+/** Bullet mask — keep length hint without leaking digits. */
+function maskFieldValue(value: string | string[]): string {
+    if (Array.isArray(value)) {
+        return value.map(() => '••••••••').join(', ');
+    }
+
+    const length = Math.min(Math.max(value.length, 4), 12);
+
+    return '•'.repeat(length);
 }
 
 function formatRawJson(raw: string): string {

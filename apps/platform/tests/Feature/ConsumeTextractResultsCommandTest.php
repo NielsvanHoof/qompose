@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Contracts\Ocr\StructuresDocumentText;
+use App\Contracts\Ocr\DescribesDocumentOverview;
 use App\Enums\DocumentProcessingStatus;
 use App\Models\Client;
 use App\Models\DocumentRequest;
@@ -47,7 +47,7 @@ test('textract consume command applies sns envelope and deletes the message', fu
         'Message' => json_encode([
             'JobId' => 'job-from-sqs',
             'Status' => 'SUCCEEDED',
-            'API' => 'StartDocumentTextDetection',
+            'API' => 'StartDocumentAnalysis',
         ], JSON_THROW_ON_ERROR),
     ], JSON_THROW_ON_ERROR);
 
@@ -71,42 +71,59 @@ test('textract consume command applies sns envelope and deletes the message', fu
         ->andReturn(new Result([]));
 
     $textract = Mockery::mock(TextractClient::class);
-    $textract->shouldReceive('getDocumentTextDetection')
+    $textract->shouldReceive('getDocumentAnalysis')
         ->once()
         ->with(['JobId' => 'job-from-sqs'])
         ->andReturn(new Result([
             'JobStatus' => 'SUCCEEDED',
             'Blocks' => [
-                ['Id' => 'line-1', 'BlockType' => 'LINE', 'Page' => 1, 'Text' => 'From SQS'],
+                [
+                    'Id' => 'key-1',
+                    'BlockType' => 'KEY_VALUE_SET',
+                    'EntityTypes' => ['KEY'],
+                    'Relationships' => [
+                        ['Type' => 'CHILD', 'Ids' => ['word-key']],
+                        ['Type' => 'VALUE', 'Ids' => ['value-1']],
+                    ],
+                ],
+                [
+                    'Id' => 'value-1',
+                    'BlockType' => 'KEY_VALUE_SET',
+                    'EntityTypes' => ['VALUE'],
+                    'Confidence' => 90.0,
+                    'Relationships' => [
+                        ['Type' => 'CHILD', 'Ids' => ['word-value']],
+                    ],
+                ],
+                ['Id' => 'word-key', 'BlockType' => 'WORD', 'Text' => 'From'],
+                ['Id' => 'word-value', 'BlockType' => 'WORD', 'Text' => 'SQS'],
             ],
         ]));
 
-    $structures = Mockery::mock(StructuresDocumentText::class);
-    $structures->shouldReceive('structure')
+    $overview = Mockery::mock(DescribesDocumentOverview::class);
+    $overview->shouldReceive('describe')
         ->once()
-        ->with(Mockery::on(fn (string $text): bool => str_contains($text, 'From SQS')))
         ->andReturn([
             'document_type' => null,
             'summary' => null,
-            'fields' => [
-                ['label' => 'From', 'value' => 'SQS'],
-            ],
-            'tables' => [],
             'notes' => [],
         ]);
 
     $this->app->instance(SqsClient::class, $sqs);
     $this->app->instance(TextractClient::class, $textract);
-    $this->app->instance(StructuresDocumentText::class, $structures);
+    $this->app->instance(DescribesDocumentOverview::class, $overview);
 
     $this->artisan('textract:consume', ['--once' => true])
         ->assertSuccessful();
 
     $uploaded->refresh();
 
-    /** @var array{fields: list<array{label: string, value: string}>} $payload */
+    /** @var array{fields: list<array{label: string, value: string, confidence: float|null, sensitivity: string|null}>} $payload */
     $payload = json_decode((string) $uploaded->extracted_text, true, 512, JSON_THROW_ON_ERROR);
 
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Completed)
-        ->and($payload['fields'][0])->toBe(['label' => 'From', 'value' => 'SQS']);
+        ->and($payload['fields'][0]['label'])->toBe('From')
+        ->and($payload['fields'][0]['value'])->toBe('SQS')
+        ->and($payload['fields'][0]['confidence'])->toBe(0.9)
+        ->and($payload['fields'][0]['sensitivity'])->toBeNull();
 });

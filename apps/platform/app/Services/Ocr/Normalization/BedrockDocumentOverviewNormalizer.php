@@ -4,25 +4,28 @@ declare(strict_types=1);
 
 namespace App\Services\Ocr\Normalization;
 
-use App\Contracts\Ocr\StructuresDocumentText;
+use App\Contracts\Ocr\DescribesDocumentOverview;
+use App\Contracts\Ocr\DocumentExtraction;
 use Aws\BedrockRuntime\BedrockRuntimeClient;
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Support\Facades\Log;
 use JsonException;
 use RuntimeException;
 
 use function is_array;
 use function is_string;
 use function json_decode;
+use function mb_strlen;
+use function count;
 
 /**
- * Asks Bedrock to group OCR line text into our extraction schema.
- * Supports Claude and OpenAI gpt-oss (reasoning + text content blocks).
+ * Asks Bedrock for document_type / summary / notes only.
+ * Fields and tables stay Textract-owned so confidence is preserved.
  *
- * @phpstan-import-type DocumentExtractionField from StructuresDocumentText
- * @phpstan-import-type DocumentExtractionTable from StructuresDocumentText
- * @phpstan-import-type DocumentExtractionPayload from StructuresDocumentText
+ * @phpstan-import-type DocumentExtractionPayload from DocumentExtraction
+ * @phpstan-import-type DocumentOverview from DocumentExtraction
  */
-final class BedrockDocumentStructureNormalizer implements StructuresDocumentText
+final class BedrockDocumentOverviewNormalizer implements DescribesDocumentOverview
 {
     public function __construct(
         private readonly BedrockRuntimeClient $bedrock,
@@ -30,14 +33,17 @@ final class BedrockDocumentStructureNormalizer implements StructuresDocumentText
     ) {}
 
     /**
-     * @return DocumentExtractionPayload
+     * @param  DocumentExtractionPayload  $payload
+     * @return DocumentOverview
      */
-    public function structure(string $plainText): array
+    public function describe(array $payload): array
     {
-        $trimmed = mb_trim($plainText);
+        $context = $this->buildContext($payload);
 
-        if ($trimmed === '') {
-            return $this->emptyPayload();
+        if ($context === '') {
+            Log::info('OCR: Bedrock overview skipped — empty Textract context.');
+
+            return $this->emptyOverview();
         }
 
         $modelId = $this->config->get('ocr.bedrock.model_id');
@@ -57,29 +63,44 @@ final class BedrockDocumentStructureNormalizer implements StructuresDocumentText
                 [
                     'role' => 'user',
                     'content' => [
-                        ['text' => $this->userPrompt($trimmed)],
+                        ['text' => $this->userPrompt($context)],
                     ],
                 ],
             ],
             'inferenceConfig' => [
-                // GPT-OSS spends tokens on reasoning first — keep headroom for JSON.
-                'maxTokens' => max(1024, $maxTokens),
+                'maxTokens' => max(512, min(2048, $maxTokens)),
                 'temperature' => max(0.0, min(1.0, $temperature)),
             ],
         ];
 
-        // OpenAI gpt-oss models return reasoningContent + text; keep reasoning light.
         if ($this->usesOpenAiGptOss($modelId)) {
             $converseArgs['additionalModelRequestFields'] = [
                 'reasoning_effort' => 'low',
             ];
         }
 
+        // Context may include PII labels — log length only, never the prompt body.
+        Log::info('OCR: calling Bedrock Converse for document overview.', [
+            'model_id' => $modelId,
+            'context_length' => mb_strlen($context),
+            'max_tokens' => $converseArgs['inferenceConfig']['maxTokens'],
+        ]);
+
+        $startedAt = hrtime(true);
         $result = $this->bedrock->converse($converseArgs);
-
+        $durationMs = (int) round((hrtime(true) - $startedAt) / 1_000_000);
         $text = $this->extractAssistantText($result->toArray());
+        $overview = $this->decodeAndNormalize($text);
 
-        return $this->decodeAndNormalize($text);
+        Log::info('OCR: Bedrock overview completed.', [
+            'model_id' => $modelId,
+            'duration_ms' => $durationMs,
+            'document_type' => $overview['document_type'],
+            'note_count' => count($overview['notes']),
+            'response_length' => mb_strlen($text),
+        ]);
+
+        return $overview;
     }
 
     private function usesOpenAiGptOss(string $modelId): bool
@@ -90,32 +111,54 @@ final class BedrockDocumentStructureNormalizer implements StructuresDocumentText
     private function systemPrompt(): string
     {
         return <<<'PROMPT'
-You structure OCR text from Dutch and international financial/identity documents
+You classify OCR extractions from Dutch and international financial/identity documents
 (payslips, bank statements, invoices, ID cards, tax forms).
 
 Return ONLY valid JSON matching this schema (no markdown fences, no commentary):
 {
   "document_type": string|null,
   "summary": string|null,
-  "fields": [{"label": string, "value": string|string[]}],
-  "tables": [{"title": string|null, "headers": string[], "rows": string[][]}],
   "notes": string[]
 }
 
 Rules:
 - document_type: short snake_case label when clear (payslip, bank_statement, invoice, identity, tax_form, other), else null.
 - summary: one short sentence describing the document, or null.
-- fields: label/value pairs. Prefer human labels from the document. Duplicate labels become a string array value.
-- tables: reconstruct tabular data; use headers when obvious, otherwise empty headers and put all rows in rows.
-- notes: short caveats (illegible areas, contradictions). Empty array when none.
-- Do not invent values that are not present in the OCR text.
-- Keep original language for labels and values.
+- notes: short caveats about the extraction quality. Empty array when none.
+- Do not invent field values. Do not return fields or tables.
+- Keep summary language matching the document when obvious (Dutch documents → Dutch summary).
 PROMPT;
     }
 
-    private function userPrompt(string $plainText): string
+    private function userPrompt(string $context): string
     {
-        return "OCR text to structure:\n\n{$plainText}";
+        return "Extracted form fields and table outlines:\n\n{$context}";
+    }
+
+    /**
+     * Compact context so Bedrock sees labels/values without re-structuring them.
+     *
+     * @param  DocumentExtractionPayload  $payload
+     */
+    private function buildContext(array $payload): string
+    {
+        $lines = [];
+
+        foreach ($payload['fields'] as $field) {
+            $value = $field['value'];
+            $rendered = is_array($value) ? implode(', ', $value) : $value;
+            $lines[] = "- {$field['label']}: {$rendered}";
+        }
+
+        foreach ($payload['tables'] as $index => $table) {
+            $title = $table['title'] ?? null;
+            $label = is_string($title) && $title !== '' ? $title : 'Table '.($index + 1);
+            $headerCount = count($table['headers']);
+            $rowCount = count($table['rows']);
+            $lines[] = "- [{$label}] headers={$headerCount} rows={$rowCount}";
+        }
+
+        return implode("\n", $lines);
     }
 
     /**
@@ -141,7 +184,6 @@ PROMPT;
             throw new RuntimeException('Bedrock Converse response is missing content.');
         }
 
-        // Prefer final answer text blocks. GPT-OSS also emits reasoningContent blocks.
         $answerParts = [];
         $reasoningParts = [];
 
@@ -171,7 +213,6 @@ PROMPT;
             return $joined;
         }
 
-        // Fallback: some SDK shapes only expose reasoning text when maxTokens was too small.
         $joinedReasoning = mb_trim(implode("\n", $reasoningParts));
 
         if ($joinedReasoning !== '') {
@@ -181,18 +222,9 @@ PROMPT;
             );
         }
 
-        $blockKeys = [];
-
-        foreach ($content as $block) {
-            if (is_array($block)) {
-                $blockKeys[] = implode(',', array_keys($block));
-            }
-        }
-
         throw new RuntimeException(
             'Bedrock returned an empty response. stopReason='.
-            (is_string($result['stopReason'] ?? null) ? $result['stopReason'] : 'unknown').
-            ' contentKeys=['.implode('|', $blockKeys).']',
+            (is_string($result['stopReason'] ?? null) ? $result['stopReason'] : 'unknown'),
         );
     }
 
@@ -204,7 +236,6 @@ PROMPT;
         $reasoningContent = $block['reasoningContent'] ?? null;
 
         if (! is_array($reasoningContent)) {
-            // AWS SDK may wrap unknown unions as ['$unknown' => ['reasoning_content', [...]]]
             $unknown = $block['$unknown'] ?? null;
 
             if (is_array($unknown) && ($unknown[0] ?? null) === 'reasoning_content' && is_array($unknown[1] ?? null)) {
@@ -232,7 +263,7 @@ PROMPT;
     }
 
     /**
-     * @return DocumentExtractionPayload
+     * @return DocumentOverview
      */
     private function decodeAndNormalize(string $text): array
     {
@@ -252,15 +283,10 @@ PROMPT;
         return [
             'document_type' => $this->nullableString($decoded['document_type'] ?? null),
             'summary' => $this->nullableString($decoded['summary'] ?? null),
-            'fields' => $this->normalizeFields($decoded['fields'] ?? []),
-            'tables' => $this->normalizeTables($decoded['tables'] ?? []),
             'notes' => $this->normalizeStringList($decoded['notes'] ?? []),
         ];
     }
 
-    /**
-     * Models sometimes wrap JSON in ```json fences despite instructions.
-     */
     private function unwrapJson(string $text): string
     {
         $trimmed = mb_trim($text);
@@ -270,101 +296,6 @@ PROMPT;
         }
 
         return $trimmed;
-    }
-
-    /**
-     * @return list<DocumentExtractionField>
-     */
-    private function normalizeFields(mixed $fields): array
-    {
-        if (! is_array($fields)) {
-            return [];
-        }
-
-        $normalized = [];
-
-        foreach ($fields as $field) {
-            if (! is_array($field)) {
-                continue;
-            }
-
-            $label = $this->nullableString($field['label'] ?? null);
-
-            if ($label === null || $label === '') {
-                continue;
-            }
-
-            $value = $field['value'] ?? '';
-
-            if (is_array($value)) {
-                $values = $this->normalizeStringList($value);
-                $normalized[] = [
-                    'label' => $label,
-                    'value' => $values === [] ? '' : $values,
-                ];
-
-                continue;
-            }
-
-            $normalized[] = [
-                'label' => $label,
-                'value' => is_string($value) ? mb_trim($value) : (string) $value,
-            ];
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * @return list<DocumentExtractionTable>
-     */
-    private function normalizeTables(mixed $tables): array
-    {
-        if (! is_array($tables)) {
-            return [];
-        }
-
-        $normalized = [];
-
-        foreach ($tables as $table) {
-            if (! is_array($table)) {
-                continue;
-            }
-
-            $headers = $this->normalizeStringList($table['headers'] ?? []);
-            $rows = [];
-
-            $rawRows = $table['rows'] ?? [];
-
-            if (is_array($rawRows)) {
-                foreach ($rawRows as $row) {
-                    if (! is_array($row)) {
-                        continue;
-                    }
-
-                    $cells = [];
-
-                    foreach ($row as $cell) {
-                        $cells[] = is_string($cell) ? mb_trim($cell) : (string) $cell;
-                    }
-
-                    $rows[] = $cells;
-                }
-            }
-
-            // Skip empty tables — no headers and no rows.
-            if ($headers === [] && $rows === []) {
-                continue;
-            }
-
-            $normalized[] = [
-                'title' => $this->nullableString($table['title'] ?? null),
-                'headers' => $headers,
-                'rows' => $rows,
-            ];
-        }
-
-        return $normalized;
     }
 
     /**
@@ -405,15 +336,13 @@ PROMPT;
     }
 
     /**
-     * @return DocumentExtractionPayload
+     * @return DocumentOverview
      */
-    private function emptyPayload(): array
+    private function emptyOverview(): array
     {
         return [
             'document_type' => null,
             'summary' => null,
-            'fields' => [],
-            'tables' => [],
             'notes' => [],
         ];
     }

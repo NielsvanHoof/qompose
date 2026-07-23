@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Dossiers;
 use App\Actions\Audit\LogAuditActivityAction;
 use App\Actions\Dossiers\ResolveDocumentTemporaryUrlAction;
 use App\Actions\Dossiers\UploadStaffDocumentAction;
-use App\Contracts\Ocr\StructuresDocumentText;
+use App\Contracts\Ocr\DocumentExtraction;
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreUploadedDocumentRequest;
@@ -23,11 +23,14 @@ use JsonException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use function is_array;
+use function is_float;
+use function is_int;
+use function is_numeric;
 use function is_string;
 use function json_decode;
 
 /**
- * @phpstan-import-type DocumentExtractionPayload from StructuresDocumentText
+ * @phpstan-import-type DocumentExtractionPayload from DocumentExtraction
  */
 final class UploadedDocumentController extends Controller
 {
@@ -166,16 +169,65 @@ final class UploadedDocumentController extends Controller
 
         $documentType = $decoded['document_type'] ?? null;
         $summary = $decoded['summary'] ?? null;
+        $confidence = $decoded['confidence'] ?? null;
 
         /** @var DocumentExtractionPayload $payload */
         $payload = [
             'document_type' => is_string($documentType) ? $documentType : null,
             'summary' => is_string($summary) ? $summary : null,
-            'fields' => array_values($fields),
+            'fields' => $this->normalizeExtractionFields(array_values($fields)),
             'tables' => array_values($tables),
             'notes' => array_values($notes),
+            'confidence' => $this->nullableFloat($confidence),
         ];
 
         return $payload;
+    }
+
+    /**
+     * Normalize field rows into the typed extraction shape for Inertia.
+     *
+     * @param  list<mixed>  $fields
+     * @return list<array{label: string, value: mixed, confidence: float|null, sensitivity: string|null}>
+     */
+    private function normalizeExtractionFields(array $fields): array
+    {
+        $normalized = [];
+
+        foreach ($fields as $field) {
+            if (! is_array($field)) {
+                continue;
+            }
+
+            $label = $field['label'] ?? null;
+
+            if (! is_string($label) || $label === '') {
+                continue;
+            }
+
+            $sensitivity = $field['sensitivity'] ?? null;
+
+            $normalized[] = [
+                'label' => $label,
+                'value' => $field['value'] ?? '',
+                'confidence' => $this->nullableFloat($field['confidence'] ?? null),
+                'sensitivity' => is_string($sensitivity) && $sensitivity !== '' ? $sensitivity : null,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    private function nullableFloat(mixed $value): ?float
+    {
+        if (is_int($value) || is_float($value)) {
+            return round((float) $value, 4);
+        }
+
+        if (is_string($value) && is_numeric($value)) {
+            return round((float) $value, 4);
+        }
+
+        return null;
     }
 }

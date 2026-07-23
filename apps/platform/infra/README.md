@@ -13,11 +13,11 @@ No VPC, ECS, ALB, RDS, Redis, or ECR.
 ```mermaid
 flowchart LR
   Sail[Sail / local app] -->|upload| S3[Documents S3]
-  Sail -->|StartDocumentTextDetection| Textract[Amazon Textract]
+  Sail -->|StartDocumentAnalysis| Textract[Amazon Textract]
   Textract --> Topic[SNS completion]
   Topic --> Queue[SQS results]
   Sail -->|textract:consume| Queue
-  Sail -->|Converse| Bedrock[Bedrock Claude]
+  Sail -->|Converse overview| Bedrock[Bedrock Claude]
   Queue --> DLQ[SQS DLQ]
 ```
 

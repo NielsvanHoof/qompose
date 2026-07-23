@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Contracts\Ocr\DescribesDocumentOverview;
 use App\Contracts\Ocr\StartsDocumentOcr;
-use App\Contracts\Ocr\StructuresDocumentText;
 use App\Contracts\Production\ChecksReadiness;
 use App\Enums\OcrDriver;
 use App\Models\Activity;
@@ -28,7 +28,7 @@ use App\Policies\Tenancy\TenantInvitationPolicy;
 use App\Policies\Tenancy\TenantMembershipPolicy;
 use App\Services\Ocr\Configuration\OcrConfigurationValidator;
 use App\Services\Ocr\Drivers\OcrDriverFactory;
-use App\Services\Ocr\Normalization\BedrockDocumentStructureNormalizer;
+use App\Services\Ocr\Normalization\BedrockDocumentOverviewNormalizer;
 use App\Services\Production\InfrastructureReadinessCheck;
 use App\Services\Production\ProductionConfigurationValidator;
 use Aws\BedrockRuntime\BedrockRuntimeClient;
@@ -126,7 +126,7 @@ final class AppServiceProvider extends ServiceProvider
             return new BedrockRuntimeClient($this->awsClientConfig('ocr.bedrock.region'));
         });
 
-        $this->app->bind(StructuresDocumentText::class, BedrockDocumentStructureNormalizer::class);
+        $this->app->bind(DescribesDocumentOverview::class, BedrockDocumentOverviewNormalizer::class);
 
         $this->app->bind(
             StartsDocumentOcr::class,

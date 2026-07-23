@@ -10,8 +10,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | mock     — sync fake text (CI / offline). Completes inside the upload job.
-    | textract — async AWS Textract StartDocumentTextDetection + SNS/SQS,
-    |            then Bedrock structures the LINE text into JSON.
+    | textract — async AWS Textract StartDocumentAnalysis (FORMS + TABLES) via
+    |            SNS/SQS, then Bedrock fills document_type / summary / notes.
     |
     */
 
@@ -37,11 +37,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Bedrock structuring (Textract driver only)
+    | Bedrock overview (Textract driver only)
     |--------------------------------------------------------------------------
     |
-    | After DetectDocumentText finishes, we send LINE text to Bedrock so Claude
-    | can group fields/tables into our extraction JSON schema.
+    | After FORMS/TABLES are mapped from Textract, Bedrock only classifies
+    | document_type, writes a short summary, and optional notes.
     | Prefer an EU inference profile ID in eu-west-1 (not the bare model ID).
     |
     */

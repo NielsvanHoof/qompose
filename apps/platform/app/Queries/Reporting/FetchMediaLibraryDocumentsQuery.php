@@ -92,6 +92,7 @@ final class FetchMediaLibraryDocumentsQuery extends PaginatedIndexQuery
     {
         return DocumentRequest::query()
             ->where('type', QuestionnaireItemType::File)
+            ->whereHas('dossier')
             ->with([
                 'uploadedDocument',
                 'dossier:id,client_id,title,reference',

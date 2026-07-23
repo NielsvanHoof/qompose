@@ -83,6 +83,49 @@ test('staff can view the media library with pending and uploaded documents', fun
             )));
 });
 
+test('media library excludes document requests from archived dossiers', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $activeDossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Active payroll',
+    ]);
+    $archivedDossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+        'title' => 'Archived payroll',
+    ]);
+
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $activeDossier->id,
+        'title' => 'Active payslip',
+    ]);
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $archivedDossier->id,
+        'title' => 'Archived payslip',
+    ]);
+
+    // Soft-delete mimics archive; media library must not crash or list these rows.
+    $archivedDossier->delete();
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->get(workspaceRoute('workspaces.media.index', $tenant))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('workspaces/media/index')
+            ->has('documents.data', 1)
+            ->where('documents.total', 1)
+            ->where('documents.data.0.title', 'Active payslip'));
+});
+
 test('media library does not include document requests from another tenant', function () {
     $ownerA = User::factory()->create();
     $ownerB = User::factory()->create();

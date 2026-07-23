@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -53,20 +54,44 @@ final class ProcessUploadedDocumentJob implements ShouldQueue
 
         // Idempotency: a completed extraction must never re-run.
         if ($document->processing_status === DocumentProcessingStatus::Completed) {
+            Log::info('OCR: skipped ProcessUploadedDocumentJob — already completed.', [
+                'uploaded_document_id' => $document->id,
+                'tenant_id' => $document->tenant_id,
+            ]);
+
             return;
         }
 
         $claimed = $this->claimForProcessing($document);
 
         if (! $claimed instanceof UploadedDocument) {
+            Log::info('OCR: skipped ProcessUploadedDocumentJob — could not claim document.', [
+                'uploaded_document_id' => $this->uploadedDocumentId,
+            ]);
+
             return;
         }
+
+        Log::info('OCR: ProcessUploadedDocumentJob claimed document.', [
+            'uploaded_document_id' => $claimed->id,
+            'tenant_id' => $claimed->tenant_id,
+            'attempt' => $this->attempts(),
+            'original_filename' => $claimed->original_filename,
+        ]);
 
         try {
             $ocrOrchestrator->startProcessing($claimed);
         } catch (Throwable $exception) {
             // Let the queue retry until tries are exhausted.
             if ($this->attempts() < $this->tries) {
+                Log::warning('OCR: ProcessUploadedDocumentJob failed — will retry.', [
+                    'uploaded_document_id' => $claimed->id,
+                    'tenant_id' => $claimed->tenant_id,
+                    'attempt' => $this->attempts(),
+                    'tries' => $this->tries,
+                    'error' => $exception->getMessage(),
+                ]);
+
                 throw $exception;
             }
 
@@ -75,6 +100,13 @@ final class ProcessUploadedDocumentJob implements ShouldQueue
                 'processing_error' => mb_substr($exception->getMessage(), 0, 500),
                 'processing_finished_at' => now(),
             ])->save();
+
+            Log::error('OCR: ProcessUploadedDocumentJob failed permanently.', [
+                'uploaded_document_id' => $claimed->id,
+                'tenant_id' => $claimed->tenant_id,
+                'attempt' => $this->attempts(),
+                'error' => $claimed->processing_error,
+            ]);
 
             $logAuditActivity->handle(
                 AuditEvent::DocumentProcessingFailed,
