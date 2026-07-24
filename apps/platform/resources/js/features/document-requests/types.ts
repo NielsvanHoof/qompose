@@ -2,8 +2,23 @@
  * Frontend mirror of the backend QuestionnaireItemType enum.
  * Keeping this union explicit makes every type-specific UI exhaustive.
  */
-export type QuestionnaireItemType = 'file' | 'text' | 'boolean';
+export type QuestionnaireItemType =
+    | 'file'
+    | 'text'
+    | 'textarea'
+    | 'date'
+    | 'number'
+    | 'boolean';
 
+/** Types whose answers are stored in answer_text (mirrors PHP storesAnswerText()). */
+export function storesAnswerText(type: QuestionnaireItemType): boolean {
+    return (
+        type === 'text' ||
+        type === 'textarea' ||
+        type === 'date' ||
+        type === 'number'
+    );
+}
 export type DocumentRequestStatus =
     'pending' | 'submitted' | 'accepted' | 'rejected';
 

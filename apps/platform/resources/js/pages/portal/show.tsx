@@ -64,7 +64,7 @@ export default function PortalShow({
                     }
                 />
 
-                <p className="text-center text-xs text-muted-foreground">
+                <p className="text-center text-xs text-muted-foreground text-pretty">
                     {t(
                         'This is a secure upload page for :firm. Do not share this link.',
                         { firm: firm.name },

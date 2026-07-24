@@ -3,6 +3,7 @@ import {
     SortableContext,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { useMemo } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import QuestionnaireBuilderCanvas from '@/features/document-requests/staff/builder/questionnaire-builder-canvas';
 import {
@@ -49,11 +50,17 @@ export default function QuestionnaireBuilder({
         canEdit,
     });
 
+    // Stable id list for SortableContext — only changes when items change.
+    const sortableIds = useMemo(
+        () => state.items.map((item) => item.id),
+        [state.items],
+    );
+
     const { activeDrag, sensors, handleDragStart, handleDragEnd } =
         useQuestionnaireBuilderDnD({
             items: state.items,
             setItems: state.setItems,
-            canEdit,
+            canEdit: canEdit && !state.isInsertPending,
             onInsert: state.addAt,
             onReorder: state.handleReorder,
         });
@@ -62,9 +69,13 @@ export default function QuestionnaireBuilder({
         <QuestionnaireBuilderPalette
             dossierId={dossierId}
             templates={templates}
-            canEdit={canEdit && dossierStatus !== 'completed'}
+            canEdit={
+                canEdit &&
+                dossierStatus !== 'completed' &&
+                !state.isInsertPending
+            }
             onAdd={(type) => {
-                void state.addAt(type);
+                state.addAt(type);
             }}
         />
     );
@@ -72,7 +83,7 @@ export default function QuestionnaireBuilder({
     const settings = (
         <QuestionnaireBuilderSettings
             documentRequest={state.selected}
-            canEdit={canEdit}
+            canEdit={canEdit && !state.isInsertPending}
             saveStatus={state.saveStatus}
             onSave={state.handleSave}
         />
@@ -121,14 +132,15 @@ export default function QuestionnaireBuilder({
                         ) : null}
 
                         <SortableContext
-                            items={state.items.map((item) => item.id)}
+                            items={sortableIds}
                             strategy={verticalListSortingStrategy}
                         >
                             <QuestionnaireBuilderCanvas
                                 dossierId={dossierId}
                                 items={state.items}
                                 selectedId={state.selectedId}
-                                canEdit={canEdit}
+                                canEdit={canEdit && !state.isInsertPending}
+                                insertingAt={state.insertingAt}
                                 onSelect={state.setSelectedId}
                             />
                         </SortableContext>

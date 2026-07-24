@@ -66,7 +66,7 @@ final class DocumentRequestTransitions
 
         $this->ensureCanBeSubmitted($documentRequest, $context);
 
-        if ($documentRequest->type === QuestionnaireItemType::Text) {
+        if ($documentRequest->type->storesAnswerText()) {
             if ($answerText === null || mb_trim($answerText) === '') {
                 throw new InvalidArgumentException('A text answer is required.');
             }

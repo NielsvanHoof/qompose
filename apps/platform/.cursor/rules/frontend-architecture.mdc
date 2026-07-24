@@ -43,7 +43,7 @@ Cross-feature imports of another feature's `types.ts` are fine and intentional (
 
 ## Document request types
 
-New questionnaire item types (currently `file` | `text` | `boolean`) are added by:
+New questionnaire item types (currently `file` | `text` | `textarea` | `date` | `number` | `boolean`) are added by:
 
 1. Extending `QuestionnaireItemType` in `features/document-requests/types.ts` (mirrors the PHP `QuestionnaireItemType` enum).
 2. Adding a registry entry in `questionnaire-item-type-registry.tsx` with a label, a `StaffContent` renderer (`staff/`), and a `PortalContent` renderer (`portal/`). The `satisfies Record<QuestionnaireItemType, ...>` makes TypeScript flag missing entries.

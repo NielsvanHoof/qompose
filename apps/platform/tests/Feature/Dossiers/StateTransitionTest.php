@@ -185,3 +185,27 @@ test('portal submissions are blocked on completed dossiers', function () {
         $this->dossier->fresh(),
     ))->toBeFalse();
 });
+
+test('answer_text types accept text answers', function (QuestionnaireItemType $type, string $answer) {
+    $documentRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'dossier_id' => $this->dossier->id,
+        'type' => $type,
+    ]);
+
+    $this->documentRequestTransitions->submitAnswer(
+        $documentRequest,
+        SubmissionContext::Staff,
+        $answer,
+    );
+
+    expect($documentRequest->fresh())
+        ->status->toBe(DocumentRequestStatus::Submitted)
+        ->answer_text->toBe($answer)
+        ->answer_boolean->toBeNull();
+})->with([
+    'text' => [QuestionnaireItemType::Text, 'Short answer'],
+    'textarea' => [QuestionnaireItemType::Textarea, "Line one\nLine two"],
+    'date' => [QuestionnaireItemType::Date, '2026-07-24'],
+    'number' => [QuestionnaireItemType::Number, '42.5'],
+]);

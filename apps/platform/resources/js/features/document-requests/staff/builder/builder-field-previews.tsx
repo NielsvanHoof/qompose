@@ -45,11 +45,82 @@ export function BuilderTextPreview({
     return (
         <div className="space-y-2">
             <FieldChrome title={title} instructions={instructions} />
+            <Input
+                type="text"
+                disabled
+                placeholder={t('Client types their answer here…')}
+                className="bg-muted/40 text-muted-foreground"
+                aria-hidden="true"
+                tabIndex={-1}
+            />
+        </div>
+    );
+}
+
+export function BuilderTextareaPreview({
+    title,
+    instructions,
+}: {
+    title: string;
+    instructions?: string | null;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div className="space-y-2">
+            <FieldChrome title={title} instructions={instructions} />
             <textarea
                 disabled
-                rows={3}
-                placeholder={t('Client types their answer here…')}
+                rows={4}
+                placeholder={t('Client writes a longer answer here…')}
                 className="w-full rounded-md border border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground shadow-xs"
+                aria-hidden="true"
+                tabIndex={-1}
+            />
+        </div>
+    );
+}
+
+export function BuilderDatePreview({
+    title,
+    instructions,
+}: {
+    title: string;
+    instructions?: string | null;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div className="space-y-2">
+            <FieldChrome title={title} instructions={instructions} />
+            <Input
+                type="date"
+                disabled
+                className="bg-muted/40 text-muted-foreground"
+                aria-label={t('Client picks a date here')}
+                tabIndex={-1}
+            />
+        </div>
+    );
+}
+
+export function BuilderNumberPreview({
+    title,
+    instructions,
+}: {
+    title: string;
+    instructions?: string | null;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div className="space-y-2">
+            <FieldChrome title={title} instructions={instructions} />
+            <Input
+                type="number"
+                disabled
+                placeholder={t('Client enters a number here…')}
+                className="bg-muted/40 text-muted-foreground"
                 aria-hidden="true"
                 tabIndex={-1}
             />

@@ -532,3 +532,46 @@ test('staff can answer text and boolean requests on behalf of a client', functio
             ->where('properties->source', 'staff')
             ->count())->toBe(2);
 });
+
+test('staff can create and answer textarea date and number requests', function (
+    QuestionnaireItemType $type,
+    string $answer,
+) {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'type' => $type->value,
+            'title' => 'New '.$type->value.' field',
+        ])
+        ->assertRedirect();
+
+    $documentRequest = $dossier->documentRequests()->where('type', $type)->firstOrFail();
+
+    $this->post(workspaceRoute('workspaces.dossiers.document-requests.answer', $tenant, [
+        'dossier' => $dossier,
+        'documentRequest' => $documentRequest,
+    ]), [
+        'answer_text' => $answer,
+    ])->assertRedirect();
+
+    expect($documentRequest->fresh())
+        ->type->toBe($type)
+        ->answer_text->toBe($answer)
+        ->status->toBe(DocumentRequestStatus::Submitted);
+})->with([
+    'textarea' => [QuestionnaireItemType::Textarea, "Paragraph one.\nParagraph two."],
+    'date' => [QuestionnaireItemType::Date, '2026-07-24'],
+    'number' => [QuestionnaireItemType::Number, '12.5'],
+]);

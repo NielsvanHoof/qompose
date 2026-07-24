@@ -2,13 +2,18 @@ import { Form } from '@inertiajs/react';
 import ClientPortalAnswerController from '@/actions/App/Http/Controllers/Portal/ClientPortalAnswerController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { PortalDocumentRequest } from '@/features/document-requests/types';
+import type {
+    PortalDocumentRequest,
+    QuestionnaireItemType,
+} from '@/features/document-requests/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { inlinePortalActionOptions } from '@/lib/inline-portal-action-options';
+import { cn } from '@/lib/utils';
 
 /**
- * Portal form for a text questionnaire answer.
+ * Portal form for answer_text types (text, textarea, date, number).
  */
 export function PortalTextDocumentAnswer({
     documentRequest,
@@ -16,6 +21,7 @@ export function PortalTextDocumentAnswer({
     documentRequest: PortalDocumentRequest;
 }) {
     const { t } = useTranslation();
+    const fieldId = `answer-${documentRequest.id}`;
 
     return (
         <Form
@@ -28,27 +34,103 @@ export function PortalTextDocumentAnswer({
             {({ errors, processing }) => (
                 <>
                     <div className="grid gap-2">
-                        <Label htmlFor={`answer-${documentRequest.id}`}>
+                        {/* Visually quiet — the field title above already names the question. */}
+                        <Label htmlFor={fieldId} className="sr-only">
                             {t('Your answer')}
                         </Label>
-                        <textarea
-                            id={`answer-${documentRequest.id}`}
-                            name="answer_text"
-                            rows={3}
-                            required
+                        <AnswerTextControl
+                            id={fieldId}
+                            type={documentRequest.type}
                             defaultValue={documentRequest.answer_text ?? ''}
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                         />
                         <InputError message={errors.answer_text} />
                     </div>
-                    <Button type="submit" disabled={processing}>
-                        {documentRequest.answer_text
-                            ? t('Update answer')
-                            : t('Submit answer')}
+                    <Button
+                        type="submit"
+                        disabled={processing}
+                        className="w-full sm:w-auto"
+                    >
+                        {processing
+                            ? t('Saving…')
+                            : documentRequest.answer_text
+                              ? t('Update answer')
+                              : t('Submit answer')}
                     </Button>
                 </>
             )}
         </Form>
+    );
+}
+
+/** Renders the correct native control for each answer_text questionnaire type. */
+function AnswerTextControl({
+    id,
+    type,
+    defaultValue,
+}: {
+    id: string;
+    type: QuestionnaireItemType;
+    defaultValue: string;
+}) {
+    const { t } = useTranslation();
+    const controlClassName =
+        'w-full rounded-md border bg-background px-3 py-2.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50';
+
+    if (type === 'date') {
+        return (
+            <Input
+                id={id}
+                name="answer_text"
+                type="date"
+                required
+                defaultValue={defaultValue}
+                autoComplete="off"
+                className="h-11"
+            />
+        );
+    }
+
+    if (type === 'number') {
+        return (
+            <Input
+                id={id}
+                name="answer_text"
+                type="number"
+                required
+                defaultValue={defaultValue}
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder={t('Enter a number…')}
+                className="h-11"
+            />
+        );
+    }
+
+    if (type === 'textarea') {
+        return (
+            <textarea
+                id={id}
+                name="answer_text"
+                rows={5}
+                required
+                defaultValue={defaultValue}
+                className={controlClassName}
+                placeholder={t('Write your answer…')}
+            />
+        );
+    }
+
+    return (
+        <Input
+            id={id}
+            name="answer_text"
+            type="text"
+            required
+            defaultValue={defaultValue}
+            autoComplete="off"
+            placeholder={t('Write your answer…')}
+            className="h-11"
+        />
     );
 }
 
@@ -63,7 +145,11 @@ export function PortalBooleanDocumentAnswer({
     const { t } = useTranslation();
 
     return (
-        <div className="flex flex-wrap gap-2">
+        <div
+            className="grid grid-cols-2 gap-2"
+            role="group"
+            aria-label={t('Your answer')}
+        >
             <BooleanAnswerButton
                 documentRequestId={documentRequest.id}
                 value={true}
@@ -97,6 +183,7 @@ function BooleanAnswerButton({
                 documentRequest: documentRequestId,
             })}
             options={inlinePortalActionOptions}
+            className="contents"
         >
             {({ processing }) => (
                 <>
@@ -109,6 +196,10 @@ function BooleanAnswerButton({
                         type="submit"
                         disabled={processing}
                         variant={active ? 'default' : 'outline'}
+                        className={cn(
+                            'h-11 touch-manipulation',
+                            active && 'ring-[3px] ring-ring/40',
+                        )}
                     >
                         {label}
                     </Button>

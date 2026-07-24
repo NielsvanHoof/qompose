@@ -1,6 +1,6 @@
 import { useDraggable } from '@dnd-kit/core';
 import { type LucideIcon, Plus, Search } from 'lucide-react';
-import { type ComponentType, useMemo, useState } from 'react';
+import { type ComponentType, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getQuestionnaireItemTypeDefinitions } from '@/features/document-requests/questionnaire-item-type-registry';
@@ -27,27 +27,22 @@ export default function QuestionnaireBuilderPalette({
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
     const definitions = getQuestionnaireItemTypeDefinitions(t);
+    const normalized = query.trim().toLocaleLowerCase();
+    const filtered =
+        normalized === ''
+            ? definitions
+            : definitions.filter((definition) => {
+                  const haystack =
+                      `${definition.label} ${definition.description}`.toLocaleLowerCase();
 
-    const filtered = useMemo(() => {
-        const normalized = query.trim().toLocaleLowerCase();
-
-        if (normalized === '') {
-            return definitions;
-        }
-
-        return definitions.filter((definition) => {
-            const haystack =
-                `${definition.label} ${definition.description}`.toLocaleLowerCase();
-
-            return haystack.includes(normalized);
-        });
-    }, [definitions, query]);
+                  return haystack.includes(normalized);
+              });
 
     return (
         <aside className="space-y-4" aria-label={t('Components')}>
             <div className="space-y-2">
                 <div className="space-y-1">
-                    <h3 className="text-sm font-semibold tracking-tight">
+                    <h3 className="text-sm font-semibold tracking-tight text-pretty">
                         {t('Components')}
                     </h3>
                     <p className="text-xs text-muted-foreground">
@@ -140,7 +135,7 @@ function PaletteItem({
                 <button
                     type="button"
                     className={cn(
-                        'flex min-w-0 flex-1 touch-none items-center gap-2 rounded-md px-1 py-1 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+                        'flex min-w-0 flex-1 touch-manipulation touch-none items-center gap-2 rounded-md px-1 py-1 text-left focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
                         !disabled && 'cursor-grab active:cursor-grabbing',
                     )}
                     aria-label={t('Drag :component', { component: label })}

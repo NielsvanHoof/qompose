@@ -41,6 +41,20 @@ final class StoreQuestionnaireAnswerRequest extends FormRequest
             ];
         }
 
+        if ($documentRequest instanceof DocumentRequest
+            && $documentRequest->type === QuestionnaireItemType::Date) {
+            return [
+                'answer_text' => ['required', 'date_format:Y-m-d'],
+            ];
+        }
+
+        if ($documentRequest instanceof DocumentRequest
+            && $documentRequest->type === QuestionnaireItemType::Number) {
+            return [
+                'answer_text' => ['required', 'numeric'],
+            ];
+        }
+
         return [
             'answer_text' => ['required', 'string', 'max:5000'],
         ];

@@ -65,7 +65,7 @@ export function useQuestionnaireBuilderDnD({
     items: DocumentRequest[];
     setItems: (items: DocumentRequest[]) => void;
     canEdit: boolean;
-    onInsert: (type: QuestionnaireItemType, position: number) => Promise<void>;
+    onInsert: (type: QuestionnaireItemType, position: number) => void;
     onReorder: (orderedIds: number[]) => Promise<boolean>;
 }) {
     const [activeDrag, setActiveDrag] = useState<ActiveBuilderDrag>(null);
@@ -117,7 +117,7 @@ export function useQuestionnaireBuilderDnD({
                 position = overIndex >= 0 ? overIndex : items.length;
             }
 
-            await onInsert(type, position);
+            onInsert(type, position);
 
             return;
         }

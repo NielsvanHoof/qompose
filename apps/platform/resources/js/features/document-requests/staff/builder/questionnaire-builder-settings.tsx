@@ -101,7 +101,7 @@ export default function QuestionnaireBuilderSettings({
             : saveStatus === 'saved'
               ? t('Saved')
               : saveStatus === 'error'
-                ? t('Save failed')
+                ? t('Could not save. Check the fields and try again.')
                 : null;
 
     const blurSave = () => void persist({ type, title, instructions });

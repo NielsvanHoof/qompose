@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
+import { useMediaQuery } from 'usehooks-ts';
 import DocumentRequestController from '@/actions/App/Http/Controllers/Dossiers/DocumentRequestController';
 import ConfirmDestroyDialog from '@/components/confirm-destroy-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,8 @@ import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import { inlineDossierActionOptions } from '@/lib/inline-dossier-action-options';
 import { cn } from '@/lib/utils';
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 /**
  * Compact sortable canvas row. Only the selected field expands its client preview.
@@ -32,6 +35,7 @@ export default function QuestionnaireBuilderItem({
 }) {
     const { t } = useTranslation();
     const currentWorkspace = useCurrentWorkspace();
+    const prefersReducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
     const definition = getQuestionnaireItemTypeDefinition(documentRequest.type);
     const { BuilderPreview } = definition;
     const {
@@ -46,10 +50,6 @@ export default function QuestionnaireBuilderItem({
         disabled: !canEdit,
         data: { source: 'canvas', id: documentRequest.id },
     });
-
-    const prefersReducedMotion =
-        typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     return (
         <li
@@ -72,7 +72,7 @@ export default function QuestionnaireBuilderItem({
                         type="button"
                         size="icon"
                         variant="ghost"
-                        className="size-8 shrink-0 cursor-grab touch-none active:cursor-grabbing"
+                        className="size-8 shrink-0 cursor-grab touch-manipulation touch-none active:cursor-grabbing"
                         aria-label={t('Drag to reorder')}
                         {...attributes}
                         {...listeners}
