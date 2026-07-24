@@ -23,7 +23,7 @@ Route::scopeBindings()->group(function (): void {
         ->name('dossiers.document-requests.reorder');
     Route::post(
         'dossiers/{dossier}/document-requests/{documentRequest}/answer',
-        [DocumentRequestController::class, 'answer'],
+        [DocumentRequestReviewController::class, 'answer'],
     )->name('dossiers.document-requests.answer');
     Route::post(
         'dossiers/{dossier}/document-requests/{documentRequest}/upload',

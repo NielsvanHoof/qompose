@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Ocr\CompleteTextractExtractionAction;
+use App\Actions\Ocr\FailTextractExtractionAction;
 use App\Contracts\Ocr\DescribesDocumentOverview;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentProcessingStatus;
@@ -223,6 +224,27 @@ test('complete textract extraction treats error as a terminal failure', function
     expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Failed)
         ->and($uploaded->processing_error)->toBe('Textract could not complete the analysis')
         ->and($uploaded->processing_finished_at)->not->toBeNull();
+});
+
+test('fail textract extraction marks a processing document as permanently failed', function () {
+    $uploaded = createProcessingDocumentWithTextractJob('job-permanent-fail-1');
+
+    $failed = app(FailTextractExtractionAction::class)->handle(
+        'job-permanent-fail-1',
+        new RuntimeException('SQS receive count exhausted'),
+    );
+
+    expect($failed)->toBeTrue();
+
+    $uploaded->refresh();
+
+    expect($uploaded->processing_status)->toBe(DocumentProcessingStatus::Failed)
+        ->and($uploaded->processing_error)->toBe('SQS receive count exhausted')
+        ->and($uploaded->processing_finished_at)->not->toBeNull()
+        ->and(Activity::query()
+            ->where('event', AuditEvent::DocumentProcessingFailed->value)
+            ->where('subject_id', $uploaded->id)
+            ->exists())->toBeTrue();
 });
 
 test('complete textract extraction is idempotent when already completed', function () {

@@ -4,24 +4,25 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dossiers;
 
-use App\Actions\Dossiers\ApplyQuestionnaireTemplateToDossierAction;
-use App\Actions\Dossiers\CreateDocumentRequestAction;
-use App\Actions\Dossiers\DeleteDocumentRequestAction;
-use App\Actions\Dossiers\ReorderDocumentRequestsAction;
-use App\Actions\Dossiers\SubmitQuestionnaireAnswerAction;
+use App\Actions\Dossiers\Builder\ApplyQuestionnaireTemplateToDossierAction;
+use App\Actions\Dossiers\Builder\CreateDocumentRequestAction;
+use App\Actions\Dossiers\Builder\DeleteDocumentRequestAction;
+use App\Actions\Dossiers\Builder\ReorderDocumentRequestsAction;
+use App\Actions\Dossiers\Builder\UpdateDocumentRequestAction;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Dossiers\ApplyQuestionnaireTemplateRequest;
-use App\Http\Requests\Dossiers\ReorderDocumentRequestsRequest;
-use App\Http\Requests\Dossiers\StoreDocumentRequestRequest;
-use App\Http\Requests\Dossiers\StoreQuestionnaireAnswerRequest;
-use App\Http\Requests\Dossiers\UpdateDocumentRequestRequest;
+use App\Http\Requests\Dossiers\Builder\ApplyQuestionnaireTemplateRequest;
+use App\Http\Requests\Dossiers\Builder\ReorderDocumentRequestsRequest;
+use App\Http\Requests\Dossiers\Builder\StoreDocumentRequestRequest;
+use App\Http\Requests\Dossiers\Builder\UpdateDocumentRequestRequest;
 use App\Models\DocumentRequest;
 use App\Models\Dossier;
-use App\Models\QuestionnaireTemplate;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Form-builder mutations for dossier questionnaire items.
+ */
 final class DocumentRequestController extends Controller
 {
     public function store(
@@ -32,7 +33,7 @@ final class DocumentRequestController extends Controller
     ): RedirectResponse {
         $createDocumentRequest->handle($dossier, $request->validated());
 
-        return $this->redirectToDossier($dossier);
+        return $this->redirectToBuilder($dossier);
     }
 
     public function update(
@@ -40,10 +41,11 @@ final class DocumentRequestController extends Controller
         UpdateDocumentRequestRequest $request,
         Dossier $dossier,
         DocumentRequest $documentRequest,
+        UpdateDocumentRequestAction $updateDocumentRequest,
     ): RedirectResponse {
-        $documentRequest->update($request->validated());
+        $updateDocumentRequest->handle($documentRequest, $request->validated());
 
-        return $this->redirectToDossier($dossier);
+        return $this->redirectToBuilder($dossier);
     }
 
     public function destroy(
@@ -57,7 +59,7 @@ final class DocumentRequestController extends Controller
 
         $deleteDocumentRequest->handle($documentRequest);
 
-        return $this->redirectToDossier($dossier);
+        return $this->redirectToBuilder($dossier);
     }
 
     public function reorder(
@@ -75,7 +77,7 @@ final class DocumentRequestController extends Controller
             return response()->noContent();
         }
 
-        return $this->redirectToDossier($dossier);
+        return $this->redirectToBuilder($dossier);
     }
 
     public function applyTemplate(
@@ -84,41 +86,20 @@ final class DocumentRequestController extends Controller
         Dossier $dossier,
         ApplyQuestionnaireTemplateToDossierAction $applyQuestionnaireTemplateToDossier,
     ): RedirectResponse {
-        $templateId = (int) $request->validated('questionnaire_template_id');
-
-        $template = QuestionnaireTemplate::queryVisibleToCurrentTenant()
-            ->whereKey($templateId)
-            ->firstOrFail();
-
-        $applyQuestionnaireTemplateToDossier->handle($dossier, $template);
-
-        return $this->redirectToDossier($dossier);
-    }
-
-    public function answer(
-        Tenant $tenant,
-        StoreQuestionnaireAnswerRequest $request,
-        Dossier $dossier,
-        DocumentRequest $documentRequest,
-        SubmitQuestionnaireAnswerAction $submitQuestionnaireAnswer,
-    ): RedirectResponse {
-        $validated = $request->validated();
-
-        $submitQuestionnaireAnswer->handle(
-            $documentRequest,
-            $validated['answer_text'] ?? null,
-            array_key_exists('answer_boolean', $validated)
-                ? (bool) $validated['answer_boolean']
-                : null,
+        // Action resolves the QuestionnaireTemplate so this controller stays in Dossiers.
+        $applyQuestionnaireTemplateToDossier->handle(
+            $dossier,
+            (int) $request->validated('questionnaire_template_id'),
         );
 
-        return $this->redirectToDossier($dossier);
+        return $this->redirectToBuilder($dossier);
     }
 
-    private function redirectToDossier(Dossier $dossier): RedirectResponse
+    /** Form builder mutations stay on the full-bleed builder page. */
+    private function redirectToBuilder(Dossier $dossier): RedirectResponse
     {
         return to_route(
-            'workspaces.dossiers.show',
+            'workspaces.dossiers.builder',
             $this->workspaceRouteParameters(['dossier' => $dossier]),
         );
     }

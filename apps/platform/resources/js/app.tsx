@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import DossierBuilderLayout from '@/layouts/dossiers/dossier-builder-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 // Reverb WebSocket client — keys come from VITE_REVERB_* (.env).
@@ -27,6 +28,9 @@ createInertiaApp({
             case name.startsWith('portal/'):
                 // Guest magic-link portal — no staff chrome.
                 return null;
+            case name === 'dossiers/builder':
+                // Full-bleed form builder without the app sidebar.
+                return DossierBuilderLayout;
             case name.startsWith('auth/'):
             case name.startsWith('invitations/'):
                 return AuthLayout;

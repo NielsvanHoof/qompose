@@ -4,7 +4,7 @@ import Heading from '@/components/heading';
 import IndexPagination from '@/components/index-query/index-pagination';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Button } from '@/components/ui/button';
-import ClientsListCard from '@/features/clients/clients-list-card';
+import ClientsListCard from '@/features/clients/list/clients-list-card';
 import type { ClientSummary } from '@/features/clients/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';

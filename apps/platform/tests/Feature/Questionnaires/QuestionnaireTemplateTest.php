@@ -186,7 +186,7 @@ test('adviser can apply a template and edit dossier items', function () {
         ]), [
             'questionnaire_template_id' => $system->id,
         ])
-        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]));
 
     $tenant->makeCurrent();
     $requests = DocumentRequest::query()
@@ -210,14 +210,14 @@ test('adviser can apply a template and edit dossier items', function () {
         'type' => QuestionnaireItemType::Text->value,
         'title' => 'Customised title',
         'instructions' => 'Updated instructions',
-    ])->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
+    ])->assertRedirect(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]));
 
     expect($firstTemplateItem->fresh()->title)->toBe('Customised title');
 
     $this->delete(workspaceRoute('workspaces.dossiers.document-requests.destroy', $tenant, [
         'dossier' => $dossier,
         'documentRequest' => $firstTemplateItem,
-    ]))->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
+    ]))->assertRedirect(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]));
 
     expect(DocumentRequest::query()->whereKey($firstTemplateItem->id)->exists())->toBeFalse()
         ->and(Activity::query()

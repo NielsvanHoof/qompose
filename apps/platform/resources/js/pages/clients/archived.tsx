@@ -5,7 +5,7 @@ import IndexPagination from '@/components/index-query/index-pagination';
 import IndexQueryToolbar from '@/components/index-query/index-query-toolbar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import ArchivedClientsCard from '@/features/clients/archived-clients-card';
+import ArchivedClientsCard from '@/features/clients/list/archived-clients-card';
 import type { ArchivedClientSummary } from '@/features/clients/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';

@@ -1,32 +1,32 @@
-import type { Dossier, DossierStatus } from '@/features/dossiers/types';
+import type { Dossier } from '@/features/dossiers/types';
 
 export const STAGE_ORDER = ['prepare', 'invite', 'review'] as const;
 
-export type DossierStageTab = (typeof STAGE_ORDER)[number];
+export type DossierWorkflowStage = (typeof STAGE_ORDER)[number];
 
 /**
  * English keys for dossier stage labels. Pass through `t()` for display.
  */
-export const STAGE_LABELS: Record<DossierStageTab, string> = {
-    prepare: 'Prepare',
-    invite: 'Invite',
+export const STAGE_LABELS: Record<DossierWorkflowStage, string> = {
+    prepare: 'Build Form',
+    invite: 'Send Invite',
     review: 'Review',
 };
 
 /**
  * English keys for dossier stage hints. Pass through `t()` for display.
  */
-export const STAGE_HINTS: Record<DossierStageTab, string> = {
-    prepare: 'Build the questionnaire, then continue to Invite.',
-    invite: 'Send a portal link so the client can upload. Then continue to Review.',
-    review: 'Check OCR results, approve or request changes, then complete the dossier.',
+export const STAGE_HINTS: Record<DossierWorkflowStage, string> = {
+    prepare: 'Drag components onto the canvas to build the client form.',
+    invite: 'Send a portal link so the client can complete the form. Then continue to Review.',
+    review: 'Check submissions, approve or request changes, then complete the dossier.',
 };
 
 /**
  * Resolve a translated label for a dossier stage.
  */
 export function dossierStageLabel(
-    stage: DossierStageTab,
+    stage: DossierWorkflowStage,
     t: (key: string) => string,
 ): string {
     return t(STAGE_LABELS[stage]);
@@ -36,84 +36,31 @@ export function dossierStageLabel(
  * Resolve a translated hint for a dossier stage.
  */
 export function dossierStageHint(
-    stage: DossierStageTab,
+    stage: DossierWorkflowStage,
     t: (key: string) => string,
 ): string {
     return t(STAGE_HINTS[stage]);
 }
 
-/**
- * Pick the tab that matches where the dossier is in the workflow.
- */
-export function defaultTabForStatus(status: DossierStatus): DossierStageTab {
-    switch (status) {
-        case 'awaiting_client':
-            return 'invite';
-        case 'in_review':
-        case 'completed':
-            return 'review';
-        default:
-            return 'prepare';
-    }
-}
-
-export function isDossierStageTab(value: string): value is DossierStageTab {
-    return STAGE_ORDER.includes(value as DossierStageTab);
-}
-
-export function readStageFromUrl(): DossierStageTab | null {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-
-    const stage = new URLSearchParams(window.location.search).get('stage');
-
-    return stage && isDossierStageTab(stage) ? stage : null;
-}
-
-export function writeStageToUrl(stage: DossierStageTab): void {
-    const url = new URL(window.location.href);
-    url.searchParams.set('stage', stage);
-    window.history.replaceState({}, '', url);
-}
-
-export type DossierStageProgressState = 'completed' | 'current' | 'upcoming';
+export type DossierStageCompletionState = 'completed' | 'incomplete';
 
 /**
- * Derive step states for the workflow progress indicator.
+ * Derive done/not-done states for overview workflow links.
  */
-export function dossierStageProgress(
+export function dossierStageCompletion(
     dossier: Dossier,
-    activeTab: DossierStageTab,
-): Record<DossierStageTab, DossierStageProgressState> {
+): Record<DossierWorkflowStage, DossierStageCompletionState> {
     const prepareDone = dossier.document_requests.length > 0;
+    // Invite is complete when portal access exists or the dossier already moved on.
     const inviteDone =
         dossier.access_grants.some((grant) => grant.is_valid) ||
         dossier.status === 'in_review' ||
-        dossier.status === 'completed' ||
-        dossier.document_requests.some(
-            (request) => request.status !== 'pending',
-        );
+        dossier.status === 'completed';
     const reviewDone = dossier.status === 'completed';
 
-    const completion: Record<DossierStageTab, boolean> = {
-        prepare: prepareDone,
-        invite: inviteDone,
-        review: reviewDone,
+    return {
+        prepare: prepareDone ? 'completed' : 'incomplete',
+        invite: inviteDone ? 'completed' : 'incomplete',
+        review: reviewDone ? 'completed' : 'incomplete',
     };
-
-    return STAGE_ORDER.reduce(
-        (states, stage) => {
-            if (stage === activeTab) {
-                states[stage] = 'current';
-            } else if (completion[stage]) {
-                states[stage] = 'completed';
-            } else {
-                states[stage] = 'upcoming';
-            }
-
-            return states;
-        },
-        {} as Record<DossierStageTab, DossierStageProgressState>,
-    );
 }

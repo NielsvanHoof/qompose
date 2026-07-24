@@ -3,7 +3,7 @@ import { Archive, FolderOpen, Mail, Pencil } from 'lucide-react';
 import IndexPagination from '@/components/index-query/index-pagination';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import ArchiveClientButton from '@/features/clients/archive-client-button';
+import ArchiveClientButton from '@/features/clients/manage/archive-client-button';
 import type { ClientDetails } from '@/features/clients/types';
 import DossiersListCard from '@/features/dossiers/list/dossiers-list-card';
 import type { DossierSummary } from '@/features/dossiers/types';

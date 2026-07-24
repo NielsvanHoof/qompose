@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
-use App\Actions\Audit\LogAuditActivityAction;
-use App\Enums\AuditEvent;
+use App\Actions\Portal\RecordClientPortalAccessAction;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\ResolveClientPortalGrant;
 use App\Models\ClientAccessGrant;
-use App\Models\Dossier;
 use App\Queries\Portal\FetchClientPortalQuery;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,28 +21,12 @@ final class ClientPortalController extends Controller
     public function show(
         Request $request,
         FetchClientPortalQuery $getClientPortalData,
-        LogAuditActivityAction $logAuditActivity,
+        RecordClientPortalAccessAction $recordClientPortalAccess,
     ): Response {
         $grant = $this->grantFromRequest($request);
 
-        DB::transaction(function () use ($grant, $logAuditActivity): void {
-            $openedAt = now();
-            $grant->forceFill(['last_used_at' => $openedAt])->save();
-
-            Dossier::query()
-                ->whereKey($grant->dossier_id)
-                ->toBase()
-                ->update(['last_client_opened_at' => $openedAt]);
-
-            $logAuditActivity->handle(
-                AuditEvent::ClientPortalAccessed,
-                $grant,
-                [
-                    'source' => 'client_portal',
-                    'dossier_id' => $grant->dossier_id,
-                ],
-            );
-        });
+        // Side effects (grant touch, dossier stamp, audit) live in the Action.
+        $recordClientPortalAccess->handle($grant);
 
         return Inertia::render('portal/show', $getClientPortalData->handle($grant));
     }

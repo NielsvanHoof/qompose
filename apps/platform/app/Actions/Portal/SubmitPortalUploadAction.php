@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Portal;
 
 use App\Actions\Audit\LogAuditActivityAction;
-use App\Actions\Dossiers\UploadDocumentForRequestAction;
+use App\Actions\Dossiers\DocumentRequests\UploadDocumentForRequestAction;
 use App\Enums\AuditEvent;
 use App\Enums\SubmissionContext;
 use App\Models\ClientAccessGrant;

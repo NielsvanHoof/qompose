@@ -16,21 +16,21 @@ use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dossiers\StoreDossierRequest;
 use App\Http\Requests\Dossiers\UpdateDossierRequest;
-use App\Models\Client;
 use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Queries\Dossiers\FetchArchivedDossiersQuery;
 use App\Queries\Dossiers\FetchDossierCreateQuery;
+use App\Queries\Dossiers\FetchDossierEditQuery;
 use App\Queries\Dossiers\FetchDossierIndexQuery;
 use App\Queries\Dossiers\FetchDossierShowQuery;
+use App\Queries\Questionnaires\FetchQuestionnaireTemplateOptionsQuery;
 use App\Queries\Tenancy\FetchResponsibleStaffOptionsQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Inertia\Support\Header;
-use RuntimeException;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 use function is_string;
@@ -99,65 +99,83 @@ final class DossierController extends Controller
         Request $request,
         Dossier $dossier,
         FetchDossierShowQuery $getDossierShowData,
+        FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions,
         LogAuditActivityAction $logAuditActivity,
     ): Response {
         $this->authorize('view', $dossier);
 
-        if (! $this->isDossierPartialReload($request)) {
+        if (! $this->isDossierPartialReload($request, 'dossiers/show')) {
             $logAuditActivity->handle(
                 AuditEvent::DossierViewed,
                 $dossier,
             );
         }
 
-        return Inertia::render('dossiers/show', [
-            'access_grant_token' => fn (): ?string => $this->flashedAccessGrantToken($request),
-            'access_grant_portal_url' => fn (): ?string => $this->flashedAccessGrantPortalUrl($request),
-            'can_manage' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
-            'can_edit' => $request->user()?->can('update', $dossier) ?? false,
-            'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
-            'can_review' => $request->user()?->can(Permission::ReviewDocuments->value) ?? false,
-            'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
-            'templates' => fn (): array => array_map(
-                static fn (QuestionnaireTemplateOptionData $template): array => $template->toArray(),
-                $getDossierShowData->templates(),
+        return Inertia::render(
+            'dossiers/show',
+            $this->dossierPageProps(
+                $request,
+                $dossier,
+                $getDossierShowData,
+                $fetchQuestionnaireTemplateOptions,
             ),
-            'dossier' => fn (): array => $getDossierShowData->handle($dossier)->toArray(),
-        ]);
+        );
+    }
+
+    /**
+     * Full-bleed form builder for the dossier questionnaire.
+     */
+    public function builder(
+        Tenant $tenant,
+        Request $request,
+        Dossier $dossier,
+        FetchDossierShowQuery $getDossierShowData,
+        FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions,
+    ): Response {
+        $this->authorize('view', $dossier);
+
+        return Inertia::render(
+            'dossiers/builder',
+            $this->dossierPageProps(
+                $request,
+                $dossier,
+                $getDossierShowData,
+                $fetchQuestionnaireTemplateOptions,
+            ),
+        );
+    }
+
+    /**
+     * Focused review queue for submitted questionnaire items.
+     */
+    public function review(
+        Tenant $tenant,
+        Request $request,
+        Dossier $dossier,
+        FetchDossierShowQuery $getDossierShowData,
+        FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions,
+    ): Response {
+        $this->authorize('view', $dossier);
+
+        return Inertia::render(
+            'dossiers/review',
+            $this->dossierPageProps(
+                $request,
+                $dossier,
+                $getDossierShowData,
+                $fetchQuestionnaireTemplateOptions,
+            ),
+        );
     }
 
     public function edit(
         Tenant $tenant,
         Dossier $dossier,
-        FetchResponsibleStaffOptionsQuery $fetchResponsibleStaffOptions,
+        FetchDossierEditQuery $fetchDossierEdit,
     ): Response {
         $this->authorize('update', $dossier);
 
-        $dossier->load('client:id,name,email');
-        $client = $dossier->client;
-
-        if (! $client instanceof Client) {
-            throw new RuntimeException('Dossier client is missing.');
-        }
-
-        return Inertia::render('dossiers/edit', [
-            'dossier' => [
-                'id' => $dossier->id,
-                'title' => $dossier->title,
-                'reference' => $dossier->reference,
-                'due_date' => $dossier->due_date?->toDateString(),
-                'responsible_user_id' => $dossier->responsible_user_id,
-                'reminder_interval_days' => $dossier->reminder_interval_days,
-                'client' => [
-                    'name' => $client->name,
-                    'email' => $client->email,
-                ],
-            ],
-            'responsible_staff' => array_map(
-                static fn (PersonOptionData $staff): array => $staff->toArray(),
-                $fetchResponsibleStaffOptions->handle($tenant),
-            ),
-        ]);
+        return Inertia::render('dossiers/edit', $fetchDossierEdit->handle($tenant, $dossier));
     }
 
     public function update(
@@ -231,10 +249,37 @@ final class DossierController extends Controller
         );
     }
 
-    private function isDossierPartialReload(Request $request): bool
+    /**
+     * Shared Inertia props for overview, builder, and review surfaces.
+     *
+     * @return array<string, mixed>
+     */
+    private function dossierPageProps(
+        Request $request,
+        Dossier $dossier,
+        FetchDossierShowQuery $getDossierShowData,
+        FetchQuestionnaireTemplateOptionsQuery $fetchQuestionnaireTemplateOptions,
+    ): array {
+        return [
+            'access_grant_token' => fn (): ?string => $this->flashedAccessGrantToken($request),
+            'access_grant_portal_url' => fn (): ?string => $this->flashedAccessGrantPortalUrl($request),
+            'can_manage' => $request->user()?->can(Permission::CreateDossiers->value) ?? false,
+            'can_edit' => $request->user()?->can('update', $dossier) ?? false,
+            'can_send_reminder' => $request->user()?->can('sendReminder', $dossier) ?? false,
+            'can_review' => $request->user()?->can(Permission::ReviewDocuments->value) ?? false,
+            'can_download' => $request->user()?->can(Permission::DownloadDocuments->value) ?? false,
+            'templates' => fn (): array => array_map(
+                static fn (QuestionnaireTemplateOptionData $template): array => $template->toArray(),
+                $fetchQuestionnaireTemplateOptions->handle(),
+            ),
+            'dossier' => fn (): array => $getDossierShowData->handle($dossier)->toArray(),
+        ];
+    }
+
+    private function isDossierPartialReload(Request $request, string $component): bool
     {
         return $request->headers->has(Header::INERTIA)
-            && $request->header(Header::PARTIAL_COMPONENT) === 'dossiers/show';
+            && $request->header(Header::PARTIAL_COMPONENT) === $component;
     }
 
     private function flashedAccessGrantToken(Request $request): ?string

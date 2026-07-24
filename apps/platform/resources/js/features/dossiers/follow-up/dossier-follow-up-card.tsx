@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import type { Dossier } from '@/features/dossiers/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatDateTime } from '@/lib/format-date-time';
+import { formatDate, formatDateTime } from '@/lib/format-date-time';
 
 export default function DossierFollowUpCard({
     dossier,
@@ -32,9 +32,11 @@ export default function DossierFollowUpCard({
                     label={t('Due and owner')}
                     value={
                         dossier.due_date
-                            ? new Date(
-                                  `${dossier.due_date}T00:00:00`,
-                              ).toLocaleDateString()
+                            ? // Date-only: avoid formatDateTime (adds a midnight clock).
+                              formatDate(
+                                  `${dossier.due_date}T00:00:00Z`,
+                                  locale,
+                              )
                             : t('No due date')
                     }
                     detail={dossier.responsible_staff?.name ?? t('Unassigned')}

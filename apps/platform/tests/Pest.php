@@ -128,6 +128,8 @@ pest()->presets()->custom('qompose', function () {
                 'resend',
                 'accept',
                 'register',
+                'builder',
+                'review',
             ]),
 
         expect('App\Models\Activity')

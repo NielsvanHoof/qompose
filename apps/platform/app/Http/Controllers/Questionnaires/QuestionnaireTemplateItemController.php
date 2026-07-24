@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Questionnaires;
 
-use App\Actions\Audit\LogAuditActivityAction;
 use App\Actions\Questionnaires\CreateQuestionnaireTemplateItemAction;
+use App\Actions\Questionnaires\DeleteQuestionnaireTemplateItemAction;
 use App\Actions\Questionnaires\ReorderQuestionnaireTemplateItemsAction;
-use App\Enums\AuditEvent;
+use App\Actions\Questionnaires\UpdateQuestionnaireTemplateItemAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Questionnaires\ReorderQuestionnaireTemplateItemsRequest;
 use App\Http\Requests\Questionnaires\StoreQuestionnaireTemplateItemRequest;
@@ -39,8 +39,9 @@ final class QuestionnaireTemplateItemController extends Controller
         UpdateQuestionnaireTemplateItemRequest $request,
         QuestionnaireTemplate $template,
         QuestionnaireTemplateItem $item,
+        UpdateQuestionnaireTemplateItemAction $updateQuestionnaireTemplateItem,
     ): RedirectResponse {
-        $item->update($request->validated());
+        $updateQuestionnaireTemplateItem->handle($item, $request->validated());
 
         return to_route(
             'workspaces.templates.show',
@@ -52,20 +53,11 @@ final class QuestionnaireTemplateItemController extends Controller
         Tenant $tenant,
         QuestionnaireTemplate $template,
         QuestionnaireTemplateItem $item,
-        LogAuditActivityAction $logAuditActivity,
+        DeleteQuestionnaireTemplateItemAction $deleteQuestionnaireTemplateItem,
     ): RedirectResponse {
         $this->authorize('update', $template);
 
-        $logAuditActivity->handle(
-            AuditEvent::QuestionnaireTemplateItemDeleted,
-            $item,
-            [
-                'title' => $item->title,
-                'template_id' => $template->id,
-            ],
-        );
-
-        $item->delete();
+        $deleteQuestionnaireTemplateItem->handle($template, $item);
 
         return to_route(
             'workspaces.templates.show',

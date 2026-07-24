@@ -10,3 +10,14 @@ export function formatDateTime(iso: string, locale: string): string {
         timeZone: 'UTC',
     }).format(new Date(iso));
 }
+
+/**
+ * Format a calendar date (YYYY-MM-DD or ISO) without a time component.
+ * Same locale/UTC rules as formatDateTime so due dates match the rest of the UI.
+ */
+export function formatDate(iso: string, locale: string): string {
+    return new Intl.DateTimeFormat(locale, {
+        dateStyle: 'short',
+        timeZone: 'UTC',
+    }).format(new Date(iso));
+}

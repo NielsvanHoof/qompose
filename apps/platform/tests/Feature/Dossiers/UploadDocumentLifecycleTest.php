@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Actions\Dossiers\DeleteDocumentRequestAction;
-use App\Actions\Dossiers\UploadDocumentForRequestAction;
+use App\Actions\Dossiers\Builder\DeleteDocumentRequestAction;
+use App\Actions\Dossiers\DocumentRequests\UploadDocumentForRequestAction;
 use App\Enums\DocumentRequestStatus;
 use App\Jobs\ProcessUploadedDocumentJob;
 use App\Models\Client;

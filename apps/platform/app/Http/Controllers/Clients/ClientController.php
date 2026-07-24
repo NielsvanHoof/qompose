@@ -7,16 +7,17 @@ namespace App\Http\Controllers\Clients;
 use App\Actions\Clients\CreateClientAction;
 use App\Actions\Clients\DeleteClientAction;
 use App\Actions\Clients\RestoreClientAction;
+use App\Actions\Clients\UpdateClientAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Clients\StoreClientRequest;
 use App\Http\Requests\Clients\UpdateClientRequest;
 use App\Models\Client;
-use App\Models\Dossier;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Queries\Clients\FetchArchivedClientsQuery;
 use App\Queries\Clients\FetchClientIndexQuery;
 use App\Queries\Clients\FetchClientShowQuery;
+use App\Queries\Dossiers\TenantHasAnyDossiersQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -61,10 +62,12 @@ final class ClientController extends Controller
         Tenant $tenant,
         StoreClientRequest $request,
         CreateClientAction $createClient,
+        TenantHasAnyDossiersQuery $tenantHasAnyDossiers,
     ): RedirectResponse {
         $createClient->handle($request->validated());
 
-        if (Dossier::query()->toBase()->doesntExist()) {
+        // First client with no dossiers yet → send staff into dossier creation.
+        if (! $tenantHasAnyDossiers->handle()) {
             return to_route(
                 'workspaces.dossiers.create',
                 $this->workspaceRouteParameters(),
@@ -100,8 +103,9 @@ final class ClientController extends Controller
         Tenant $tenant,
         UpdateClientRequest $request,
         Client $client,
+        UpdateClientAction $updateClient,
     ): RedirectResponse {
-        $client->update($request->validated());
+        $updateClient->handle($client, $request->validated());
 
         Inertia::flash('toast', [
             'type' => 'success',

@@ -8,7 +8,6 @@ use App\Data\Dossiers\DossierAccessGrantData;
 use App\Data\Dossiers\DossierClientSummaryData;
 use App\Data\Dossiers\DossierReviewSummaryData;
 use App\Data\Dossiers\DossierShowData;
-use App\Data\Dossiers\QuestionnaireTemplateOptionData;
 use App\Data\Dossiers\StaffDocumentRequestData;
 use App\Data\Dossiers\StaffUploadedDocumentData;
 use App\Data\Shared\PersonOptionData;
@@ -16,7 +15,6 @@ use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
 use App\Models\Client;
 use App\Models\Dossier;
-use App\Models\QuestionnaireTemplate;
 use App\Models\User;
 use RuntimeException;
 
@@ -127,32 +125,6 @@ final class FetchDossierShowQuery
             documentRequests: $documentRequestRows,
             accessGrants: $accessGrants,
         );
-    }
-
-    /**
-     * @return list<QuestionnaireTemplateOptionData>
-     */
-    public function templates(): array
-    {
-        $templates = QuestionnaireTemplate::queryVisibleToCurrentTenant()
-            ->withCount('items')
-            ->oldest('name')
-            ->get(['id', 'name', 'category', 'tenant_id']);
-
-        /** @var list<QuestionnaireTemplateOptionData> $templateOptions */
-        $templateOptions = [];
-
-        foreach ($templates as $template) {
-            $templateOptions[] = new QuestionnaireTemplateOptionData(
-                id: $template->id,
-                name: $template->name,
-                categoryLabel: $template->category->label(),
-                itemsCount: $template->items_count,
-                isSystem: $template->isSystem(),
-            );
-        }
-
-        return $templateOptions;
     }
 
     private function resolveClient(Dossier $dossier): Client

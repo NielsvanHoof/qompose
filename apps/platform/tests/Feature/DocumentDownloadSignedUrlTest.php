@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Dossiers\ResolveDocumentTemporaryUrlAction;
+use App\Actions\Dossiers\DocumentRequests\ResolveDocumentTemporaryUrlAction;
 use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Models\Activity;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\Dossiers\UploadDocumentForRequestAction;
+use App\Actions\Dossiers\DocumentRequests\UploadDocumentForRequestAction;
 use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\DocumentProcessingStatus;
 use App\Enums\DocumentRequestStatus;

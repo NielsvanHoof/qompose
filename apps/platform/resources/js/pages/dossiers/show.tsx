@@ -1,7 +1,6 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import DossierShowContent from '@/features/dossiers/show/dossier-show-content';
 import type { Dossier } from '@/features/dossiers/types';
-import type { ApplyTemplateOption } from '@/features/questionnaires/types';
 import { useCurrentWorkspace } from '@/hooks/use-current-workspace';
 import { useTranslation } from '@/hooks/use-translation';
 import {
@@ -10,11 +9,10 @@ import {
 } from '@/routes/workspaces/dossiers';
 
 /**
- * Staff dossier detail — stage tabs for Prepare → Invite → Review.
+ * Staff dossier overview — follow-up, invite, and links to builder/review.
  */
 export default function ShowDossier({
     dossier,
-    templates = [],
     access_grant_token: accessGrantToken = null,
     access_grant_portal_url: accessGrantPortalUrl = null,
     can_manage: canManage,
@@ -24,7 +22,7 @@ export default function ShowDossier({
     can_download: canDownload,
 }: {
     dossier: Dossier;
-    templates?: ApplyTemplateOption[];
+    templates?: unknown[];
     access_grant_token?: string | null;
     access_grant_portal_url?: string | null;
     can_manage: boolean;
@@ -57,7 +55,6 @@ export default function ShowDossier({
             <Head title={dossier.title} />
             <DossierShowContent
                 dossier={dossier}
-                templates={templates}
                 accessGrantToken={accessGrantToken}
                 accessGrantPortalUrl={accessGrantPortalUrl}
                 canManage={canManage}

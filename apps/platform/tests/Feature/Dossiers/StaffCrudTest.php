@@ -6,6 +6,7 @@ use App\Actions\Tenancy\ProvisionTenantAction;
 use App\Enums\AuditEvent;
 use App\Enums\DocumentRequestStatus;
 use App\Enums\DossierStatus;
+use App\Enums\QuestionnaireItemType;
 use App\Enums\Role;
 use App\Enums\TenantMembershipStatus;
 use App\Models\Activity;
@@ -66,7 +67,7 @@ test('staff can create a client, dossier, and document request', function () {
         'type' => 'file',
         'title' => 'Payslip January 2025',
         'instructions' => 'Upload the original PDF.',
-    ])->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
+    ])->assertRedirect(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]));
 
     $this->get(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]))
         ->assertOk()
@@ -80,6 +81,87 @@ test('staff can create a client, dossier, and document request', function () {
         ->and(Activity::query()
             ->where('event', AuditEvent::DocumentRequestCreated->value)
             ->exists())->toBeTrue();
+});
+
+test('staff can insert a document request at a canvas position', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    $first = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'title' => 'First',
+        'sort_order' => 0,
+    ]);
+    $second = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'title' => 'Second',
+        'sort_order' => 1,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'type' => 'text',
+            'title' => 'Inserted middle',
+            'position' => 1,
+        ])
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]));
+
+    expect(DocumentRequest::query()
+        ->whereBelongsTo($dossier)
+        ->oldest('sort_order')
+        ->pluck('title')
+        ->all())->toBe(['First', 'Inserted middle', 'Second']);
+
+    expect($first->fresh()->sort_order)->toBe(0)
+        ->and($second->fresh()->sort_order)->toBe(2);
+});
+
+test('document request position is clamped to the end of the list', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+
+    DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'title' => 'Only',
+        'sort_order' => 0,
+    ]);
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post(workspaceRoute('workspaces.dossiers.document-requests.store', $tenant, [
+            'dossier' => $dossier,
+        ]), [
+            'type' => 'boolean',
+            'title' => 'Appended by clamp',
+            'position' => 99,
+        ])
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]));
+
+    expect(DocumentRequest::query()
+        ->whereBelongsTo($dossier)
+        ->oldest('sort_order')
+        ->pluck('title')
+        ->all())->toBe(['Only', 'Appended by clamp']);
 });
 
 test('document request creation rolls back when auditing fails', function () {
@@ -146,7 +228,7 @@ test('staff can reorder every document request in a dossier', function () {
         'dossier_id' => $otherDossier->id,
     ]);
     $reorderedIds = $documentRequests->pluck('id')->reverse()->values()->all();
-    $showRoute = workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]);
+    $builderRoute = workspaceRoute('workspaces.dossiers.builder', $tenant, ['dossier' => $dossier]);
     $reorderRoute = workspaceRoute('workspaces.dossiers.document-requests.reorder', $tenant, [
         'dossier' => $dossier,
     ]);
@@ -154,7 +236,7 @@ test('staff can reorder every document request in a dossier', function () {
     $this->actingAs($owner)
         ->withSession(['active_tenant_id' => $tenant->id])
         ->post($reorderRoute, ['document_request_ids' => $reorderedIds])
-        ->assertRedirect($showRoute);
+        ->assertRedirect($builderRoute);
 
     expect(DocumentRequest::query()
         ->whereBelongsTo($dossier)
@@ -162,7 +244,7 @@ test('staff can reorder every document request in a dossier', function () {
         ->pluck('id')
         ->all())->toBe($reorderedIds);
 
-    $this->from($showRoute)
+    $this->from($builderRoute)
         ->post($reorderRoute, [
             'document_request_ids' => [
                 $reorderedIds[0],
@@ -170,7 +252,7 @@ test('staff can reorder every document request in a dossier', function () {
                 $foreignDocumentRequest->id,
             ],
         ])
-        ->assertRedirect($showRoute)
+        ->assertRedirect($builderRoute)
         ->assertSessionHasErrors('document_request_ids');
 
     expect(DocumentRequest::query()
@@ -326,7 +408,7 @@ test('staff can upload a document for a document request', function () {
         ]), [
             'document' => $file,
         ])
-        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $tenant, ['dossier' => $dossier]));
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.review', $tenant, ['dossier' => $dossier]));
 
     $uploaded = UploadedDocument::query()->sole();
 
@@ -376,6 +458,11 @@ test('read only staff cannot upload documents', function () {
         'tenant_id' => $tenant->id,
         'dossier_id' => $dossier->id,
     ]);
+    $textRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'type' => QuestionnaireItemType::Text,
+    ]);
 
     $this->actingAs($reader)
         ->withSession(['active_tenant_id' => $tenant->id])
@@ -386,4 +473,62 @@ test('read only staff cannot upload documents', function () {
             'document' => UploadedFile::fake()->create('payslip.pdf', 120, 'application/pdf'),
         ])
         ->assertForbidden();
+
+    $this->post(workspaceRoute('workspaces.dossiers.document-requests.answer', $tenant, [
+        'dossier' => $dossier,
+        'documentRequest' => $textRequest,
+    ]), [
+        'answer_text' => 'Received by phone.',
+    ])->assertForbidden();
+});
+
+test('staff can answer text and boolean requests on behalf of a client', function () {
+    $owner = User::factory()->create();
+    $tenant = app(ProvisionTenantAction::class)->handle('Acme Accountants', $owner);
+
+    $tenant->makeCurrent();
+    $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+    $dossier = Dossier::factory()->create([
+        'tenant_id' => $tenant->id,
+        'client_id' => $client->id,
+    ]);
+    $textRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'type' => QuestionnaireItemType::Text,
+    ]);
+    $booleanRequest = DocumentRequest::factory()->create([
+        'tenant_id' => $tenant->id,
+        'dossier_id' => $dossier->id,
+        'type' => QuestionnaireItemType::Boolean,
+    ]);
+
+    $route = fn (DocumentRequest $documentRequest): string => workspaceRoute(
+        'workspaces.dossiers.document-requests.answer',
+        $tenant,
+        [
+            'dossier' => $dossier,
+            'documentRequest' => $documentRequest,
+        ],
+    );
+
+    $this->actingAs($owner)
+        ->withSession(['active_tenant_id' => $tenant->id])
+        ->post($route($textRequest), ['answer_text' => 'Received by email.'])
+        ->assertRedirect();
+
+    $this->post($route($booleanRequest), ['answer_boolean' => false])
+        ->assertRedirect();
+
+    expect($textRequest->fresh())
+        ->answer_text->toBe('Received by email.')
+        ->status->toBe(DocumentRequestStatus::Submitted)
+        ->and($booleanRequest->fresh())
+        ->answer_boolean->toBeFalse()
+        ->status->toBe(DocumentRequestStatus::Submitted)
+        ->and($dossier->fresh()->status)->toBe(DossierStatus::InReview)
+        ->and(Activity::query()
+            ->where('event', AuditEvent::QuestionnaireAnswerSubmitted->value)
+            ->where('properties->source', 'staff')
+            ->count())->toBe(2);
 });

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands\Ocr;
 
 use App\Actions\Ocr\CompleteTextractExtractionAction;
+use App\Actions\Ocr\FailTextractExtractionAction;
 use Aws\Sqs\SqsClient;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -31,6 +32,7 @@ final class ConsumeTextractResultsCommand extends Command
     public function handle(
         SqsClient $sqs,
         CompleteTextractExtractionAction $completeTextractExtraction,
+        FailTextractExtractionAction $failTextractExtraction,
         Repository $config,
     ): int {
         $queueUrl = $config->get('ocr.textract.results_queue_url');
@@ -151,7 +153,7 @@ final class ConsumeTextractResultsCommand extends Command
                         && is_string($jobId)
                         && $jobId !== ''
                         && $this->failPermanently(
-                            $completeTextractExtraction,
+                            $failTextractExtraction,
                             $jobId,
                             $exception,
                             $messageId,
@@ -239,13 +241,13 @@ final class ConsumeTextractResultsCommand extends Command
     }
 
     private function failPermanently(
-        CompleteTextractExtractionAction $completeTextractExtraction,
+        FailTextractExtractionAction $failTextractExtraction,
         string $jobId,
         Throwable $exception,
         ?string $messageId,
     ): bool {
         try {
-            $failed = $completeTextractExtraction->failPermanently($jobId, $exception);
+            $failed = $failTextractExtraction->handle($jobId, $exception);
         } catch (Throwable $finalizationException) {
             Log::critical('OCR: textract:consume could not persist the terminal failure.', [
                 'textract_job_id' => $jobId,

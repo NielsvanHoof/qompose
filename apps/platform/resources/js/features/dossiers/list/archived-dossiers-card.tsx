@@ -7,7 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import RestoreDossierButton from '@/features/dossiers/restore-dossier-button';
+import RestoreDossierButton from '@/features/dossiers/list/restore-dossier-button';
 import {
     dossierStatusBadgeVariant,
     dossierStatusLabel,

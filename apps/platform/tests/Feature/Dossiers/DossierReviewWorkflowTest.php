@@ -95,7 +95,7 @@ test('a reviewer can approve submitted evidence without editing the questionnair
         ]), [
             'decision' => DocumentRequestStatus::Accepted->value,
         ])
-        ->assertRedirect(workspaceRoute('workspaces.dossiers.show', $context['tenant'], [
+        ->assertRedirect(workspaceRoute('workspaces.dossiers.review', $context['tenant'], [
             'dossier' => $context['dossier'],
         ]));
 

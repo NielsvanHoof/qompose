@@ -93,3 +93,14 @@ export type PortalDocumentRequest = {
     can_respond: boolean;
     uploaded_document: PortalUploadedDocument | null;
 };
+
+/** Dedicated OCR extraction page props (staff). */
+export type UploadedDocumentShowProps = {
+    uploaded_document: UploadedDocument & {
+        extraction: DocumentExtraction | null;
+        raw_json: string | null;
+    };
+    document_request: { id: number; title: string } | null;
+    dossier: { id: number; title: string } | null;
+    can_download: boolean;
+};
